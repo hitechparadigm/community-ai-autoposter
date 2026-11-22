@@ -120,7 +120,7 @@ sequenceDiagram
 | 8:30 | 📅 Цей день в історії Канади: an event or a person on today's date (alternating) |
 | 9:00, 12:00, 15:00, 18:00, 21:00 | 📰 News post (Ukrainian-community stories first) |
 | 11:30 | 🍁 Історія Канади long-read (Sundays: a Ukrainian-Canadian story) |
-| every 5 min, 6:00-midnight | Publisher: posts what was approved; drafts not tapped expire after 24 hours |
+| every 5 min, around the clock | Publisher: posts what was approved; drafts not tapped expire after 24 hours |
 
 GitHub schedules run in UTC, so from March to November (daylight time) everything runs an hour later in
 Toronto unless the `cron:` lines are adjusted. Scheduled runs can be a few minutes late when GitHub is busy.

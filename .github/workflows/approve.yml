@@ -2,9 +2,9 @@ name: Publish approved posts
 
 on:
   schedule:
-    # Every 5 min, about 6:00-midnight Toronto time (the repo is public, so GitHub Actions minutes are free).
+    # Every 5 minutes, around the clock (the repo is public, so GitHub Actions minutes are free).
     # If the repo is public (unlimited free minutes), you can use "*/5 * * * *" instead.
-    - cron: "*/5 11-23,0-4 * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 permissions:
