@@ -691,6 +691,10 @@ def cmd_referrals():
             continue
         r = _json(ask_claude(REFERRAL_PROMPT.format(what=what, text=text)), "{", "}") or {}
         label = (r.get("label") or "").strip()
+        if not r.get("offer_found"):  # nothing new on the page: keep our own text
+            labels.pop(link, None)
+            report.append(f"\n• {html.escape(default)}\n  ℹ️ На сторінці немає конкретної пропозиції — текст без змін.")
+            continue
         if label and len(label) <= 70:
             old = labels.get(link, default)
             labels[link] = label

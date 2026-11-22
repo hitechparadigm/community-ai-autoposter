@@ -81,7 +81,8 @@ REFERRALS = [
      "free credit score check"),
     ("🏦 Відкрийте рахунок у Simplii без щомісячної плати", "https://blue.mbsy.co/6svHvM",
      "Simplii Financial no-fee bank account"),
-    ("💸 Перекази за кордон з Wise", "https://bit.ly/3UYzy9r", "Wise international money transfers"),
+    ("💸 Перший переказ в Україну з Wise — без комісії", "https://bit.ly/3UYzy9r",
+     "Wise international money transfers (e.g. to Ukraine)"),
     ("📊 Інвестуйте з Questrade", "https://bit.ly/4dUdlWV", "Questrade investing account"),
     ("💳 Перевірте свій кредитний рейтинг", "https://bit.ly/3cqN99x", "free credit score check"),
 ]
