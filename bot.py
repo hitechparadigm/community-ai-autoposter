@@ -303,16 +303,69 @@ def parse_post(text):
 BAD_IMG = re.compile(r"logo|icon|favicon|header|banner|avatar|sprite|android-chrome|placeholder|\.svg|\.gif", re.I)
 
 
+def _image_size(data):
+    """(width, height) from the first bytes of a JPEG or PNG, or None."""
+    if data[:8] == b"\x89PNG\r\n\x1a\n" and len(data) >= 24:
+        return int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
+    if data[:2] == b"\xff\xd8":
+        i = 2
+        while i + 9 < len(data):
+            if data[i] != 0xFF:
+                i += 1
+                continue
+            marker, length = data[i + 1], int.from_bytes(data[i + 2:i + 4], "big")
+            if marker in (0xC0, 0xC1, 0xC2):
+                return int.from_bytes(data[i + 7:i + 9], "big"), int.from_bytes(data[i + 5:i + 7], "big")
+            i += 2 + length
+    return None
+
+
+def image_ok(url):
+    """A real photo: big enough and not a wide banner or a logo strip."""
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": UA, "Range": "bytes=0-131071"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            data = r.read(131072)
+    except Exception:
+        return False
+    size = _image_size(data)
+    if not size:
+        return data[:4] == b"RIFF"  # WebP: can't measure cheaply, accept
+    w, h = size
+    return w >= 400 and h >= 250 and 0.5 <= w / h <= 2.0
+
+
 def _find_image(page, url):
-    """The page's main picture: og:image, or else the first real photo in the content."""
+    """The page's main picture: og:image or a photo in the content, checked to be a real photo."""
+    found = []
     for pat in (r'<meta[^>]+property="og:image"[^>]+content="([^"]+)"',
-                r'<meta[^>]+content="([^"]+)"[^>]+property="og:image"'):
-        m = re.search(pat, page)
-        if m and not BAD_IMG.search(m.group(1)):
-            return urllib.parse.urljoin(url, html.unescape(m.group(1)))
-    for src in re.findall(r'<img[^>]+src="([^"]+\.(?:jpe?g|png)[^"]*)"', page, re.I):
-        if not BAD_IMG.search(src):
-            return urllib.parse.urljoin(url, html.unescape(src))
+                r'<meta[^>]+content="([^"]+)"[^>]+property="og:image"',
+                r'<img[^>]+src="([^"]+\.(?:jpe?g|png)[^"]*)"'):
+        for src in re.findall(pat, page, re.I):
+            full = urllib.parse.urljoin(url, html.unescape(src))
+            if not BAD_IMG.search(full) and full not in found:
+                found.append(full)
+    for img in found[:6]:
+        if image_ok(img):
+            return img
+    return ""
+
+
+def commons_image(query):
+    """A freely licensed photo from Wikimedia Commons, via the best-matching English Wikipedia article."""
+    if not query:
+        return ""
+    q = urllib.parse.urlencode({"action": "query", "generator": "search", "gsrsearch": query, "gsrlimit": 3,
+                                "prop": "pageimages", "piprop": "original", "format": "json"})
+    try:
+        pages = json.loads(http(f"https://en.wikipedia.org/w/api.php?{q}")).get("query", {}).get("pages", {})
+    except Exception as e:
+        print(f"Commons image search failed: {e}")
+        return ""
+    for p in sorted(pages.values(), key=lambda p: p.get("index", 99)):
+        src = (p.get("original") or {}).get("source", "")
+        if src and not BAD_IMG.search(src) and image_ok(src):
+            return src
     return ""
 
 
@@ -492,7 +545,10 @@ Give enough context (where, when, who) for a newcomer who does not know Canadian
 Mention a connection to Ukrainians in Canada only if the source supports it.
 - Write in your own words. Use only facts stated in the source; do not invent dialogue, details, dates or numbers.
 
-Reply with JSON only: {{"title": "...", "body": "..."}}
+- "image_query": the main person, place or event in English, as it would be titled on English Wikipedia \
+(e.g. "Maude Abbott"), used to find a photo.
+
+Reply with JSON only: {{"title": "...", "body": "...", "image_query": "..."}}
 
 Topic: {topic}
 Source: {source}
@@ -590,9 +646,14 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
     if not post:
         print("Could not write the history post")
         return False
+    query = post.get("image_query", "")
     edited = parse_post(ask_claude(EDIT_PROMPT.format(
-        draft=json.dumps(post, ensure_ascii=False), title=topic, summary="", article=article)))
+        draft=json.dumps({"title": post["title"], "body": post["body"]}, ensure_ascii=False),
+        title=topic, summary="", article=article)))
     post = edited or post
+    if not image:  # the source has no usable photo: look for a freely licensed one
+        image = commons_image(query)
+        print(f"Image from Wikimedia Commons for '{query}': {image or 'none'}")
     text = format_post(post["title"], post["body"], source_name, url, header=header)
     return send_draft(s, url, text, stamp, image=image)
 
