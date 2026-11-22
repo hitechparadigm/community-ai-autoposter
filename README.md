@@ -1,9 +1,41 @@
-# Ukrainian Canada autoposter
+# Community AI Autoposter
 
-A bot for the Telegram channel [@UkrainianCanada](https://t.me/UkrainianCanada) (and, optionally, the
-Facebook Page). It reads Canadian news and history sources, has Claude write posts in Ukrainian, and sends
-each one to the approvers in Telegram with **✅ Publish / ❌ Skip** buttons. Approved posts go to the channel
-within about 5 minutes. Everything runs on GitHub Actions; no computer or chat app needs to be open.
+**An AI editorial assistant for a community news channel.** It runs the Telegram channel
+[Українська Канада (@UkrainianCanada)](https://t.me/UkrainianCanada), about 17,000 Ukrainians living in
+Canada: every day it finds the news and history that matter to this community, writes posts in literary
+Ukrainian with Claude, and sends each one to human editors for one-tap approval before anything is published.
+
+**Live demo:** [t.me/UkrainianCanada](https://t.me/UkrainianCanada)
+
+### What it does
+
+- **News, 5 times a day.** Reads 30+ Canadian feeds (CBC and Global News for every province and territory,
+  Postmedia papers, Ukrainian-Canadian outlets), puts Ukrainian-community stories first, and writes a short,
+  self-contained post in Ukrainian from the full article.
+- **Morning digest.** Yesterday's key national stories, rotating provincial highlights, community news and
+  "what happens today", each item linked to its source, with a mix of outlets.
+- **Canadian history.** A daily "This day in Canadian history" post and a history long-read, published as
+  Telegraph articles (Instant View in Telegram), grounded in Canadian archives and encyclopedias.
+- **Human in the loop.** Every draft goes to the editors in Telegram with ✅ / ❌; nothing is published
+  without approval (optional timed auto-publish per post type). Approved posts also go to the Facebook Page.
+
+### Engineering highlights
+
+- **Two-pass generation.** Claude writes, then a separate "copy editor" pass checks language and verifies every
+  name, number and date against the source. A Ukrainian style guide (no russianisms or calques, Canadian
+  terminology, typography) is part of every prompt.
+- **Source-grounded content.** Posts use only facts from the fetched article; history prefers Canadian
+  institutions (Dictionary of Canadian Biography, Library and Archives Canada, CBC Archives, provincial
+  societies), with Wikipedia only as a fallback. Images are checked to be real photos (not logos or banners),
+  with freely licensed Wikimedia Commons photos as a fallback.
+- **Serverless and free to run.** Scheduled GitHub Actions jobs, Telegram Bot API, Telegraph API and the
+  Facebook Graph API; state is a JSON file in the repo, with a three-way merge so overlapping runs never lose
+  a draft or double-post. No servers, no database, no third-party Python packages.
+- **Configurable, not hard-coded.** Sources, schedules, approvers, referral offers and publishing rules live in
+  `config.py`; all editorial instructions live in `prompts.py`, so the same code can serve another community.
+
+**Stack:** Python 3 (standard library only) · Claude API (Sonnet) · GitHub Actions · Telegram Bot API ·
+Telegraph API · Facebook Graph API · RSS/Atom
 
 ## How it works
 
