@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Commit state.json and push it. If another run pushed first, merge both runs' changes and retry.
 set -u
+BRANCH="${GITHUB_REF_NAME:-main}"
 git config user.name "github-actions[bot]"
 git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 git add state.json
@@ -11,8 +12,8 @@ for attempt in 1 2 3 4 5 6; do
   echo "Push rejected (attempt $attempt); merging with the newer state"
   git show HEAD~1:state.json > /tmp/base.json
   cp state.json /tmp/ours.json
-  git fetch -q origin main
-  git reset -q --hard origin/main
+  git fetch -q origin "$BRANCH"
+  git reset -q --hard "origin/$BRANCH"
   python3 bot.py merge-state /tmp/base.json /tmp/ours.json
   git add state.json
   git diff --cached --quiet && exit 0
