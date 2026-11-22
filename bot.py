@@ -645,7 +645,14 @@ def wiki_thumb(url, width=1280):
 
 def card_photo(url):
     """Only freely licensed photos go on cards (news outlets' photos are copyrighted)."""
-    return url if url and any(d in url for d in config.CARD.get("photo_domains", ("wikimedia.org",))) else ""
+    if not url or not any(d in url for d in config.CARD.get("photo_domains", ("wikimedia.org",))):
+        return ""
+    if NOT_A_PHOTO.search(urllib.parse.unquote(url.split("?")[0].rsplit("/", 1)[-1])):  # maps, flags, charts
+        return ""
+    return url
+
+
+NOT_A_PHOTO = re.compile(r"\.png$|\.svg|map|census|flag|coat_of_arms|seal|diagram|chart|logo|locator", re.I)
 
 
 def render_card(card):
@@ -723,7 +730,7 @@ def make_card(card):
     for q in card.get("queries", []):  # find a free photo only now, when the card is really made
         if card.get("photo"):
             break
-        card["photo"] = commons_image(q) if q else ""
+        card["photo"] = card_photo(commons_image(q)) if q else ""
     png = render_card(card)
     return send_card(png, "🖼 Facebook") if png else ""
 
@@ -1523,7 +1530,7 @@ def cmd_cards(path="samples/cards.json"):
     for i, card in enumerate(json.load(open(path, encoding="utf-8")), 1):
         for q in card.get("queries", []):
             if not card.get("photo"):
-                card["photo"] = commons_image(q)
+                card["photo"] = card_photo(commons_image(q))
         png = render_card(card)
         if not png:
             continue
