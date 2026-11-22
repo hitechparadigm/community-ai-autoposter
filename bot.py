@@ -173,7 +173,25 @@ News items:
 {items}
 """
 
-WRITE_PROMPT = AUDIENCE + """
+STYLE = """Language standard: literary Ukrainian at the level of a professional news editor \
+(Суспільне, Українська правда, Радіо Свобода).
+- Write natural Ukrainian, not a translation from English. Rebuild English sentence structure; avoid calques \
+and bureaucratic wording.
+- No russianisms or surzhyk. Examples of errors: "приймати участь" (correct: брати участь), "на протязі" \
+(протягом), "являється" (є), "слідуючий" (наступний), "в якості" (як), "співпадати" (збігатися), \
+"міроприємство" (захід), "згідно закону" (згідно із законом), "вірно" in the sense of correct (правильно).
+- Check every word's meaning: "прибульці" means aliens from space; newcomers are "новоприбулі", \
+"новоприбулі українці", "ті, хто нещодавно приїхав".
+- Canadian terms: IRCC = Міністерство імміграції, біженців і громадянства Канади (IRCC); permanent residence = \
+постійне резидентство (PR); work permit = дозвіл на роботу; study permit = дозвіл на навчання; \
+provincial premier = прем'єр провінції (e.g. прем'єр Онтаріо); Prime Minister = прем'єр-міністр Канади; \
+Parliament / House of Commons = парламент / Палата громад; amounts: "50 млн доларів".
+- People: full Ukrainian transliteration of the name plus their role on first mention \
+(e.g. міністерка промисловості Канади Мелані Жолі). Use feminine job titles for women.
+- Typography: apostrophe ' (м'ясо), em dash with spaces " — ", quotation marks «...», no double spaces.
+- Prefer short sentences and active voice. No clichés, no filler, no exclamation marks, no clickbait."""
+
+WRITE_PROMPT = AUDIENCE + "\n\n" + STYLE + """
 
 Write a Telegram post in Ukrainian about the news article below. Readers should understand the story \
 without opening the link.
@@ -194,6 +212,27 @@ Source: {source}
 Headline: {title}
 Summary: {summary}
 Article text:
+{article}
+"""
+
+EDIT_PROMPT = """You are the copy editor of a Ukrainian news channel. Edit this draft post to publication quality.
+
+""" + STYLE + """
+
+Check and fix:
+1. Spelling, grammar, punctuation, typography.
+2. Russianisms, surzhyk, calques from English, unnatural or awkward phrasing, wrong word choice.
+3. Facts: every name, number, date and claim must match the article. Remove anything the article does not support.
+4. Clarity: a reader who has not seen the article must understand it. Keep the structure and length.
+
+If the draft is already correct, return it unchanged. Reply with JSON only: {{"title": "...", "body": "..."}}
+
+Draft:
+{draft}
+
+Article (for fact-checking):
+Headline: {title}
+Summary: {summary}
 {article}
 """
 
@@ -251,7 +290,7 @@ def fetch_article(url, limit=6000):
 
 def format_post(title, body, source, url):
     e = html.escape
-    return (f"<b>{e(title)}</b>\n\n{e(body)}\n\n"
+    return (f"<b>{e(title, quote=False)}</b>\n\n{e(body, quote=False)}\n\n"
             f"🔗 Джерело: <a href=\"{e(url, quote=True)}\">{e(source)}</a>")
 
 
@@ -313,6 +352,13 @@ def cmd_draft():
         if not post:
             print(f"Could not write post for: {it['title']}")
             continue
+        edited = parse_post(ask_claude(EDIT_PROMPT.format(
+            draft=json.dumps(post, ensure_ascii=False), title=it["title"],
+            summary=it["summary"], article=article or "(not available)")))
+        if edited:
+            post = edited
+        else:
+            print("Copy edit failed; using the first draft")
         did = hashlib.sha1(it["url"].encode()).hexdigest()[:10]
         text = format_post(post["title"], post["body"], it["source"], it["url"])
         msgs = []

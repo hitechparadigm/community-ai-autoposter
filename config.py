@@ -22,5 +22,5 @@ MAX_AGE_HOURS = 36
 # Drafts not approved within this time are dropped
 DRAFT_EXPIRY_HOURS = 24
 
-# Claude model used to pick stories and write posts
+# Claude model used to pick, write and copy-edit posts (Sonnet 5.5)
 MODEL = "claude-sonnet-5-5"
