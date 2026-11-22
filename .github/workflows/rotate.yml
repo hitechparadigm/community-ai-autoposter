@@ -1,0 +1,16 @@
+name: Replace Telegraph key (one-off)
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  rotate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 bot.py rotate-telegraph
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ADMIN_ID: ${{ secrets.TELEGRAM_ADMIN_ID }}
+      - name: Save state
+        if: always()
+        run: bash save_state.sh

@@ -40,6 +40,7 @@ TG_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 # One or more approver IDs, comma-separated (e.g. "456360947,123456789")
 ADMIN_IDS = [x.strip() for x in os.environ.get("TELEGRAM_ADMIN_ID", "").split(",") if x.strip()]
 ANTHROPIC_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+TELEGRAPH_TOKEN = os.environ.get("TELEGRAPH_TOKEN", "").strip()
 FB_PAGE_ID = os.environ.get("FACEBOOK_PAGE_ID", "").strip()
 FB_TOKEN = os.environ.get("FACEBOOK_PAGE_TOKEN", "").strip()
 
@@ -105,8 +106,7 @@ def merge_state(base, ours, theirs):
     out["ref_news"] = max((rn_t, rn_o), key=lambda r: (r.get("date", ""), r.get("count", 0)))
     if ours.get("thisday_last"):
         out["thisday_last"] = ours["thisday_last"]
-    if ours.get("telegraph_token") and not out.get("telegraph_token"):
-        out["telegraph_token"] = ours["telegraph_token"]
+    out.pop("telegraph_token", None)
     return out
 
 
@@ -359,16 +359,25 @@ def preview(url):
     return {"url": url, "prefer_large_media": True}
 
 
+def admin_key(admin_id):
+    """A short, non-reversible label for an approver, so their Telegram ID isn't stored in state.json."""
+    return hashlib.sha256(f"approver:{admin_id}".encode()).hexdigest()[:10]
+
+
 def close_draft(d, status):
     """On every approver's copy of the draft, replace the buttons with a status line."""
+    by_key = {admin_key(a): a for a in ADMIN_IDS}
     msgs = d.get("msgs") or [[ADMIN_IDS[0], d["admin_msg_id"]]]  # older drafts stored one id
-    for chat_id, msg_id in msgs:
+    for who, msg_id in msgs:
+        chat_id = by_key.get(who, who if who in ADMIN_IDS else None)
+        if not chat_id:
+            continue
         try:
             tg("editMessageText", chat_id=chat_id, message_id=msg_id,
                text=d["text"] + f"\n\n— {status}", parse_mode="HTML",
                link_preview_options={"is_disabled": True})
         except Exception as e:
-            print(f"Could not update draft message for {chat_id}: {e}")
+            print(f"Could not update a draft message: {e}")
 
 
 # ---------- commands ----------
@@ -442,9 +451,9 @@ def send_draft(s, url, text, stamp, image="", preview_url=""):
         try:
             msg = tg("sendMessage", chat_id=admin, text=text, parse_mode="HTML",
                      link_preview_options=lp, reply_markup=buttons(did))
-            msgs.append([admin, msg["message_id"]])
+            msgs.append([admin_key(admin), msg["message_id"]])
         except Exception as e:  # e.g. this approver never pressed Start in the bot
-            print(f"Could not send draft to {admin}: {e}")
+            print(f"Could not send a draft to approver #{ADMIN_IDS.index(admin) + 1}: {e}")
     if msgs:
         s["pending"][did] = {"url": url, "text": text, "created": stamp, "msgs": msgs, "lp": lp}
     return bool(msgs)
@@ -663,17 +672,23 @@ def wiki_on_this_day(d):
     return out
 
 
+_telegraph_session = {}
+
+
 def telegraph(method, s, **params):
-    """Call the Telegraph API (telegra.ph). The bot creates its own account once and keeps the token in state."""
-    if method != "createAccount" and not s.get("telegraph_token"):
-        acc = telegraph("createAccount", s, short_name="UkrainianCanada", author_name=config.TELEGRAPH_AUTHOR,
-                        author_url=config.TELEGRAPH_AUTHOR_URL)
-        s["telegraph_token"] = acc["access_token"]
-    if method != "createAccount":
-        params["access_token"] = s["telegraph_token"]
+    """Call the Telegraph API (telegra.ph) with the account key from the TELEGRAPH_TOKEN secret.
+    The key is never written to state.json (the repository may be public)."""
+    if method not in ("createAccount", "revokeAccessToken"):
+        token = TELEGRAPH_TOKEN or _telegraph_session.get("token")
+        if not token:  # no secret yet: use a temporary account for this run
+            print("TELEGRAPH_TOKEN is not set: using a temporary Telegraph account")
+            acc = telegraph("createAccount", s, short_name="UkrainianCanada", author_name=config.TELEGRAPH_AUTHOR,
+                            author_url=config.TELEGRAPH_AUTHOR_URL)
+            token = _telegraph_session["token"] = acc["access_token"]
+        params["access_token"] = token
     resp = json.loads(http(f"https://api.telegra.ph/{method}", params))
     if not resp.get("ok"):
-        raise RuntimeError(f"Telegraph {method} failed: {resp}")
+        raise RuntimeError(f"Telegraph {method} failed: {resp.get('error')}")
     return resp["result"]
 
 
@@ -924,6 +939,22 @@ def post_to_facebook(d):
         raise RuntimeError(e.read().decode(errors="replace")[:300]) from None
 
 
+def cmd_rotate_telegraph():
+    """Revoke the Telegraph key that used to be stored in state.json, and send the new key to the approvers
+    in Telegram (never to the log) so it can be saved as the TELEGRAPH_TOKEN secret."""
+    s = load_state()
+    old = s.pop("telegraph_token", "") or TELEGRAPH_TOKEN
+    if not old:
+        sys.exit("No Telegraph key to rotate")
+    new = telegraph("revokeAccessToken", s, access_token=old)["access_token"]
+    text = ("🔑 <b>Новий ключ Telegraph</b>\n\nЗбережіть його в GitHub → Settings → Secrets and variables → "
+            "Actions → New repository secret, з назвою <code>TELEGRAPH_TOKEN</code>:\n\n"
+            f"<code>{html.escape(new)}</code>\n\nСтарий ключ більше не діє. Після збереження це повідомлення можна видалити.")
+    tg("sendMessage", chat_id=ADMIN_IDS[0], text=text, parse_mode="HTML")
+    print("Telegraph key replaced; the new key was sent to the first approver in Telegram")
+    save_state(s)
+
+
 def answer(cq, text, alert=False):
     # Telegram rejects answers to taps older than a few minutes; that's harmless.
     try:
@@ -999,6 +1030,8 @@ if __name__ == "__main__":
         cmd_thisday()
     elif cmd == "digest":
         cmd_digest()
+    elif cmd == "rotate-telegraph":
+        cmd_rotate_telegraph()
     elif cmd == "merge-state":  # used by save_state.sh: merge-state BASE OURS (theirs = state.json)
         with open(sys.argv[2], encoding="utf-8") as f:
             base = json.load(f)
