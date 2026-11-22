@@ -38,19 +38,24 @@ Any other community can run its own channel by changing two settings files (see
 
 ### Reusable for any community
 
-Nothing about Ukrainian Canada is hard-coded in the program. Any community, diaspora, city or interest
-group can run its own channel by forking the repo and changing two files:
+Nothing specific to this channel is hard-coded: `bot.py` contains no names, sources, languages, countries or
+time zones. Anyone with the same use case (a community channel on Telegram and/or a Facebook Page) can fork
+the repo and change only the settings and the prompts:
 
 | Change | In |
 |---|---|
-| Channel, time zone, news feeds, history sources, referral offers, publishing rules | `config.py` |
-| Language of the posts and fixed words (headers, "Source", "Read more", month names) | `config.py` → `LABELS`, `MONTHS` |
-| Who the audience is, what counts as important, the style guide for the target language | `prompts.py` |
+| Telegram channel, bot name, time zone, approvers' auto-publish rules, model, limits | `config.py` |
+| News feeds and regions; which stories count as community news (`COMMUNITY_WORDS`, `COMMUNITY_REGIONS`) | `config.py` |
+| History sources, "people of the day" page, community-history day and sources, Wikipedia language | `config.py` |
+| Fixed words in posts (headers, "Source", "Read more", month names) and the language of the channel | `config.py` → `LABELS`, `MONTHS` |
+| Referral offers | `config.py` → `REFERRALS` |
+| Audience, what counts as important, length and structure of posts, style guide for the language | `prompts.py` |
 | Run times | `.github/workflows/*.yml` |
+| Bot token, approvers, API and Facebook keys | GitHub secrets |
 
-Examples: a Polish- or Filipino-Canadian channel, a city news channel for newcomers, a university or church
-community, a professional association. Facebook is optional; Telegraph long-reads and the history columns can
-be pointed at any country's archives (or switched off by not scheduling them).
+Examples: a Polish- or Filipino-Canadian channel, a city news channel for newcomers, a diaspora in another
+country, a university or church community, a professional association. Facebook is optional; the history
+columns can use any country's archives, or be switched off by removing their schedules.
 
 **Stack:** Python 3 (standard library only) · Claude API (Sonnet) · GitHub Actions · Telegram Bot API ·
 Telegraph API · Facebook Graph API · RSS/Atom
@@ -139,14 +144,16 @@ today (left out when there are none). A key phrase in each item links to the sou
 **History long-reads.** Written as Telegraph articles (telegra.ph, open inside Telegram with Instant View),
 with photo, subheadings and the source credited at the end. The channel gets a teaser with one bold
 "📖 Читати повністю →" link. A skipped or expired draft's Telegraph page is blanked.
-- 📅 *Цей день*: people from the Dictionary of Canadian Biography; events from Wikipedia "On this day"
-  (Canadian entries), because the Canadian sites with dated events block automated access.
+- 📅 *Цей день*: people from the Dictionary of Canadian Biography (`PEOPLE_OF_THE_DAY`); events from
+  Wikipedia "On this day" (entries matching `THISDAY_WORDS`), because the Canadian sites with dated events
+  block automated access.
 - 🍁 *Історія Канади*: Canadian sources first (`HISTORY_SOURCES`: CBC Archives, Library and Archives Canada,
   Ontario Heritage Trust, Quebec Anglophone Heritage Network, Manitoba Historical Society, Encyclopedia of
   Saskatchewan, RETROactive Alberta). Wikipedia (`WIKI_REGIONAL_TOPICS`) is the fallback and covers BC, the
   Atlantic provinces and the North, whose history sites can't be read automatically.
-- Sundays: Ukrainian-Canadian stories (`UKRAINIAN_CANADIAN_SOURCES`; fallback `UKRAINIAN_CANADIAN_TOPICS`).
-  For one on another day: Actions → "Draft history story" → tick "Ukrainian-Canadian story".
+- Sundays (`COMMUNITY_HISTORY_DAY`): Ukrainian-Canadian stories (`COMMUNITY_HISTORY_SOURCES`; fallback
+  `COMMUNITY_HISTORY_TOPICS`). For one on another day: Actions → "Draft history story" → tick
+  "Community-history story".
 - Photos: the source's own picture if it is a real photo (logos and banners are rejected), otherwise a freely
   licensed photo of the subject from Wikimedia Commons.
 

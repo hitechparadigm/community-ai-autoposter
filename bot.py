@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Ukrainian Canada autoposter.
+"""Community AI autoposter (settings: config.py, editorial instructions: prompts.py).
 
-  python bot.py draft    - fetch news, have Claude pick and write posts (Ukrainian),
+  python bot.py draft    - fetch news, have Claude pick and write posts,
                            send drafts to you in Telegram with Publish / Skip buttons
-  python bot.py thisday  - draft one "This day in Canadian history" post
-  python bot.py history  - draft one "Canadian history" story
+  python bot.py digest   - draft the morning digest
+  python bot.py thisday  - draft one "This day in history" post
+  python bot.py history  - draft one history story ("history community" = a community-history story)
   python bot.py approve  - check your button taps and publish approved posts to the channel
 
 No third-party packages needed (standard library only).
@@ -33,7 +34,7 @@ STATE_FILE = os.path.join(HERE, "state.json")
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/131.0 Safari/537.36")
 # Wikimedia asks bots to identify themselves (and throttles generic browser user agents)
-WIKI_UA = "UkrainianCanadaBot/1.0 (https://t.me/UkrainianCanada; Telegram news channel)"
+WIKI_UA = f"{config.BOT_NAME}/1.0 ({config.BOT_CONTACT_URL})"
 ATOM = "{http://www.w3.org/2005/Atom}"
 DC = "{http://purl.org/dc/elements/1.1/}"
 
@@ -185,7 +186,7 @@ def fetch_news(seen, max_age_hours=None, limit=200):
         got.sort(key=lambda i: i["published"] or now(), reverse=True)
         taken = 0
         for it in got:
-            community = region != "Ukraine" and any(  # Ukrinform is all about Ukraine: not "community"
+            community = region not in config.NOT_COMMUNITY_REGIONS and any(
                 w in it["title"] + " " + it["summary"] for w in config.COMMUNITY_WORDS)
             if taken >= config.ITEMS_PER_FEED and not community:
                 continue
@@ -194,7 +195,7 @@ def fetch_news(seen, max_age_hours=None, limit=200):
             if it["published"] and it["published"] < cutoff:
                 continue
             it["region"] = region
-            it["community"] = community or region == "Ukrainian community in Canada"
+            it["community"] = community or region in config.COMMUNITY_REGIONS
             urls.add(it["url"])
             items.append(it)
             taken += 1
@@ -305,7 +306,7 @@ def commons_image(query):
         q = urllib.parse.urlencode({"action": "query", "prop": "pageimages", "piprop": "original",
                                     "format": "json", **params})
         try:
-            pages = json.loads(http(f"https://en.wikipedia.org/w/api.php?{q}")).get("query", {}).get("pages", {})
+            pages = json.loads(http(f"{WIKI}/w/api.php?{q}")).get("query", {}).get("pages", {})
         except Exception as e:
             print(f"Commons image search failed: {e}")
             return ""
@@ -500,8 +501,8 @@ def matching_referral(s, post):
 # ---------- daily digest ----------
 
 def outlet(source):
-    """Media outlet from a feed name: "CBC Manitoba" -> "CBC", "Global News Winnipeg" -> "Global News"."""
-    for name in ("CBC", "Global News"):
+    """Media outlet from a feed name, e.g. "CBC Manitoba" -> "CBC" (prefixes in config.OUTLET_PREFIXES)."""
+    for name in config.OUTLET_PREFIXES:
         if source.startswith(name):
             return name
     return source
@@ -515,7 +516,7 @@ def cmd_digest():
     s = load_state()
     s.setdefault("digest_regions", {})
     d = now().astimezone(LOCAL)
-    items = [it for it in fetch_news({}, max_age_hours=36, limit=250) if it["region"] != "Ukraine"]
+    items = [it for it in fetch_news({}, max_age_hours=36, limit=250) if it["region"] not in config.DIGEST_EXCLUDE_REGIONS]
     print(f"{len(items)} items for the digest")
     if len(items) < 5:
         return save_state(s)
@@ -597,6 +598,7 @@ def cmd_digest():
 #   "🍁 Історія Канади"            (python bot.py history) - a story from the history sources in config.py
 
 
+WIKI = f"https://{config.WIKIPEDIA_LANG}.wikipedia.org"
 LOCAL = timezone(timedelta(hours=config.UTC_OFFSET_HOURS))  # for picking "today" and showing times
 
 
@@ -605,7 +607,7 @@ def wiki_text(title, limit=15000):
     q = urllib.parse.urlencode({"action": "query", "prop": "extracts", "explaintext": 1,
                                 "redirects": 1, "titles": title, "format": "json"})
     try:
-        data = json.loads(http(f"https://en.wikipedia.org/w/api.php?{q}"))
+        data = json.loads(http(f"{WIKI}/w/api.php?{q}"))
     except Exception as e:
         print(f"Wikipedia error for {title}: {e}")
         return "", ""
@@ -613,7 +615,7 @@ def wiki_text(title, limit=15000):
         text = page.get("extract") or ""
         if text:
             real = page.get("title", title)
-            url = "https://en.wikipedia.org/wiki/" + urllib.parse.quote(real.replace(" ", "_"))
+            url = f"{WIKI}/wiki/" + urllib.parse.quote(real.replace(" ", "_"))
             return text[:limit], url
     return "", ""
 
@@ -651,22 +653,24 @@ def harvest(src):
     return list(found.items())
 
 
-def dcb_bios_of_the_day():
-    """Dictionary of Canadian Biography: people born or died on this day (its "biography of the day" page)."""
-    page = _get_page("http://www.biographi.ca/en/bio_of_the_day.html")
+def people_of_the_day():
+    """People born or died on this day, from config.PEOPLE_OF_THE_DAY (a page listing them), or [] if unset."""
+    src = getattr(config, "PEOPLE_OF_THE_DAY", None)
+    if not src:
+        return []
+    page = _get_page(src["url"])
     out = {}
-    for href, name in re.findall(r'href="((?:https?://www\.biographi\.ca)?/en/bio/[A-Za-z0-9_]+\.html)"[^>]*>(.*?)</a>',
-                                 page, re.S):
-        url = urllib.parse.urljoin("http://www.biographi.ca/", href)
+    for href, name in re.findall(r'<a\b[^>]*?href="([^"#]+)"[^>]*>(.*?)</a>', page, re.S):
+        url = urllib.parse.urljoin(src["url"], html.unescape(href))
         name = _clean(name, 120)
-        if len(name) > 3 and url not in out:
+        if re.search(src["pattern"], url) and len(name) > 3 and url not in out:
             out[url] = name
     return [{"url": u, "name": n} for u, n in out.items()]
 
 
 def wiki_on_this_day(d):
     try:
-        data = json.loads(http(f"https://en.wikipedia.org/api/rest_v1/feed/onthisday/all/{d:%m}/{d:%d}"))
+        data = json.loads(http(f"{WIKI}/api/rest_v1/feed/onthisday/all/{d:%m}/{d:%d}"))
     except Exception as e:
         print(f"On-this-day error: {e}")
         return []
@@ -675,7 +679,7 @@ def wiki_on_this_day(d):
         for e in data.get(kind, []):
             pages = e.get("pages") or []
             blob = e.get("text", "") + " " + " ".join(p.get("extract", "") for p in pages[:2])
-            if pages and any(w in blob for w in config.CANADA_WORDS):
+            if pages and any(w in blob for w in config.THISDAY_WORDS):
                 out.append({"kind": kind, "year": e.get("year"), "text": e.get("text", ""),
                             "page": pages[0].get("title", "")})
     return out
@@ -691,7 +695,7 @@ def telegraph(method, s, **params):
         token = TELEGRAPH_TOKEN or _telegraph_session.get("token")
         if not token:  # no secret yet: use a temporary account for this run
             print("TELEGRAPH_TOKEN is not set: using a temporary Telegraph account")
-            acc = telegraph("createAccount", s, short_name="UkrainianCanada", author_name=config.TELEGRAPH_AUTHOR,
+            acc = telegraph("createAccount", s, short_name=config.BOT_NAME[:32], author_name=config.TELEGRAPH_AUTHOR,
                             author_url=config.TELEGRAPH_AUTHOR_URL)
             token = _telegraph_session["token"] = acc["access_token"]
         params["access_token"] = token
@@ -783,8 +787,7 @@ def _date_opening(d, year=""):
 
 def cmd_thisday():
     """An event or a person on today's date, alternating day by day.
-    People: Dictionary of Canadian Biography. Events: Wikipedia "On this day" (Canadian entries) - the
-    Canadian sites with dated events (The Canadian Encyclopedia) block automated access."""
+    People: config.PEOPLE_OF_THE_DAY. Events: Wikipedia "On this day", entries matching config.THISDAY_WORDS."""
     s = _history_state()
     stamp = now().isoformat()
     d = now().astimezone(LOCAL)
@@ -792,7 +795,7 @@ def cmd_thisday():
     want = "event" if s.get("thisday_last") != "event" else "person"
 
     cands = [{"kind": "person", "label": f"person (born or died on {d:%B} {d.day}): {b['name']}", **b}
-             for b in dcb_bios_of_the_day() if b["url"] not in s["history_done"]]
+             for b in people_of_the_day() if b["url"] not in s["history_done"]]
     for e in wiki_on_this_day(d):
         if e["page"] not in s["history_done"]:
             kind = "event" if e["kind"] in ("selected", "events") else "person"
@@ -822,10 +825,10 @@ def cmd_thisday():
             if len(article) < 800:
                 continue
             ok = _write_history(f"{c['name']} (born or died on {d:%B} {d.day}; the text says which, and the year)",
-                                "Dictionary of Canadian Biography", article,
+                                config.PEOPLE_OF_THE_DAY["name"], article,
                                 "Start with the date" + DATE_WORDS[:-1] + " and what happened on it: "
                                 "the person's birth or death.",
-                                header, "Dictionary of Canadian Biography", c["url"], s, stamp, image)
+                                header, config.PEOPLE_OF_THE_DAY["name"], c["url"], s, stamp, image)
         if ok:
             s["thisday_last"] = c["kind"]
             print(f"This-day draft sent ({c['kind']}): {c['label']}")
@@ -878,17 +881,17 @@ def _wiki_story(titles, s, stamp, header):
     return False
 
 
-def cmd_history(ukrainian=False):
-    """Canadian sources first; Wikipedia only if none of them gives a usable story."""
+def cmd_history(community=False):
+    """Sources from config first; Wikipedia only if none of them gives a usable story."""
     s = _history_state()
     stamp = now().isoformat()
     header = config.LABELS["history_header"]
-    if ukrainian or now().astimezone(LOCAL).weekday() == config.UKRAINIAN_CANADIAN_DAY:
-        candidates = _collect(config.UKRAINIAN_CANADIAN_SOURCES, s, per_source=8)
-        print(f"{len(candidates)} Ukrainian-Canadian candidates")
+    if community or now().astimezone(LOCAL).weekday() == config.COMMUNITY_HISTORY_DAY:
+        candidates = _collect(config.COMMUNITY_HISTORY_SOURCES, s, per_source=8)
+        print(f"{len(candidates)} community-history candidates")
         ok = candidates and _story_from(candidates, s, stamp, header)
         if not ok:
-            topics = [("Ukrainian Canadians", t) for t in config.UKRAINIAN_CANADIAN_TOPICS]
+            topics = [(config.COMMUNITY_HISTORY_LABEL, t) for t in config.COMMUNITY_HISTORY_TOPICS]
             _wiki_story(topics, s, stamp, header)
         return save_state(s)
 
@@ -912,12 +915,19 @@ def retire_telegraph(d, s):
         print(f"Could not retire Telegraph page: {e}")
 
 
+def clean_link(url):
+    """Remove tracking bits (config.STRIP_FROM_LINKS) from a link."""
+    for part in config.STRIP_FROM_LINKS:
+        url = url.replace(part, "")
+    return url
+
+
 def fb_text(text):
     """Telegram HTML -> plain text for Facebook (links written out, since Facebook ignores HTML)."""
     text = re.sub(r'<a href="[^"]*">&#8203;</a>', "", text)  # invisible image link
 
     def link(m):
-        url = html.unescape(m.group(1)).replace("?cmp=rss", "")
+        url = clean_link(html.unescape(m.group(1)))
         label = html.unescape(re.sub(r"<[^>]+>", "", m.group(2)))
         if config.LABELS["read_more"] in label:
             return f"📖 {config.LABELS['read_more']}: {url}"
@@ -938,7 +948,7 @@ def post_to_facebook(d):
     link = lp_url if lp_url and not re.search(r"\.(jpe?g|png|webp)(\?|$)", lp_url, re.I) else d["url"]
     params = {"message": fb_text(d["text"]), "access_token": FB_TOKEN}
     if link.startswith("http"):
-        params["link"] = link.replace("?cmp=rss", "")
+        params["link"] = clean_link(link)
     data = urllib.parse.urlencode(params).encode()
     req = urllib.request.Request(f"https://graph.facebook.com/{FB_PAGE_ID}/feed", data=data,
                                  headers={"User-Agent": UA})
@@ -1037,7 +1047,7 @@ if __name__ == "__main__":
     elif cmd == "approve":
         cmd_approve()
     elif cmd == "history":
-        cmd_history(ukrainian=len(sys.argv) > 2 and sys.argv[2] == "ukrainian")
+        cmd_history(community=len(sys.argv) > 2 and sys.argv[2] == "community")
     elif cmd == "thisday":
         cmd_thisday()
     elif cmd == "digest":

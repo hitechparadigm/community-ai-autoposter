@@ -3,6 +3,10 @@
 # Telegram channel where approved posts go
 CHANNEL = "@UkrainianCanada"
 
+# How the bot identifies itself to websites that ask for it (Wikipedia, Telegraph)
+BOT_NAME = "UkrainianCanadaBot"
+BOT_CONTACT_URL = "https://t.me/UkrainianCanada"
+
 # Local time zone as hours from UTC (Toronto: -5; the schedules themselves are in the workflow files)
 UTC_OFFSET_HOURS = -5
 
@@ -79,6 +83,17 @@ FEEDS = [
     ("Ukrinform", "https://www.ukrinform.net/rss/block-lastnews", "Ukraine"),
 ]
 
+# Regions whose stories are all community news, and regions that are never "community" (and are left
+# out of the digest), e.g. a feed about the home country rather than the community here.
+COMMUNITY_REGIONS = ("Ukrainian community in Canada",)
+NOT_COMMUNITY_REGIONS = ("Ukraine",)
+DIGEST_EXCLUDE_REGIONS = ("Ukraine",)
+
+# Outlet names used in "sources" lines: feed names starting with these are shortened to them
+OUTLET_PREFIXES = ("CBC", "Global News")
+# Tracking bits removed from links in Facebook posts
+STRIP_FROM_LINKS = ("?cmp=rss",)
+
 # Newest items taken from each feed per run (keeps big feeds from crowding out small ones).
 # Stories about the Ukrainian community are always kept, whatever their position in the feed.
 ITEMS_PER_FEED = 8
@@ -136,16 +151,17 @@ MODEL = "claude-sonnet-5-5"
 TELEGRAPH_AUTHOR = "Українська Канада"
 TELEGRAPH_AUTHOR_URL = "https://t.me/UkrainianCanada"
 
-# Canadian sources come first; Wikipedia is used only when they give nothing usable.
-# "📅 Цей день в історії Канади" (daily): a person born or died on today's date, from the
-#   Dictionary of Canadian Biography (fallback: Wikipedia "On this day", Canadian entries).
-# "🍁 Історія Канади" (daily): a story picked from HISTORY_SOURCES (fallback: WIKI_REGIONAL_TOPICS).
-# On this weekday (0 = Monday ... 6 = Sunday) it tells a Ukrainian-Canadian story instead,
-#   from UKRAINIAN_CANADIAN_SOURCES (fallback: UKRAINIAN_CANADIAN_TOPICS on Wikipedia).
-UKRAINIAN_CANADIAN_DAY = 6
+# Sources listed here come first; Wikipedia is used only when they give nothing usable.
+# "This day" (daily): alternates between an event (Wikipedia "On this day", entries matching THISDAY_WORDS)
+#   and a person (PEOPLE_OF_THE_DAY).
+# History story (daily): picked from HISTORY_SOURCES (fallback: WIKI_REGIONAL_TOPICS).
+# On COMMUNITY_HISTORY_DAY (0 = Monday ... 6 = Sunday) it tells a community-history story instead,
+#   from COMMUNITY_HISTORY_SOURCES (fallback: COMMUNITY_HISTORY_TOPICS on Wikipedia).
+COMMUNITY_HISTORY_DAY = 6
 
-# Ukrainian-Canadian stories from Canadian archives and heritage sites (their own search pages).
-UKRAINIAN_CANADIAN_SOURCES = [
+# Community-history stories (on COMMUNITY_HISTORY_DAY) from archives and heritage sites (their own search pages).
+COMMUNITY_HISTORY_LABEL = "Ukrainian Canadians"
+COMMUNITY_HISTORY_SOURCES = [
     {"name": "Library and Archives Canada", "region": "Ukrainian Canadians",
      "index": ["https://thediscoverblog.com/?s=ukrainian", "https://thediscoverblog.com/page/2/?s=ukrainian",
                "https://thediscoverblog.com/?s=internment"],
@@ -159,7 +175,7 @@ UKRAINIAN_CANADIAN_SOURCES = [
 ]
 
 # Wikipedia fallback for Ukrainian-Canadian Sundays (English article titles, used in order).
-UKRAINIAN_CANADIAN_TOPICS = [
+COMMUNITY_HISTORY_TOPICS = [
     "Ivan Pylypiw",
     "Wasyl Eleniak",
     "Ukrainian Canadian internment",
@@ -199,8 +215,13 @@ HISTORY_SOURCES = [
      "pages": 15, "pattern": r"albertashistoricplaces\.com/\d{4}/\d{2}/\d{2}/[a-z0-9-]+/$"},
 ]
 
-# Words that mark a Wikipedia "On this day" entry as Canadian
-CANADA_WORDS = ("Canad", "Quebec", "Québec", "Ontario", "Manitoba", "Saskatchewan", "Alberta",
+# "This day": people born or died on this date (a page listing them; None to skip), and the words that
+# mark a Wikipedia "On this day" event as relevant. WIKIPEDIA_LANG: Wikipedia language for fallbacks.
+PEOPLE_OF_THE_DAY = {"name": "Dictionary of Canadian Biography",
+                     "url": "http://www.biographi.ca/en/bio_of_the_day.html",
+                     "pattern": r"biographi\.ca/en/bio/[A-Za-z0-9_]+\.html$"}
+WIKIPEDIA_LANG = "en"
+THISDAY_WORDS = ("Canad", "Quebec", "Québec", "Ontario", "Manitoba", "Saskatchewan", "Alberta",
                 "British Columbia", "Nova Scotia", "New Brunswick", "Newfoundland", "Labrador",
                 "Prince Edward Island", "Yukon", "Nunavut", "Northwest Territories", "Toronto",
                 "Montreal", "Montréal", "Vancouver", "Winnipeg", "Ottawa", "Halifax", "Calgary",

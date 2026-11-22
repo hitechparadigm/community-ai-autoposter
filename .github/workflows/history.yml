@@ -5,8 +5,8 @@ on:
     - cron: "30 16 * * *"   # 11:30 Toronto time (winter)
   workflow_dispatch:
     inputs:
-      ukrainian:
-        description: "Ukrainian-Canadian story (otherwise it's only on Sundays)"
+      community:
+        description: "Community-history story (otherwise only on COMMUNITY_HISTORY_DAY, Sundays)"
         type: boolean
         default: false
 
@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Write a Canadian history story
-        run: python3 bot.py history ${{ inputs.ukrainian && 'ukrainian' || '' }}
+        run: python3 bot.py history ${{ inputs.community && 'community' || '' }}
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
