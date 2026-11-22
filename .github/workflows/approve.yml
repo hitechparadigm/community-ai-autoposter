@@ -1,0 +1,34 @@
+name: Publish approved posts
+
+on:
+  schedule:
+    # Every 20 min, about 6:00-23:00 Toronto time. Fits the free 2,000 min/month of a private repo.
+    # If the repo is public (unlimited free minutes), you can use "*/5 * * * *" instead.
+    - cron: "*/20 11-23,0-3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: state
+  cancel-in-progress: false
+
+jobs:
+  approve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check taps and publish
+        run: python3 bot.py approve
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ADMIN_ID: ${{ secrets.TELEGRAM_ADMIN_ID }}
+      - name: Save state
+        if: always()
+        run: |
+          git config user.name "autopost-bot"
+          git config user.email "autopost-bot@users.noreply.github.com"
+          git add state.json
+          git diff --cached --quiet || (git commit -m "Update state" && git push)
