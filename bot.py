@@ -637,6 +637,7 @@ def post_multipart(url, fields, files, timeout=60):
 
 def wiki_thumb(url, width=1280):
     """A smaller copy of a Wikimedia image (originals can be tens of megabytes)."""
+    url = url.split("?")[0]
     m = re.match(r"(https://upload\.wikimedia\.org/wikipedia/(?:commons|en))/(\w/\w\w)/([^/?#]+)$", url)
     if not m or url.lower().endswith(".svg"):
         return url
