@@ -75,8 +75,11 @@ without opening the link.
 - Use only facts stated in the article; do not invent or guess details. If the article text is missing, \
 keep the post shorter and stick to the headline and summary.
 - Neutral, clear, friendly tone. No hashtags, no emojis in the body.
+- "image_query": the English Wikipedia title of a well-known place, building or landmark in the story that
+  would make a fitting photo (e.g. "Manitoba Legislative Building", "Toronto Pearson International Airport");
+  an empty string if nothing specific fits. Never a person.
 
-Reply with JSON only: {{"title": "...", "body": "..."}}
+Reply with JSON only: {{"title": "...", "body": "...", "image_query": "..."}}
 
 Source: {source}
 Headline: {title}

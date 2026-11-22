@@ -1,0 +1,23 @@
+name: Preview Facebook cards
+
+on:
+  workflow_dispatch:           # draws the sample cards in samples/cards.json and sends them to the approvers
+
+permissions:
+  contents: read
+
+jobs:
+  cards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Draw sample cards
+        run: python3 bot.py cards
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ADMIN_ID: ${{ secrets.TELEGRAM_ADMIN_ID }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cards
+          path: cards/

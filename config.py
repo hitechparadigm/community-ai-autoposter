@@ -157,6 +157,44 @@ REFERRAL_DISCLOSURE = ""  # optional line under the link, e.g. "#реклама"
 # Claude model used to pick, write and copy-edit posts (Sonnet 5.5)
 MODEL = "claude-sonnet-5-5"
 
+# ---------- Facebook ----------
+# Facebook gets the full post text with a picture card (see CARD) and no links: in Canada, Meta blocks links
+# to news outlets (Online News Act) even in comments, and posts with links reach fewer people anyway.
+# Sources stay named in plain text. Links that are allowed (the channel, Telegraph long-reads) go in a
+# first comment that the bot adds right after posting.
+FB_REFERRALS = False   # leave referral links out of Facebook posts
+FB_FOOTER = "📲 Більше новин щодня — у нашому Telegram-каналі @UkrainianCanada"
+FB_COMMENT = "📲 Підписуйтеся на наш Telegram-канал: https://t.me/UkrainianCanada"
+FB_COMMENT_READ_MORE = "📖 Версія з фото: {url}"   # added to the comment for long-reads
+
+# Picture cards for Facebook, drawn from card.html (edit it for layout, fonts and colours)
+CARD = {
+    "size": (1080, 1350),                 # 4:5, the tallest shape Facebook shows in full in the feed
+    "brand": "Українська Канада",
+    "handle": "t.me/UkrainianCanada",
+    "handle2": "ukrainiancanada.ca",
+    "colors": {"blue": "#0057B7", "yellow": "#FFD700", "dark": "#081228"},
+    "community_tag": "Українська громада",
+    "digest_items": 4,                    # headlines listed on the digest card
+}
+# Card labels for news regions, and a fallback photo (an English Wikipedia title) when a story has none
+REGIONS = {
+    "Canada": ("Канада", "Parliament Hill"),
+    "British Columbia": ("Британська Колумбія", "British Columbia Parliament Buildings"),
+    "Alberta": ("Альберта", "Alberta Legislature Building"),
+    "Saskatchewan": ("Саскачеван", "Saskatchewan Legislative Building"),
+    "Manitoba": ("Манітоба", "Manitoba Legislative Building"),
+    "Ontario": ("Онтаріо", "Ontario Legislative Building"),
+    "Quebec": ("Квебек", "Parliament Building (Quebec)"),
+    "New Brunswick": ("Нью-Брансвік", "New Brunswick Legislative Building"),
+    "Nova Scotia": ("Нова Шотландія", "Province House (Nova Scotia)"),
+    "Prince Edward Island": ("Острів Принца Едварда", "Province House (Prince Edward Island)"),
+    "Newfoundland and Labrador": ("Ньюфаундленд і Лабрадор", "Confederation Building (Newfoundland and Labrador)"),
+    "Territories (Yukon, NWT, Nunavut)": ("Північ Канади", "Northern Canada"),
+    "Ukraine": ("Україна", "Kyiv"),
+    "Ukrainian community in Canada": ("Українська громада", "Ukrainian Canadians"),
+}
+
 # ---------- Canadian history ----------
 # History posts are long-reads on Telegraph (telegra.ph, opens inside Telegram); the channel gets a teaser.
 TELEGRAPH_AUTHOR = "Українська Канада"

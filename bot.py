@@ -577,10 +577,11 @@ def cmd_draft():
         src_text = article or "(not available)"
         post = parse_post(ask_claude(WRITE_PROMPT.format(
             source=it["source"], title=it["title"], summary=it["summary"], article=SOURCE_REF), source=src_text,
-            schema=schema_post(("title", "body"))))
+            schema=schema_post(("title", "body"), ("image_query",))))
         if not post:
             print(f"Could not write post for: {it['title']}")
             continue
+        photo_query = (post.pop("image_query", "") or "").strip()  # for the Facebook card
         edited = parse_post(ask_claude(EDIT_PROMPT.format(
             draft=json.dumps(post, ensure_ascii=False), title=it["title"],
             summary=it["summary"], article=SOURCE_REF), source=src_text, schema=schema_post(("title", "body"))))
@@ -593,7 +594,12 @@ def cmd_draft():
         ref = matching_referral(s, post)
         if ref:
             text += f'\n\n<a href="{html.escape(ref[1], quote=True)}">{html.escape(ref[0], quote=False)}</a>'
-        if not send_draft(s, it["url"], text, stamp, note=review_note(problems)):
+        region, fallback = getattr(config, "REGIONS", {}).get(it["region"], (it["region"], ""))
+        community = it.get("community")
+        card = {"kind": "community" if community else "news", "title": post["title"],
+                "tag": config.CARD.get("community_tag", region) if community else region,
+                "queries": [photo_query, fallback]}
+        if not send_draft(s, it["url"], text, stamp, note=review_note(problems), card=card):
             continue
         if ref:
             s["pending"][hashlib.sha1(it["url"].encode()).hexdigest()[:10]]["referral"] = True
@@ -605,7 +611,124 @@ def auto_publish_on(kind):
     return bool(getattr(config, "AUTO_PUBLISH", {}).get(kind))
 
 
-def send_draft(s, url, text, stamp, image="", preview_url="", kind="news", note=""):
+# ---------- Facebook picture cards ----------
+
+def multipart(fields, files):
+    """Encode a multipart/form-data body. files: {name: (filename, bytes, content type)}."""
+    boundary = "----autoposter" + hashlib.sha1(os.urandom(8)).hexdigest()
+    out = b""
+    for k, v in fields.items():
+        out += (f"--{boundary}\r\nContent-Disposition: form-data; name=\"{k}\"\r\n\r\n{v}\r\n").encode()
+    for k, (fname, data, ctype) in files.items():
+        out += (f"--{boundary}\r\nContent-Disposition: form-data; name=\"{k}\"; filename=\"{fname}\"\r\n"
+                f"Content-Type: {ctype}\r\n\r\n").encode() + data + b"\r\n"
+    return out + f"--{boundary}--\r\n".encode(), f"multipart/form-data; boundary={boundary}"
+
+
+def post_multipart(url, fields, files, timeout=60):
+    body, ctype = multipart(fields, files)
+    req = urllib.request.Request(url, data=body, headers={"Content-Type": ctype, "User-Agent": UA})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        raise RuntimeError(e.read().decode(errors="replace")[:300]) from None
+
+
+def wiki_thumb(url, width=1280):
+    """A smaller copy of a Wikimedia image (originals can be tens of megabytes)."""
+    m = re.match(r"(https://upload\.wikimedia\.org/wikipedia/(?:commons|en))/(\w/\w\w)/([^/?#]+)$", url)
+    if not m or url.lower().endswith(".svg"):
+        return url
+    return f"{m.group(1)}/thumb/{m.group(2)}/{m.group(3)}/{width}px-{m.group(3)}"
+
+
+def card_photo(url):
+    """Only freely licensed photos go on cards (news outlets' photos are copyrighted)."""
+    return url if url and any(d in url for d in config.CARD.get("photo_domains", ("wikimedia.org",))) else ""
+
+
+def render_card(card):
+    """Draw a Facebook picture card from card.html with headless Chrome. Returns PNG bytes, or b"" if it can't."""
+    import base64, shutil, subprocess, tempfile
+    chrome = next((c for c in ("google-chrome", "chromium", "chromium-browser") if shutil.which(c)), None)
+    tpl = os.path.join(os.path.dirname(os.path.abspath(__file__)), "card.html")
+    if not chrome or not os.path.exists(tpl):
+        print("Card skipped: Chrome or card.html not found")
+        return b""
+    c, e = config.CARD, html.escape
+    w, h = c["size"]
+    d = now().astimezone(LOCAL)
+    background = credit = ""
+    photo = card_photo(card.get("photo", ""))
+    if photo:
+        try:
+            data = http(wiki_thumb(photo), timeout=40)
+            mime = "image/png" if data[:4] == b"\x89PNG" else "image/jpeg"
+            background = (f'<div class="photo" style="background-image:url(data:{mime};base64,'
+                          f'{base64.b64encode(data).decode()})"></div>')
+            credit = f'<div class="credit">{e(config.LABELS["photo"])}: Wikimedia Commons</div>'
+        except Exception as ex:
+            print(f"Card photo failed, using the plain background: {ex}")
+    kind = card.get("kind", "news")
+    items = ""
+    if card.get("items"):
+        items = "<ol>" + "".join(f"<li>{e(i)}</li>" for i in card["items"]) + "</ol>"
+    bigdate = ""
+    if kind == "thisday":
+        bigdate = f'<div class="bigdate">{d.day}<small>{e(config.MONTHS[d.month - 1])}</small></div>'
+    tag = f'<div class="tag">{e(card["tag"])}</div>' if card.get("tag") else ""
+    values = {"kind": kind, "background": background, "credit": credit, "items": items, "bigdate": bigdate,
+              "tag": tag, "title": e(card.get("title", "")), "brand": e(c["brand"]),
+              "date": f"{d.day} {config.MONTHS[d.month - 1]} {d.year}", "handle": e(c.get("handle", "")),
+              "handle2": e(c.get("handle2", "")), "width": w, "height": h, **c.get("colors", {})}
+    page = open(tpl, encoding="utf-8").read()
+    for k, v in values.items():
+        page = page.replace("{{" + k + "}}", str(v))
+    with tempfile.TemporaryDirectory() as tmp:
+        src, out = os.path.join(tmp, "card.html"), os.path.join(tmp, "card.png")
+        open(src, "w", encoding="utf-8").write(page)
+        try:
+            subprocess.run([chrome, "--headless=new", "--no-sandbox", "--disable-gpu", "--hide-scrollbars",
+                            "--force-device-scale-factor=1", f"--window-size={w},{h}",
+                            "--virtual-time-budget=15000", f"--screenshot={out}", src],
+                           capture_output=True, timeout=90)
+            return open(out, "rb").read()
+        except Exception as ex:
+            print(f"Card rendering failed: {ex}")
+            return b""
+
+
+def send_card(png, caption="Facebook"):
+    """Show the card to the approvers in Telegram; Telegram also stores it until it's published."""
+    file_id = ""
+    for admin in ADMIN_IDS:
+        try:
+            fields = {"chat_id": admin, "caption": caption}
+            if file_id:  # already uploaded once: reuse it
+                tg("sendPhoto", photo=file_id, **fields)
+                continue
+            r = post_multipart(f"https://api.telegram.org/bot{TG_TOKEN}/sendPhoto", fields,
+                               {"photo": ("card.png", png, "image/png")})
+            file_id = r["result"]["photo"][-1]["file_id"]
+        except Exception as ex:
+            print(f"Could not send the card to approver #{ADMIN_IDS.index(admin) + 1}: {ex}")
+    return file_id
+
+
+def make_card(card):
+    """Render and store a card for Facebook. Only when Facebook is set up (or CARDS_ALWAYS for testing)."""
+    if not card or not ((FB_PAGE_ID and FB_TOKEN) or os.environ.get("CARDS_ALWAYS")):
+        return ""
+    for q in card.get("queries", []):  # find a free photo only now, when the card is really made
+        if card.get("photo"):
+            break
+        card["photo"] = commons_image(q) if q else ""
+    png = render_card(card)
+    return send_card(png, "🖼 Facebook") if png else ""
+
+
+def send_draft(s, url, text, stamp, image="", preview_url="", kind="news", note="", card=None, fb=""):
     """Send a draft with Publish/Skip buttons to every approver and remember it.
     With an image, the picture is shown above the post (via an invisible link) instead of the source preview."""
     did = hashlib.sha1(url.encode()).hexdigest()[:10]
@@ -630,6 +753,11 @@ def send_draft(s, url, text, stamp, image="", preview_url="", kind="news", note=
     if msgs:
         s["pending"][did] = {"url": url, "text": text, "created": now().isoformat(), "msgs": msgs, "lp": lp,
                              "kind": kind}
+        if fb:
+            s["pending"][did]["fb"] = fb
+        file_id = make_card(card)
+        if file_id:
+            s["pending"][did]["card"] = file_id
     return bool(msgs)
 
 
@@ -784,7 +912,11 @@ def cmd_digest():
     except (KeyError, ValueError, IndexError, TypeError):
         top = ""
     key = f"digest:{d:%Y-%m-%d}"
-    if send_draft(s, key, text, now().isoformat(), preview_url=top, kind="digest"):
+    n = config.CARD.get("digest_items", 4)
+    heads = [re.sub(r"[\[\]]", "", x.get("text", "")).strip() for x in digest["national"][:n]]
+    card = {"kind": "digest", "title": config.LABELS["digest_title"], "tag": f"{y.day} {config.MONTHS[y.month - 1]}",
+            "items": [h if len(h) <= 110 else h[:107].rsplit(" ", 1)[0] + "…" for h in heads if h]}
+    if send_draft(s, key, text, now().isoformat(), preview_url=top, kind="digest", card=card):
         print("Digest draft sent")
     save_state(s)
 
@@ -935,6 +1067,19 @@ def telegraph_nodes(body, image, image_credit, source_name, url):
     return nodes
 
 
+def history_card(kind, header, title, image, query, topic):
+    """Card for a history post: the post's photo if it's freely licensed, otherwise one from Wikimedia Commons."""
+    tag = re.sub(r"^\W+", "", header).strip()  # the header without its emoji
+    return {"kind": kind, "title": title, "tag": tag, "photo": card_photo(image), "queries": [query, topic]}
+
+
+def fb_long(header, post, source_name):
+    """The whole long-read as one Facebook post (Facebook readers may not open Telegram or Telegraph)."""
+    body = re.sub(r"^##\s*(.+)$", lambda m: "▪️ " + m.group(1).strip().upper(), post["body"], flags=re.M)
+    text = f"{header}\n\n{post['title'].upper()}\n\n{post['teaser']}\n\n{body}\n\n{config.LABELS['source']}: {source_name}"
+    return fb_footer(text)
+
+
 def _write_history(topic, source, article, opening, header, source_name, url, s, stamp, image=""):
     """Write a long-read, publish it on Telegraph, and send the teaser post as a draft."""
     kind = "thisday" if header == config.LABELS["thisday_header"] else "history"
@@ -968,13 +1113,17 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
         print(f"Telegraph error, sending a normal post instead: {e}")
         text = format_post(post["title"], post["teaser"] + "\n\n" + post["body"].replace("## ", ""),
                            source_name, url, header=header)
-        return send_draft(s, url, text[:4000], stamp, image=image, kind=kind, note=review_note(problems))
+        return send_draft(s, url, text[:4000], stamp, image=image, kind=kind, note=review_note(problems),
+                          card=history_card(kind, header, post["title"], image, query, topic),
+                          fb=fb_long(header, post, source_name))
     e = html.escape
     text = (f"{e(header, quote=False)}\n\n<b>{e(post['title'], quote=False)}</b>\n\n{e(post['teaser'], quote=False)}"
             f"\n\n📖 <b><a href=\"{e(page['url'], quote=True)}\">{e(config.LABELS['read_more'])} →</a></b>")
     # the source is credited at the end of the Telegraph article, not in the post
     print(f"Telegraph page: {page['url']}")
-    ok = send_draft(s, url, text, stamp, preview_url=page["url"], kind=kind, note=review_note(problems))
+    ok = send_draft(s, url, text, stamp, preview_url=page["url"], kind=kind, note=review_note(problems),
+                    card=history_card(kind, header, post["title"], image, query, topic),
+                    fb=fb_long(header, post, source_name))
     if ok:
         s["pending"][hashlib.sha1(url.encode()).hexdigest()[:10]]["telegraph_path"] = page["path"]
     return ok
@@ -1135,41 +1284,58 @@ def clean_link(url):
     return url
 
 
+def fb_footer(text):
+    footer = getattr(config, "FB_FOOTER", "")
+    return f"{text}\n\n{footer}" if footer else text
+
+
 def fb_text(text):
-    """Telegram HTML -> plain text for Facebook (links written out, since Facebook ignores HTML)."""
+    """Telegram HTML -> plain text for Facebook: links keep only their words (see FB_COMMENT for why),
+    the channel signature and referral lines are dropped, and the FB_FOOTER line is added."""
     text = re.sub(r'<a href="[^"]*">&#8203;</a>', "", text)  # invisible image link
-
-    def link(m):
-        url = clean_link(html.unescape(m.group(1)))
-        label = html.unescape(re.sub(r"<[^>]+>", "", m.group(2)))
-        if config.LABELS["read_more"] in label:
-            return f"📖 {config.LABELS['read_more']}: {url}"
-        if url.startswith("https://t.me/"):
-            return label
-        return f"{label} ({url})"
-
-    text = re.sub(r'<a href="([^"]+)">(.*?)</a>', link, text, flags=re.S)
+    drop = [config.TELEGRAPH_AUTHOR_URL]  # the digest's channel signature line
+    if not getattr(config, "FB_REFERRALS", False):
+        drop += [r[1] for r in getattr(config, "REFERRALS", [])]
+    text = "\n".join(l for l in text.split("\n") if not any(f'href="{html.escape(u, quote=True)}"' in l for u in drop))
+    text = re.sub(r'\n*📖 <b><a href="[^"]+">[^<]*</a></b>', "", text)  # "read more" (it goes in the comment)
+    text = re.sub(r'<a href="[^"]+">(.*?)</a>', lambda m: re.sub(r"<[^>]+>", "", m.group(1)), text, flags=re.S)
     text = html.unescape(re.sub(r"</?(b|i|u|s)>", "", text))
-    return text.replace("📖 📖", "📖").strip()
+    return fb_footer(re.sub(r"\n{3,}", "\n\n", text).strip())
+
+
+def fb_comment(d):
+    """The first comment: the clickable links Facebook allows (the channel, a Telegraph long-read)."""
+    parts = []
+    if d.get("lp", {}).get("url", "").startswith("https://telegra.ph/") and getattr(config, "FB_COMMENT_READ_MORE", ""):
+        parts.append(config.FB_COMMENT_READ_MORE.format(url=d["lp"]["url"]))
+    if getattr(config, "FB_COMMENT", ""):
+        parts.append(config.FB_COMMENT)
+    return "\n\n".join(parts)
 
 
 def post_to_facebook(d):
-    """Publish an approved post to the Facebook Page (only if the Facebook secrets are set)."""
+    """Publish an approved post to the Facebook Page (only if the Facebook secrets are set): the picture card
+    with the full text (or the text alone if there is no card), then the first comment with the links."""
     if not (FB_PAGE_ID and FB_TOKEN):
         return None
-    lp_url = (d.get("lp") or {}).get("url", "")
-    link = lp_url if lp_url and not re.search(r"\.(jpe?g|png|webp)(\?|$)", lp_url, re.I) else d["url"]
-    params = {"message": fb_text(d["text"]), "access_token": FB_TOKEN}
-    if link.startswith("http"):
-        params["link"] = clean_link(link)
-    data = urllib.parse.urlencode(params).encode()
-    req = urllib.request.Request(f"https://graph.facebook.com/{FB_PAGE_ID}/feed", data=data,
-                                 headers={"User-Agent": UA})
-    try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            return json.loads(r.read()).get("id", "ok")
-    except urllib.error.HTTPError as e:
-        raise RuntimeError(e.read().decode(errors="replace")[:300]) from None
+    message = d.get("fb") or fb_text(d["text"])
+    api = "https://graph.facebook.com"
+    if d.get("card"):
+        path = tg("getFile", file_id=d["card"])["file_path"]
+        png = http(f"https://api.telegram.org/file/bot{TG_TOKEN}/{path}")
+        r = post_multipart(f"{api}/{FB_PAGE_ID}/photos", {"message": message, "access_token": FB_TOKEN},
+                           {"source": ("card.png", png, "image/png")})
+        post_id = r.get("post_id") or r.get("id")
+    else:
+        r = post_multipart(f"{api}/{FB_PAGE_ID}/feed", {"message": message, "access_token": FB_TOKEN}, {})
+        post_id = r.get("id")
+    comment = fb_comment(d)
+    if comment and post_id:
+        try:
+            post_multipart(f"{api}/{post_id}/comments", {"message": comment, "access_token": FB_TOKEN}, {})
+        except Exception as e:  # the post is out; a missing comment isn't worth failing over
+            print(f"Facebook comment failed: {e}")
+    return post_id or "ok"
 
 
 def answer(cq, text, alert=False):
@@ -1351,6 +1517,22 @@ def cmd_check():
         sys.exit(1)
 
 
+def cmd_cards(path="samples/cards.json"):
+    """Draw sample Facebook cards (to try changes to card.html): sends them to the approvers and saves them in cards/."""
+    os.makedirs("cards", exist_ok=True)
+    for i, card in enumerate(json.load(open(path, encoding="utf-8")), 1):
+        for q in card.get("queries", []):
+            if not card.get("photo"):
+                card["photo"] = commons_image(q)
+        png = render_card(card)
+        if not png:
+            continue
+        name = f"cards/{i}-{card.get('kind', 'news')}.png"
+        open(name, "wb").write(png)
+        send_card(png, f"🖼 Зразок картки: {card.get('kind', 'news')}")
+        print(f"{name}: photo {card.get('photo') or 'none'}")
+
+
 def _print_usage():
     if _usage["calls"]:
         print(f"Claude usage: {_usage['calls']} calls, input {_usage['input']}, cache write {_usage['cache_write']}, "
@@ -1375,6 +1557,8 @@ if __name__ == "__main__":
         cmd_tick()
     elif cmd == "rewrite":  # rewrite TELEGRAPH_PATH SOURCE  (SOURCE = URL or "wiki:Title")
         cmd_rewrite(sys.argv[2], sys.argv[3])
+    elif cmd == "cards":  # sample Facebook cards: cards [FILE]
+        cmd_cards(*sys.argv[2:3])
     elif cmd == "check":  # test the connections, posts nothing
         cmd_check()
     elif cmd == "merge-state":  # used by save_state.sh: merge-state BASE OURS (theirs = state.json)
