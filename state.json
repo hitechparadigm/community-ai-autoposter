@@ -16,7 +16,8 @@
   "https://qahn.org/article/cure-francois-xavier-antoine-labelle-1833-1891-le-roi-du-nord",
   "http://www.biographi.ca/en/bio/delorme_pierre_14E.html",
   "Canadian_National_Railway",
-  "René-Robert_Cavelier,_Sieur_de_La_Salle"
+  "René-Robert_Cavelier,_Sieur_de_La_Salle",
+  "https://albertashistoricplaces.com/2015/12/16/love-it-or-loathe-it-a-brief-history-of-the-holiday-fruit-cake/"
  ],
  "pending": {
   "0c1af4c048": {
@@ -165,6 +166,28 @@
    "text": "<b>Зеленський: гарантій безпеки на рівні статті 5 НАТО Україні ще не пропонували</b>\n\nПрезидент Володимир Зеленський заявив, що Україна поки що не отримала офіційної пропозиції гарантій безпеки, рівнозначних статті 5 НАТО, яка передбачає колективну відповідь на агресію. За його словами, членство в НАТО було б найкращою гарантією безпеки для країни, і це питання обговорюється. Для української громади в Канаді це важливо, бо від таких гарантій залежить, наскільки міцним буде будь-який майбутній мир.\n\n🔗 Джерело: <a href=\"https://www.ukrinform.net/rubric-polytics/4187167-zelensky-says-ukraine-not-yet-received-official-security-guarantees-equivalent-to-nato-article-5.html\">Ukrinform</a>",
    "url": "https://www.ukrinform.net/rubric-polytics/4187167-zelensky-says-ukraine-not-yet-received-official-security-guarantees-equivalent-to-nato-article-5.html"
   },
+  "8279a766b0": {
+   "created": "2026-11-22T16:31:55.081955+00:00",
+   "kind": "history",
+   "lp": {
+    "prefer_large_media": true,
+    "show_above_text": true,
+    "url": "https://telegra.ph/Fruktovij-keks-vіd-davnogo-YEgiptu-do-rіzdvyanogo-stolu-11-22"
+   },
+   "msgs": [
+    [
+     "7bb2c834ae",
+     48
+    ],
+    [
+     "74c991a120",
+     49
+    ]
+   ],
+   "telegraph_path": "Fruktovij-keks-vіd-davnogo-YEgiptu-do-rіzdvyanogo-stolu-11-22",
+   "text": "🍁 Історія Канади\n\n<b>Фруктовий кекс: від давнього Єгипту до різдвяного столу</b>\n\nФруктовий кекс клали в дорогу померлим, роздавали бідним, забороняли як надто «гріховний» і посилали солдатам. У Канаді його їдять майже лише на Різдво, а 1959 року едмонтонські українки видали п'ять рецептів цього кекса.\n\n📖 <b><a href=\"https://telegra.ph/Fruktovij-keks-vіd-davnogo-YEgiptu-do-rіzdvyanogo-stolu-11-22\">Читати повністю →</a></b>",
+   "url": "https://albertashistoricplaces.com/2015/12/16/love-it-or-loathe-it-a-brief-history-of-the-holiday-fruit-cake/"
+  },
   "91463fc6d4": {
    "created": "2026-11-22T04:17:48.935868+00:00",
    "lp": {
@@ -251,6 +274,7 @@
  "ref_news": {},
  "schedule_done": {
   "digest 2026-11-22 06:30": "2026-11-22T13:50:00+00:00",
+  "history 2026-11-22 11:30": "2026-11-22T16:30:24.687324+00:00",
   "news 2026-11-22 09:00": "2026-11-22T14:07:44.635334+00:00",
   "thisday 2026-11-22 08:30": "2026-11-22T13:45:00+00:00"
  },
