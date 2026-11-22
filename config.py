@@ -74,13 +74,11 @@ DIGEST_REGIONS = "3-4"
 # Referral links: one per morning digest, in rotation. (text shown in the post, link).
 # Put the exact bonus from each program's referral page in the text, e.g. "Отримайте $25".
 REFERRALS = [
-    ("🎁 Wealthsimple: отримайте бонус на рахунок, коли відкриєте його за цим посиланням",
-     "https://www.wealthsimple.com/invite/L4FYWG"),
-    ("💳 Дізнайтеся свій кредитний рейтинг безкоштовно — за хвилину, онлайн", "https://bit.ly/my-credit-score"),
-    ("🏦 Simplii Financial: банківський рахунок без щомісячної плати та бонус для нових клієнтів",
-     "https://blue.mbsy.co/6svHvM"),
-    ("💸 Wise: перший міжнародний переказ без комісії", "https://bit.ly/3UYzy9r"),
-    ("📊 Questrade: бонус для нових клієнтів при відкритті інвестиційного рахунку", "https://bit.ly/4dUdlWV"),
+    ("🎁 Бонус від Wealthsimple", "https://www.wealthsimple.com/invite/L4FYWG"),
+    ("💳 Ваш кредитний рейтинг — безкоштовно", "https://bit.ly/my-credit-score"),
+    ("🏦 Рахунок у Simplii без щомісячної плати", "https://blue.mbsy.co/6svHvM"),
+    ("💸 Перший переказ через Wise без комісії", "https://bit.ly/3UYzy9r"),
+    ("📊 Бонус від Questrade", "https://bit.ly/4dUdlWV"),
     ("💳 Перевірте кредитний рейтинг безкоштовно", "https://bit.ly/3cqN99x"),
 ]
 REFERRAL_DISCLOSURE = ""  # optional line under the link, e.g. "#реклама"; empty = none
