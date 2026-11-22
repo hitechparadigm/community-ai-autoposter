@@ -247,6 +247,25 @@ Facebook Page, built for Facebook readers:
 - Referral links stay off Facebook (`FB_REFERRALS`).
 If Facebook fails, the Telegram post still goes out and the draft says "Facebook failed".
 
+### How the picture cards are made
+
+1. **Content.** When a draft is written, the bot fills in a card: the final, edited headline, a tag (the
+   province, "Українська громада", "Історія Канади"…) and, for the digest, the top 4 headlines.
+2. **Photo.** The writer (Claude) suggests up to 4 searches for a meaningful picture, best first: a monument,
+   building, place or object (never a person in news). The bot looks each one up on Wikipedia/Wikimedia
+   Commons and takes the first real photo: big enough, not a banner, not a map, flag, chart or logo. News
+   falls back to a photo of the province's legislature (`REGIONS` in `config.py`). Only freely licensed
+   Wikimedia photos are used (news outlets' photos are copyrighted), credited on the card's edge.
+3. **Drawing.** `card.html` is an ordinary web page with placeholders (`{{title}}`, `{{tag}}`…). The bot
+   fills them in, embeds the photo, and takes a 1080×1350 screenshot with headless Chrome (already on GitHub's
+   machines). A small script in the page shrinks the headline until it fits. Without a photo, the page
+   switches to the centred large-text layout with the ornament band.
+4. **Approval and storage.** The PNG goes to the approvers in Telegram with the draft; Telegram keeps the
+   file. When the post is approved, the bot fetches it back and uploads it to Facebook with the text.
+
+To change the look, edit `card.html` (layout, fonts, colours) and `CARD` in `config.py` (size, brand texts,
+colours), then run **Preview Facebook cards**. Cost: free (no image-generation service).
+
 Getting the keys (you must be an admin of the Page):
 1. developers.facebook.com/apps → Create App. Use case: Content management → **Manage everything on your
    Page**. Business portfolio: "I don't want to connect a business portfolio yet".
