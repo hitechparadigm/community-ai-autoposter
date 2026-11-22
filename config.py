@@ -39,7 +39,6 @@ UKRAINIAN_CANADIAN_TOPICS = [
     "Ukrainian Canadian Congress",
     "Ray Hnatyshyn",
     "Vegreville egg",
-    "Ukrainian Labour Temple",
     "Ukrainian Cultural Heritage Village",
     "Ukrainian Canadians",
     "Canadian Ukrainian Catholic Church",
