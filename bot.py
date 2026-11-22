@@ -1321,6 +1321,35 @@ def cmd_tick():
     cmd_approve()
 
 
+def cmd_check():
+    """Check the Telegram and Facebook connections without posting anything."""
+    ok = True
+    try:
+        me, chat = tg("getMe"), tg("getChat", chat_id=config.CHANNEL)
+        print(f"Telegram: OK, bot @{me['username']}, channel {chat.get('title')}")
+    except Exception as e:
+        ok = False
+        print(f"Telegram: FAILED ({e})")
+    if not (FB_PAGE_ID and FB_TOKEN):
+        print("Facebook: not set up (FACEBOOK_PAGE_ID / FACEBOOK_PAGE_TOKEN missing)")
+    else:
+        tok = urllib.parse.quote(FB_TOKEN)
+        try:
+            page = json.loads(http(f"https://graph.facebook.com/{FB_PAGE_ID}?fields=name&access_token={tok}"))
+            info = json.loads(http(f"https://graph.facebook.com/debug_token?input_token={tok}&access_token={tok}"))["data"]
+            exp = info.get("expires_at") or 0
+            when = "never" if not exp else datetime.fromtimestamp(exp, timezone.utc).strftime("%Y-%m-%d")
+            print(f"Facebook: OK, page {page.get('name')}, token type {info.get('type')}, expires {when}")
+            if "pages_manage_posts" not in info.get("scopes", []):
+                ok = False
+                print(f"Facebook: the token can't post (missing pages_manage_posts; has {info.get('scopes')})")
+        except Exception as e:
+            ok = False
+            print(f"Facebook: FAILED ({str(e).replace(FB_TOKEN, '***')})")
+    if not ok:
+        sys.exit(1)
+
+
 def _print_usage():
     if _usage["calls"]:
         print(f"Claude usage: {_usage['calls']} calls, input {_usage['input']}, cache write {_usage['cache_write']}, "
@@ -1345,6 +1374,8 @@ if __name__ == "__main__":
         cmd_tick()
     elif cmd == "rewrite":  # rewrite TELEGRAPH_PATH SOURCE  (SOURCE = URL or "wiki:Title")
         cmd_rewrite(sys.argv[2], sys.argv[3])
+    elif cmd == "check":  # test the connections, posts nothing
+        cmd_check()
     elif cmd == "merge-state":  # used by save_state.sh: merge-state BASE OURS (theirs = state.json)
         with open(sys.argv[2], encoding="utf-8") as f:
             base = json.load(f)

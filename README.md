@@ -141,6 +141,7 @@ sequenceDiagram
 | Draft this-day post | `thisday.yml` | Make a "This day" draft now |
 | Draft history story | `history.yml` | Make a history long-read now (tick "Community-history story" for a Ukrainian-Canadian one) |
 | Rewrite a published long-read | `rewrite.yml` | Rewrite a published Telegraph article in place from a source you give |
+| Check connections | `check.yml` | Test the Telegram and Facebook tokens without posting (shows the page name and when the Facebook token expires) |
 
 All of them except Tick are for running something by hand: Actions → pick it → Run workflow.
 
@@ -237,13 +238,19 @@ Facebook Page as plain text with a link card (long-reads link to the Telegraph a
 the Telegram post still goes out and the draft says "Facebook failed".
 
 Getting the keys (you must be an admin of the Page):
-1. developers.facebook.com → My Apps → Create App → Other → Business.
-2. Tools → Graph API Explorer: select the app; add permissions `pages_show_list`, `pages_read_engagement`,
-   `pages_manage_posts`; Generate Access Token; choose the Page.
-3. ⓘ next to the token → Open in Access Token Tool → Extend Access Token; copy it.
-4. In Graph API Explorer, paste the extended token and request `me/accounts`; copy the Page's `id` and
-   `access_token` (it doesn't expire).
-5. Save them as the secrets `FACEBOOK_PAGE_ID` and `FACEBOOK_PAGE_TOKEN`.
+1. developers.facebook.com/apps → Create App. Use case: Content management → **Manage everything on your
+   Page**. Business portfolio: "I don't want to connect a business portfolio yet".
+2. App → Use cases → Manage everything on your Page → Customize: add `pages_manage_posts` and
+   `pages_read_engagement` (no App Review needed for your own Page).
+3. developers.facebook.com/tools/explorer: select the app; permissions `pages_show_list`,
+   `pages_read_engagement`, `pages_manage_posts` and, if the Page belongs to a business portfolio,
+   `business_management`. Generate Access Token; in the pop-up tick the business and the Page.
+4. developers.facebook.com/tools/debug/accesstoken: paste the token → Debug → Extend Access Token; copy it.
+5. Back in the Explorer, paste the extended token and GET `me/accounts?fields=id,name,access_token`.
+   If `data` is empty, the Page wasn't granted (see step 3). Copy the Page's `id` and its `access_token`
+   (the Page token, not your user token; the debug tool should show Type: Page, Expires: Never).
+6. Save them as the secrets `FACEBOOK_PAGE_ID` and `FACEBOOK_PAGE_TOKEN`, then run **Check connections**
+   (`check.yml`) in the Actions tab: it shows the Page name and token expiry and posts nothing.
 If posts don't appear publicly, switch the Meta app to Live (it asks for a privacy policy URL).
 
 ## Setup from scratch
