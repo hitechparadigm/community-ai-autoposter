@@ -5,7 +5,7 @@ name: Tick (every 5 minutes)
 # so the repository owner should be the last one to edit it.
 on:
   schedule:
-    - cron: "*/5 hi * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:      # also lets an external timer (e.g. cron-job.org) start it
 
 permissions:
