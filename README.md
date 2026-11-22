@@ -29,6 +29,13 @@ with "За матеріалами: ...".
 
 News drafts come at 9:00, 12:00, 15:00, 18:00 and 21:00; "This day" at 8:30; the history story at 11:30.
 
+## Facebook Page
+
+When the secrets `FACEBOOK_PAGE_ID` and `FACEBOOK_PAGE_TOKEN` are set, every post you approve is also
+published to the Facebook Page (as plain text with the link card; long-reads link to the Telegraph article).
+Without them, only Telegram is used. If Facebook fails, the Telegram post still goes out and the draft says
+"Facebook failed".
+
 ## Changing things
 
 Edit `config.py`: news sources, drafts per run, model. Run times are in the `cron:` lines

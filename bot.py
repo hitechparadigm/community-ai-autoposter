@@ -38,6 +38,8 @@ TG_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 # One or more approver IDs, comma-separated (e.g. "456360947,123456789")
 ADMIN_IDS = [x.strip() for x in os.environ.get("TELEGRAM_ADMIN_ID", "").split(",") if x.strip()]
 ANTHROPIC_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+FB_PAGE_ID = os.environ.get("FACEBOOK_PAGE_ID", "").strip()
+FB_TOKEN = os.environ.get("FACEBOOK_PAGE_TOKEN", "").strip()
 
 
 # ---------- helpers ----------
@@ -1012,6 +1014,43 @@ def retire_telegraph(d, s):
         print(f"Could not retire Telegraph page: {e}")
 
 
+def fb_text(text):
+    """Telegram HTML -> plain text for Facebook (links written out, since Facebook ignores HTML)."""
+    text = re.sub(r'<a href="[^"]*">&#8203;</a>', "", text)  # invisible image link
+
+    def link(m):
+        url = html.unescape(m.group(1)).replace("?cmp=rss", "")
+        label = html.unescape(re.sub(r"<[^>]+>", "", m.group(2)))
+        if "Читати повністю" in label:
+            return f"📖 Читати повністю: {url}"
+        if url.startswith("https://t.me/"):
+            return label
+        return f"{label} ({url})"
+
+    text = re.sub(r'<a href="([^"]+)">(.*?)</a>', link, text, flags=re.S)
+    text = html.unescape(re.sub(r"</?(b|i|u|s)>", "", text))
+    return text.replace("📖 📖", "📖").strip()
+
+
+def post_to_facebook(d):
+    """Publish an approved post to the Facebook Page (only if the Facebook secrets are set)."""
+    if not (FB_PAGE_ID and FB_TOKEN):
+        return None
+    lp_url = (d.get("lp") or {}).get("url", "")
+    link = lp_url if lp_url and not re.search(r"\.(jpe?g|png|webp)(\?|$)", lp_url, re.I) else d["url"]
+    params = {"message": fb_text(d["text"]), "access_token": FB_TOKEN}
+    if link.startswith("http"):
+        params["link"] = link.replace("?cmp=rss", "")
+    data = urllib.parse.urlencode(params).encode()
+    req = urllib.request.Request(f"https://graph.facebook.com/{FB_PAGE_ID}/feed", data=data,
+                                 headers={"User-Agent": UA})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.loads(r.read()).get("id", "ok")
+    except urllib.error.HTTPError as e:
+        raise RuntimeError(e.read().decode(errors="replace")[:300]) from None
+
+
 def answer(cq, text, alert=False):
     # Telegram rejects answers to taps older than a few minutes; that's harmless.
     try:
@@ -1046,8 +1085,15 @@ def cmd_approve():
                 print(f"PUBLISH ERROR: {e}")
                 answer(cq, "Publishing failed, check the bot is a channel admin", alert=True)
                 continue
-            answer(cq, "Published")
-            close_draft(d, f"✅ Published by {who}")
+            fb = ""
+            try:
+                if post_to_facebook(d):
+                    fb = " + Facebook"
+            except Exception as e:
+                print(f"FACEBOOK ERROR: {e}")
+                fb = " (Facebook failed: check the token)"
+            answer(cq, "Published" + fb)
+            close_draft(d, f"✅ Published by {who}{fb}")
             print(f"Published {d['url']}")
         else:
             answer(cq, "Skipped")
