@@ -167,11 +167,9 @@ FB_FOOTER = "📲 Більше новин щодня — у нашому Telegra
 FB_COMMENT = "📲 Підписуйтеся на наш Telegram-канал: https://t.me/UkrainianCanada"
 FB_COMMENT_READ_MORE = "📖 Версія з фото: {url}"   # added to the comment for long-reads
 
-# A Facebook group the Page is an admin of (optional). Meta closed its Groups API in 2024; posting as a
-# Page to a group it administers may still work, unofficially. Only the post types listed in FB_GROUP_KINDS
-# go there (a group is for discussion: keep it to a few posts a day). Empty = off.
-FB_GROUP_ID = "201208863383810"
-FB_GROUP_KINDS = ()   # e.g. ("digest", "community", "history")
+# Facebook groups: not supported. Meta closed its Groups API in 2024, and a Page token is refused even for a
+# group the Page administers ("Missing Permission", tested November 2026). Share posts to a group by hand:
+# on the Page post, Share -> Share to a group.
 
 # Picture cards for Facebook, drawn from card.html (edit it for layout, fonts and colours)
 CARD = {
