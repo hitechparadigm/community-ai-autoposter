@@ -23,8 +23,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Replace the post text in the channel
-        run: python3 bot.py edit "${{ inputs.post }}"
+        run: python3 bot.py edit "$POST"
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          POST: ${{ inputs.post }}
           EDIT_TEXT: ${{ inputs.text }}
           EDIT_SOURCE: ${{ inputs.source }}
