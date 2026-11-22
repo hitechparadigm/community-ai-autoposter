@@ -141,6 +141,7 @@ sequenceDiagram
 | Draft this-day post | `thisday.yml` | Make a "This day" draft now |
 | Draft history story | `history.yml` | Make a history long-read now (tick "Community-history story" for a Ukrainian-Canadian one) |
 | Rewrite a published long-read | `rewrite.yml` | Rewrite a published Telegraph article in place from a source you give |
+| Preview Facebook cards | `cards.yml` | Draw the sample cards in `samples/cards.json` and send them to the approvers |
 | Check connections | `check.yml` | Test the Telegram and Facebook tokens without posting (shows the page name and when the Facebook token expires) |
 
 All of them except Tick are for running something by hand: Actions → pick it → Run workflow.
@@ -234,8 +235,17 @@ amounts in `REFERRALS` when an offer changes.
 ## Facebook Page
 
 When the secrets `FACEBOOK_PAGE_ID` and `FACEBOOK_PAGE_TOKEN` are set, every published post also goes to the
-Facebook Page as plain text with a link card (long-reads link to the Telegraph article). If Facebook fails,
-the Telegram post still goes out and the draft says "Facebook failed".
+Facebook Page, built for Facebook readers:
+- **Picture card** (`card.html`, drawn with headless Chrome): the headline over a freely licensed Wikimedia
+  Commons photo (the writer suggests several searches: monument, place, object), or a centred text layout with
+  an ornament band when none fits. Approvers see the card with each draft. Try design changes with the
+  **Preview Facebook cards** workflow (`samples/cards.json`).
+- **Full text, no links.** In Canada Meta blocks links to news outlets (Online News Act), even in comments,
+  and link posts reach fewer people. Sources stay named in plain text; long-reads go in whole.
+- **First comment** with the links Facebook allows: the Telegram channel and, for long-reads, the Telegraph
+  version (`FB_COMMENT`, `FB_COMMENT_READ_MORE`). Needs the `pages_manage_engagement` permission.
+- Referral links stay off Facebook (`FB_REFERRALS`).
+If Facebook fails, the Telegram post still goes out and the draft says "Facebook failed".
 
 Getting the keys (you must be an admin of the Page):
 1. developers.facebook.com/apps → Create App. Use case: Content management → **Manage everything on your
@@ -243,7 +253,8 @@ Getting the keys (you must be an admin of the Page):
 2. App → Use cases → Manage everything on your Page → Customize: add `pages_manage_posts` and
    `pages_read_engagement` (no App Review needed for your own Page).
 3. developers.facebook.com/tools/explorer: select the app; permissions `pages_show_list`,
-   `pages_read_engagement`, `pages_manage_posts` and, if the Page belongs to a business portfolio,
+   `pages_read_engagement`, `pages_manage_posts`, `pages_manage_engagement` (plus `pages_read_user_content`, which
+   it needs, added in the use case first) and, if the Page belongs to a business portfolio,
    `business_management`. Generate Access Token; in the pop-up tick the business and the Page.
 4. developers.facebook.com/tools/debug/accesstoken: paste the token → Debug → Extend Access Token; copy it.
 5. Back in the Explorer, paste the extended token and GET `me/accounts?fields=id,name,access_token`.
