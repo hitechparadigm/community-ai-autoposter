@@ -25,7 +25,8 @@ from email.utils import parsedate_to_datetime
 
 import config
 from prompts import (AUDIENCE, DIGEST_PROMPT, EDIT_PROMPT, HISTORY_WRITE_PROMPT, PICK_PROMPT,
-                     REFERRAL_MATCH_PROMPT, STORY_PICK_PROMPT, STYLE, THISDAY_PICK_PROMPT, WRITE_PROMPT)
+                     REFERRAL_MATCH_PROMPT, STORY_PICK_PROMPT, STYLE, THISDAY_PICK_PROMPT, WRITE_PROMPT,
+                     DATE_WORDS)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATE_FILE = os.path.join(HERE, "state.json")
@@ -345,7 +346,7 @@ def format_post(title, body, source, url, header=""):
     e = html.escape
     top = f"{e(header, quote=False)}\n\n" if header else ""
     return (f"{top}<b>{e(title, quote=False)}</b>\n\n{e(body, quote=False)}\n\n"
-            f"🔗 Джерело: <a href=\"{e(url, quote=True)}\">{e(source)}</a>")
+            f"🔗 {e(config.LABELS['source'])}: <a href=\"{e(url, quote=True)}\">{e(source)}</a>")
 
 
 def buttons(did):
@@ -453,7 +454,7 @@ def send_draft(s, url, text, stamp, image="", preview_url="", kind="news"):
     note = ""
     if auto_publish_on(kind):
         at = (now() + timedelta(minutes=config.AUTO_PUBLISH_AFTER_MINUTES)).astimezone(LOCAL)
-        note = f"\n\n<i>⏱ Опублікується автоматично о {at:%H:%M}, якщо не натиснути ❌</i>"
+        note = "\n\n<i>⏱ " + config.LABELS["auto_publish_note"].format(time=f"{at:%H:%M}") + "</i>"
     msgs = []
     for admin in ADMIN_IDS:
         try:
@@ -506,8 +507,6 @@ def outlet(source):
     return source
 
 
-UK_MONTHS = ["січня", "лютого", "березня", "квітня", "травня", "червня", "липня", "серпня",
-             "вересня", "жовтня", "листопада", "грудня"]
 
 
 def cmd_digest():
@@ -557,7 +556,8 @@ def cmd_digest():
         return f"• {e(before, quote=False)}{link}{e(phrase, quote=False)}</a>{e(after, quote=False)}"
 
     y = d - timedelta(days=1)
-    parts = [f"🗞 <b>Головне за вчора · {y.day} {UK_MONTHS[y.month - 1]}</b>", "", "🇨🇦 <b>Канада</b>"]
+    parts = [f"🗞 <b>{config.LABELS['digest_title']} · {y.day} {config.MONTHS[y.month - 1]}</b>", "",
+             f"<b>{config.LABELS['digest_national']}</b>"]
     parts += [l for l in map(line, digest["national"]) if l]
     for reg in digest.get("regions", []):
         lines = [l for l in map(line, reg.get("items", [])) if l]
@@ -566,12 +566,12 @@ def cmd_digest():
             s["digest_regions"][reg.get("region_en") or reg.get("region", "")] = d.strftime("%Y-%m-%d")
     community_lines = [l for l in map(line, digest.get("community") or []) if l]
     if community_lines:
-        parts += ["", "🇺🇦 <b>Українська громада</b>"] + community_lines
+        parts += ["", f"<b>{config.LABELS['digest_community']}</b>"] + community_lines
     today_lines = [l for l in map(line, digest.get("today") or []) if l]
     if today_lines:
-        parts += ["", f"📌 <b>Сьогодні, {d.day} {UK_MONTHS[d.month - 1]}</b>"] + today_lines
+        parts += ["", f"📌 <b>{config.LABELS['digest_today']}, {d.day} {config.MONTHS[d.month - 1]}</b>"] + today_lines
     outlets = list(dict.fromkeys(used))
-    parts += ["", f"<i>За матеріалами: {e(', '.join(outlets), quote=False)}</i>",
+    parts += ["", f"<i>{config.LABELS['digest_sources']}: {e(', '.join(outlets), quote=False)}</i>",
               f"<a href=\"{config.TELEGRAPH_AUTHOR_URL}\">{e(config.TELEGRAPH_AUTHOR, quote=False)}</a>"]
     refs = getattr(config, "REFERRALS", [])
     if refs:  # one referral link per digest, rotating
@@ -597,7 +597,7 @@ def cmd_digest():
 #   "🍁 Історія Канади"            (python bot.py history) - a story from the history sources in config.py
 
 
-LOCAL = timezone(timedelta(hours=-5))  # Toronto (standard time is close enough for picking a date)
+LOCAL = timezone(timedelta(hours=config.UTC_OFFSET_HOURS))  # for picking "today" and showing times
 
 
 def wiki_text(title, limit=15000):
@@ -706,7 +706,7 @@ def telegraph_nodes(body, image, image_credit, source_name, url):
     nodes = []
     if image:
         nodes.append({"tag": "figure", "children": [{"tag": "img", "attrs": {"src": image}},
-                                                    {"tag": "figcaption", "children": [f"Фото: {image_credit}"]}]})
+                                                    {"tag": "figcaption", "children": [f"{config.LABELS['photo']}: {image_credit}"]}]})
     for block in re.split(r"\n\s*\n", body.strip()):
         block = block.strip()
         if block.startswith("#"):
@@ -714,7 +714,7 @@ def telegraph_nodes(body, image, image_credit, source_name, url):
         elif block:
             nodes.append({"tag": "p", "children": [block]})
     nodes.append({"tag": "hr"})
-    nodes.append({"tag": "p", "children": ["Джерело: ", {"tag": "a", "attrs": {"href": url}, "children": [source_name]}]})
+    nodes.append({"tag": "p", "children": [config.LABELS["source"] + ": ", {"tag": "a", "attrs": {"href": url}, "children": [source_name]}]})
     nodes.append({"tag": "p", "children": [{"tag": "a", "attrs": {"href": config.TELEGRAPH_AUTHOR_URL},
                                             "children": [config.TELEGRAPH_AUTHOR]}]})
     return nodes
@@ -722,7 +722,7 @@ def telegraph_nodes(body, image, image_credit, source_name, url):
 
 def _write_history(topic, source, article, opening, header, source_name, url, s, stamp, image=""):
     """Write a long-read, publish it on Telegraph, and send the teaser post as a draft."""
-    kind = "thisday" if "Цей день" in header else "history"
+    kind = "thisday" if header == config.LABELS["thisday_header"] else "history"
     keys = ("title", "teaser", "body")
     post = parse_post(ask_claude(HISTORY_WRITE_PROMPT.format(
         topic=topic, source=source_name, article=article, opening=opening)), keys)
@@ -754,7 +754,7 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
         return send_draft(s, url, text[:4000], stamp, image=image, kind=kind)
     e = html.escape
     text = (f"{e(header, quote=False)}\n\n<b>{e(post['title'], quote=False)}</b>\n\n{e(post['teaser'], quote=False)}"
-            f"\n\n📖 <b><a href=\"{e(page['url'], quote=True)}\">Читати повністю →</a></b>")
+            f"\n\n📖 <b><a href=\"{e(page['url'], quote=True)}\">{e(config.LABELS['read_more'])} →</a></b>")
     # the source is credited at the end of the Telegraph article, not in the post
     print(f"Telegraph page: {page['url']}")
     ok = send_draft(s, url, text, stamp, preview_url=page["url"], kind=kind)
@@ -778,7 +778,7 @@ def _done(s, key):
 
 def _date_opening(d, year=""):
     return (f"Start with the date: this happened on this day, {d.day}.{d.month:02d}"
-            + (f".{year}" if year else "") + " (write the date in Ukrainian words, e.g. «22 листопада 1902 року»).")
+            + (f".{year}" if year else "") + DATE_WORDS)
 
 
 def cmd_thisday():
@@ -788,7 +788,7 @@ def cmd_thisday():
     s = _history_state()
     stamp = now().isoformat()
     d = now().astimezone(LOCAL)
-    header = "📅 Цей день в історії Канади"
+    header = config.LABELS["thisday_header"]
     want = "event" if s.get("thisday_last") != "event" else "person"
 
     cands = [{"kind": "person", "label": f"person (born or died on {d:%B} {d.day}): {b['name']}", **b}
@@ -814,8 +814,8 @@ def cmd_thisday():
             article, url = wiki_text(e["page"])
             if len(article) < 500:
                 continue
-            ok = _write_history(f"{e['year']}: {e['text']}", "Вікіпедія", article, _date_opening(d, e["year"]),
-                                header, "Вікіпедія", url, s, stamp, fetch_page(url)[1])
+            ok = _write_history(f"{e['year']}: {e['text']}", config.LABELS["wikipedia"], article, _date_opening(d, e["year"]),
+                                header, config.LABELS["wikipedia"], url, s, stamp, fetch_page(url)[1])
         else:
             _done(s, c["url"])
             article, image = fetch_page(c["url"], 15000)
@@ -823,8 +823,8 @@ def cmd_thisday():
                 continue
             ok = _write_history(f"{c['name']} (born or died on {d:%B} {d.day}; the text says which, and the year)",
                                 "Dictionary of Canadian Biography", article,
-                                "Start with the date (day, month and year in Ukrainian words, e.g. «22 листопада 1902 року») "
-                                "and what happened on it: the person's birth or death.",
+                                "Start with the date" + DATE_WORDS[:-1] + " and what happened on it: "
+                                "the person's birth or death.",
                                 header, "Dictionary of Canadian Biography", c["url"], s, stamp, image)
         if ok:
             s["thisday_last"] = c["kind"]
@@ -871,8 +871,8 @@ def _wiki_story(titles, s, stamp, header):
         if len(article) < 800:
             continue
         image = fetch_page(url)[1]
-        if _write_history(title, "Вікіпедія", article, "Open with a vivid detail or the key moment.",
-                          header, "Вікіпедія", url, s, stamp, image):
+        if _write_history(title, config.LABELS["wikipedia"], article, "Open with a vivid detail or the key moment.",
+                          header, config.LABELS["wikipedia"], url, s, stamp, image):
             print(f"History draft sent: {title} (Wikipedia fallback)")
             return True
     return False
@@ -882,7 +882,7 @@ def cmd_history(ukrainian=False):
     """Canadian sources first; Wikipedia only if none of them gives a usable story."""
     s = _history_state()
     stamp = now().isoformat()
-    header = "🍁 Історія Канади"
+    header = config.LABELS["history_header"]
     if ukrainian or now().astimezone(LOCAL).weekday() == config.UKRAINIAN_CANADIAN_DAY:
         candidates = _collect(config.UKRAINIAN_CANADIAN_SOURCES, s, per_source=8)
         print(f"{len(candidates)} Ukrainian-Canadian candidates")
@@ -905,8 +905,8 @@ def retire_telegraph(d, s):
     if not d.get("telegraph_path"):
         return
     try:
-        telegraph("editPage", s, path=d["telegraph_path"], title="Матеріал не опубліковано",
-                  content=json.dumps([{"tag": "p", "children": ["Цей матеріал не опубліковано."]}],
+        telegraph("editPage", s, path=d["telegraph_path"], title=config.LABELS["unpublished"],
+                  content=json.dumps([{"tag": "p", "children": [config.LABELS["unpublished"] + "."]}],
                                      ensure_ascii=False))
     except Exception as e:
         print(f"Could not retire Telegraph page: {e}")
@@ -919,8 +919,8 @@ def fb_text(text):
     def link(m):
         url = html.unescape(m.group(1)).replace("?cmp=rss", "")
         label = html.unescape(re.sub(r"<[^>]+>", "", m.group(2)))
-        if "Читати повністю" in label:
-            return f"📖 Читати повністю: {url}"
+        if config.LABELS["read_more"] in label:
+            return f"📖 {config.LABELS['read_more']}: {url}"
         if url.startswith("https://t.me/"):
             return label
         return f"{label} ({url})"
@@ -947,22 +947,6 @@ def post_to_facebook(d):
             return json.loads(r.read()).get("id", "ok")
     except urllib.error.HTTPError as e:
         raise RuntimeError(e.read().decode(errors="replace")[:300]) from None
-
-
-def cmd_rotate_telegraph():
-    """Revoke the Telegraph key that used to be stored in state.json, and send the new key to the approvers
-    in Telegram (never to the log) so it can be saved as the TELEGRAPH_TOKEN secret."""
-    s = load_state()
-    old = s.pop("telegraph_token", "") or TELEGRAPH_TOKEN
-    if not old:
-        sys.exit("No Telegraph key to rotate")
-    new = telegraph("revokeAccessToken", s, access_token=old)["access_token"]
-    text = ("🔑 <b>Новий ключ Telegraph</b>\n\nЗбережіть його в GitHub → Settings → Secrets and variables → "
-            "Actions → New repository secret, з назвою <code>TELEGRAPH_TOKEN</code>:\n\n"
-            f"<code>{html.escape(new)}</code>\n\nСтарий ключ більше не діє. Після збереження це повідомлення можна видалити.")
-    tg("sendMessage", chat_id=ADMIN_IDS[0], text=text, parse_mode="HTML")
-    print("Telegraph key replaced; the new key was sent to the first approver in Telegram")
-    save_state(s)
 
 
 def answer(cq, text, alert=False):
@@ -1058,8 +1042,6 @@ if __name__ == "__main__":
         cmd_thisday()
     elif cmd == "digest":
         cmd_digest()
-    elif cmd == "rotate-telegraph":
-        cmd_rotate_telegraph()
     elif cmd == "merge-state":  # used by save_state.sh: merge-state BASE OURS (theirs = state.json)
         with open(sys.argv[2], encoding="utf-8") as f:
             base = json.load(f)

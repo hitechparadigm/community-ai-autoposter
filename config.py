@@ -3,6 +3,28 @@
 # Telegram channel where approved posts go
 CHANNEL = "@UkrainianCanada"
 
+# Local time zone as hours from UTC (Toronto: -5; the schedules themselves are in the workflow files)
+UTC_OFFSET_HOURS = -5
+
+# Fixed words in posts, in the channel's language
+MONTHS = ["січня", "лютого", "березня", "квітня", "травня", "червня", "липня", "серпня",
+          "вересня", "жовтня", "листопада", "грудня"]
+LABELS = {
+    "source": "Джерело",
+    "photo": "Фото",
+    "read_more": "Читати повністю",
+    "wikipedia": "Вікіпедія",
+    "digest_title": "Головне за вчора",
+    "digest_national": "🇨🇦 Канада",
+    "digest_community": "🇺🇦 Українська громада",
+    "digest_today": "Сьогодні",
+    "digest_sources": "За матеріалами",
+    "thisday_header": "📅 Цей день в історії Канади",
+    "history_header": "🍁 Історія Канади",
+    "auto_publish_note": "Опублікується автоматично о {time}, якщо не натиснути ❌",
+    "unpublished": "Матеріал не опубліковано",
+}
+
 # News sources: (display name, RSS/Atom feed URL, region)
 # If a feed stops working, the run log shows "FEED ERROR" and the rest still run.
 # National Post isn't here: its feeds don't return a readable feed to automated requests.

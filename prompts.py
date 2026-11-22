@@ -209,3 +209,7 @@ Offers:
 News post:
 {post}
 """
+
+
+# How dates are written at the start of "This day" posts
+DATE_WORDS = " (write the date in Ukrainian words, e.g. «22 листопада 1902 року»)."

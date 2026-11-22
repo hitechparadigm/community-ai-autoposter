@@ -1,9 +1,11 @@
 # Community AI Autoposter
 
-**An AI editorial assistant for a community news channel.** It runs the Telegram channel
+**An AI editorial assistant for community news channels**, reusable for any community or language. It runs the Telegram channel
 [Українська Канада (@UkrainianCanada)](https://t.me/UkrainianCanada), about 17,000 Ukrainians living in
 Canada: every day it finds the news and history that matter to this community, writes posts in literary
 Ukrainian with Claude, and sends each one to human editors for one-tap approval before anything is published.
+Any other community can run its own channel by changing two settings files (see
+[Reusable for any community](#reusable-for-any-community)).
 
 **Live demo:** [t.me/UkrainianCanada](https://t.me/UkrainianCanada)
 
@@ -33,6 +35,22 @@ Ukrainian with Claude, and sends each one to human editors for one-tap approval 
   a draft or double-post. No servers, no database, no third-party Python packages.
 - **Configurable, not hard-coded.** Sources, schedules, approvers, referral offers and publishing rules live in
   `config.py`; all editorial instructions live in `prompts.py`, so the same code can serve another community.
+
+### Reusable for any community
+
+Nothing about Ukrainian Canada is hard-coded in the program. Any community, diaspora, city or interest
+group can run its own channel by forking the repo and changing two files:
+
+| Change | In |
+|---|---|
+| Channel, time zone, news feeds, history sources, referral offers, publishing rules | `config.py` |
+| Language of the posts and fixed words (headers, "Source", "Read more", month names) | `config.py` → `LABELS`, `MONTHS` |
+| Who the audience is, what counts as important, the style guide for the target language | `prompts.py` |
+| Run times | `.github/workflows/*.yml` |
+
+Examples: a Polish- or Filipino-Canadian channel, a city news channel for newcomers, a university or church
+community, a professional association. Facebook is optional; Telegraph long-reads and the history columns can
+be pointed at any country's archives (or switched off by not scheduling them).
 
 **Stack:** Python 3 (standard library only) · Claude API (Sonnet) · GitHub Actions · Telegram Bot API ·
 Telegraph API · Facebook Graph API · RSS/Atom
@@ -187,7 +205,7 @@ If posts don't appear publicly, switch the Meta app to Live (it asks for a priva
 
 | What you want to change | Where |
 |---|---|
-| Channel, news sources, history sources, referral links, auto-publish, model, limits | `config.py` |
+| Channel, time zone, fixed words in posts, news and history sources, referral links, auto-publish, model, limits | `config.py` |
 | Tone, Ukrainian style guide, what to pick, length and structure of each post | `prompts.py` |
 | Run times (UTC: Toronto + 5 hours in winter, + 4 in summer) | `cron:` lines in `.github/workflows/*.yml` |
 | API keys, bot token, approver IDs, Telegraph and Facebook keys | GitHub → Settings → Secrets and variables → Actions |
