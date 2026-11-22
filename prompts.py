@@ -89,7 +89,11 @@ keep the post shorter and stick to the headline and summary.
   Wikimedia Commons (e.g. "Health Sciences Centre Winnipeg | Winnipeg skyline"); never a person. Empty if
   nothing specific fits.
 
-Reply with JSON only: {{"title": "...", "body": "...", "image_query": "..."}}
+- "emoji": one emoji that marks the topic, shown before the headline (e.g. 🛂 immigration, 🏠 housing,
+  💰 money and taxes, 🏥 health, 🎓 education, ⚖️ courts, 🏛 politics, 🚆 transport, ❄️ weather, 🇺🇦 Ukrainian
+  community). Never alarm or hype emojis (🔥 ⚡ ‼️ 😱).
+
+Reply with JSON only: {{"title": "...", "body": "...", "image_query": "...", "emoji": "..."}}
 
 Source: {source}
 Headline: {title}

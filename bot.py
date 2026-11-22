@@ -579,11 +579,12 @@ def cmd_draft():
         src_text = article or "(not available)"
         post = parse_post(ask_claude(WRITE_PROMPT.format(
             source=it["source"], title=it["title"], summary=it["summary"], article=SOURCE_REF), source=src_text,
-            schema=schema_post(("title", "body"), ("image_query",))))
+            schema=schema_post(("title", "body"), ("image_query", "emoji"))))
         if not post:
             print(f"Could not write post for: {it['title']}")
             continue
         photo_query = (post.pop("image_query", "") or "").strip()  # for the Facebook card
+        emoji = (post.pop("emoji", "") or "").strip()[:4]  # shown before the headline
         edited = parse_post(ask_claude(EDIT_PROMPT.format(
             draft=json.dumps(post, ensure_ascii=False), title=it["title"],
             summary=it["summary"], article=SOURCE_REF), source=src_text, schema=schema_post(("title", "body"))))
@@ -592,7 +593,7 @@ def cmd_draft():
         else:
             print("Copy edit failed; using the first draft")
         post, problems = review_post(post, ("title", "body"), article or it["summary"], it["title"])
-        text = format_post(post["title"], post["body"], it["source"], it["url"])
+        text = format_post(f"{emoji} {post['title']}".strip(), post["body"], it["source"], it["url"])
         ref = matching_referral(s, post)
         if ref:
             text += f'\n\n<a href="{html.escape(ref[1], quote=True)}">{html.escape(ref[0], quote=False)}</a>'
