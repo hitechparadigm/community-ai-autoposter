@@ -28,7 +28,8 @@ ATOM = "{http://www.w3.org/2005/Atom}"
 DC = "{http://purl.org/dc/elements/1.1/}"
 
 TG_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-ADMIN_ID = os.environ.get("TELEGRAM_ADMIN_ID", "").strip()
+# One or more approver IDs, comma-separated (e.g. "456360947,123456789")
+ADMIN_IDS = [x.strip() for x in os.environ.get("TELEGRAM_ADMIN_ID", "").split(",") if x.strip()]
 ANTHROPIC_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 
 
@@ -266,19 +267,21 @@ def preview(url):
 
 
 def close_draft(d, status):
-    """Replace the buttons on your draft message with a status line."""
-    try:
-        tg("editMessageText", chat_id=ADMIN_ID, message_id=d["admin_msg_id"],
-           text=d["text"] + f"\n\n— {status}", parse_mode="HTML",
-           link_preview_options={"is_disabled": True})
-    except Exception as e:
-        print(f"Could not update draft message: {e}")
+    """On every approver's copy of the draft, replace the buttons with a status line."""
+    msgs = d.get("msgs") or [[ADMIN_IDS[0], d["admin_msg_id"]]]  # older drafts stored one id
+    for chat_id, msg_id in msgs:
+        try:
+            tg("editMessageText", chat_id=chat_id, message_id=msg_id,
+               text=d["text"] + f"\n\n— {status}", parse_mode="HTML",
+               link_preview_options={"is_disabled": True})
+        except Exception as e:
+            print(f"Could not update draft message for {chat_id}: {e}")
 
 
 # ---------- commands ----------
 
 def cmd_draft():
-    if not ADMIN_ID:
+    if not ADMIN_IDS:
         sys.exit("TELEGRAM_ADMIN_ID is not set")
     s = load_state()
     week_ago = (now() - timedelta(days=7)).isoformat()
@@ -312,12 +315,27 @@ def cmd_draft():
             continue
         did = hashlib.sha1(it["url"].encode()).hexdigest()[:10]
         text = format_post(post["title"], post["body"], it["source"], it["url"])
-        msg = tg("sendMessage", chat_id=ADMIN_ID, text=text, parse_mode="HTML",
-                 link_preview_options=preview(it["url"]), reply_markup=buttons(did))
-        s["pending"][did] = {"url": it["url"], "text": text, "created": stamp,
-                             "admin_msg_id": msg["message_id"]}
+        msgs = []
+        for admin in ADMIN_IDS:
+            try:
+                msg = tg("sendMessage", chat_id=admin, text=text, parse_mode="HTML",
+                         link_preview_options=preview(it["url"]), reply_markup=buttons(did))
+                msgs.append([admin, msg["message_id"]])
+            except Exception as e:  # e.g. this approver never pressed Start in the bot
+                print(f"Could not send draft to {admin}: {e}")
+        if not msgs:
+            continue
+        s["pending"][did] = {"url": it["url"], "text": text, "created": stamp, "msgs": msgs}
         print(f"Draft sent: {it['title']}")
     save_state(s)
+
+
+def answer(cq, text, alert=False):
+    # Telegram rejects answers to taps older than a few minutes; that's harmless.
+    try:
+        tg("answerCallbackQuery", callback_query_id=cq["id"], text=text, show_alert=alert)
+    except Exception as e:
+        print(f"(could not answer tap: {e})")
 
 
 def cmd_approve():
@@ -329,13 +347,14 @@ def cmd_approve():
         cq = u.get("callback_query")
         if not cq:
             continue
-        if str(cq["from"]["id"]) != ADMIN_ID:
-            tg("answerCallbackQuery", callback_query_id=cq["id"], text="Not allowed")
+        if str(cq["from"]["id"]) not in ADMIN_IDS:
+            answer(cq, "Not allowed")
             continue
+        who = html.escape(str(cq["from"].get("first_name") or cq["from"]["id"]))
         action, _, did = (cq.get("data") or "").partition(":")
         d = s["pending"].get(did)
         if not d:
-            tg("answerCallbackQuery", callback_query_id=cq["id"], text="Already handled or expired")
+            answer(cq, "Already handled or expired")
             continue
         if action == "pub":
             try:
@@ -343,15 +362,14 @@ def cmd_approve():
                    link_preview_options=preview(d["url"]))
             except Exception as e:
                 print(f"PUBLISH ERROR: {e}")
-                tg("answerCallbackQuery", callback_query_id=cq["id"],
-                   text="Publishing failed, check the bot is a channel admin", show_alert=True)
+                answer(cq, "Publishing failed, check the bot is a channel admin", alert=True)
                 continue
-            tg("answerCallbackQuery", callback_query_id=cq["id"], text="Published")
-            close_draft(d, "✅ Published")
+            answer(cq, "Published")
+            close_draft(d, f"✅ Published by {who}")
             print(f"Published {d['url']}")
         else:
-            tg("answerCallbackQuery", callback_query_id=cq["id"], text="Skipped")
-            close_draft(d, "❌ Skipped")
+            answer(cq, "Skipped")
+            close_draft(d, f"❌ Skipped by {who}")
         del s["pending"][did]
 
     cutoff = (now() - timedelta(hours=config.DRAFT_EXPIRY_HOURS)).isoformat()

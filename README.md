@@ -14,7 +14,7 @@ buttons. Posts you approve go to @UkrainianCanada within about 20 minutes.
 5. **Add secrets:** repo → Settings → Secrets and variables → Actions → New repository secret:
    - `ANTHROPIC_API_KEY` – from console.anthropic.com
    - `TELEGRAM_BOT_TOKEN` – from @BotFather
-   - `TELEGRAM_ADMIN_ID` – your numeric ID from step 2
+   - `TELEGRAM_ADMIN_ID` – your numeric ID from step 2. For several approvers, separate IDs with commas: `456360947,123456789`
 6. **Test:** Actions tab → "Draft posts" → Run workflow. Drafts should arrive in Telegram
    within a minute. Tap ✅ on one, then run "Publish approved posts" by hand to post right away.
 
