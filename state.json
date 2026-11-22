@@ -1,4 +1,5 @@
 {
+ "digest_regions": {},
  "history_done": [
   "Foster_Hewitt",
   "Alaska_Highway",
@@ -8,7 +9,8 @@
   "https://thediscoverblog.com/2017/08/22/sergeant-filip-konowal-vc/",
   "https://qahn.org/article/dr-maude-abbott-1869-1940-pioneer-woman-doctor",
   "https://qahn.org/article/cure-francois-xavier-antoine-labelle-1833-1891-le-roi-du-nord",
-  "http://www.biographi.ca/en/bio/delorme_pierre_14E.html"
+  "http://www.biographi.ca/en/bio/delorme_pierre_14E.html",
+  "Canadian_National_Railway"
  ],
  "pending": {
   "35ba38a8a6": {
@@ -51,6 +53,27 @@
    "telegraph_path": "Kyure-yakij-privіv-potyag-u-Lorentіjskі-gori-11-22",
    "text": "🍁 Історія Канади\n\n<b>Кюре, який привів потяг у Лорентійські гори</b>\n\nВзимку 1871–1872 років вулицями Монреаля рушив обоз зі сотні саней: з духовим оркестром, шістьма кіньми з червоними помпонами і священником на чолі. Так кюре Антуан Лабель виборював залізницю для бідного краю на північ від міста. Розповідаємо, як це йому вдалося.\n\n📖 <a href=\"https://telegra.ph/Kyure-yakij-privіv-potyag-u-Lorentіjskі-gori-11-22\">Читати повністю</a>\n🔗 Джерело: <a href=\"https://qahn.org/article/cure-francois-xavier-antoine-labelle-1833-1891-le-roi-du-nord\">Quebec Anglophone Heritage Network</a>",
    "url": "https://qahn.org/article/cure-francois-xavier-antoine-labelle-1833-1891-le-roi-du-nord"
+  },
+  "542707d193": {
+   "created": "2026-11-22T04:09:07.560588+00:00",
+   "lp": {
+    "prefer_large_media": true,
+    "show_above_text": true,
+    "url": "https://telegra.ph/Katastrofa-na-Kanu-Rіver-zіtknennya-potyagіv-yake-zabralo-21-zhittya-11-22"
+   },
+   "msgs": [
+    [
+     "456360947",
+     27
+    ],
+    [
+     "522929986",
+     28
+    ]
+   ],
+   "telegraph_path": "Katastrofa-na-Kanu-Rіver-zіtknennya-potyagіv-yake-zabralo-21-zhittya-11-22",
+   "text": "📅 Цей день в історії Канади\n\n<b>Катастрофа на Кану-Рівер: зіткнення потягів, яке забрало 21 життя</b>\n\n1950 року в північно-східній Британській Колумбії зіткнулися два потяги Канадської національної залізниці. Загинуло 21 людина, серед них 17 військових, які їхали до Кореї. Розповідаємо, що відомо про катастрофу і про залізницю, якій належали обидва потяги.\n\n📖 <a href=\"https://telegra.ph/Katastrofa-na-Kanu-Rіver-zіtknennya-potyagіv-yake-zabralo-21-zhittya-11-22\">Читати повністю</a>\n🔗 Джерело: <a href=\"https://en.wikipedia.org/wiki/Canadian_National_Railway\">Вікіпедія</a>",
+   "url": "https://en.wikipedia.org/wiki/Canadian_National_Railway"
   },
   "5487897e7b": {
    "created": "2026-11-22T03:52:10.520727+00:00",
@@ -394,5 +417,6 @@
   "https://www.ukrinform.net/rubric-society/4187233-prague-pays-tribute-to-ukrainians-who-died-for-freedom.html": "2026-11-22T02:54:46.860426+00:00"
  },
  "telegraph_token": "54232472749cefe01f8a27d8d1237ce4061fc529827d0f732365b20b200a",
- "tg_offset": 17524581
+ "tg_offset": 17524581,
+ "thisday_last": "event"
 }
