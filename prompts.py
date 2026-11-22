@@ -28,7 +28,15 @@ Later mentions: Ukrainian only. Do the same for lesser-known places, venues and 
 (e.g. «Мейпл-Ліф-Гарденс» (Maple Leaf Gardens)); well-known names like Торонто or Оттава need no brackets. \
 Use feminine job titles for women.
 - Typography: apostrophe ' (м'ясо), em dash with spaces " — ", quotation marks «...», no double spaces.
-- Prefer short sentences and active voice. No clichés, no filler, no exclamation marks, no clickbait."""
+- Prefer short sentences and active voice. No clichés, no filler, no exclamation marks, no clickbait.
+- No repetition: every sentence and paragraph adds something new. Don't restate the same fact in other words,
+  don't repeat the title or teaser in the body, don't repeat the person's full name in every sentence (use
+  "він", "дослідник", the surname), vary how sentences and paragraphs begin, and don't end with a summary of
+  what was already said.
+- Never write about the writing process or the sources: no "розповідаємо", "у цій статті", "нам не вдалося
+  з'ясувати", "джерело не уточнює", "достеменно невідомо, бо в тексті немає". If the source doesn't give a
+  detail, simply leave it out. If historians genuinely disagree or a record is lost, say it as a historical
+  fact in plain words (e.g. "Його щоденник не зберігся, тож історики досі сперечаються, чи...")."""
 
 
 PICK_PROMPT = AUDIENCE + """
@@ -87,6 +95,9 @@ Check and fix:
 2. Russianisms, surzhyk, calques from English, unnatural or awkward phrasing, wrong word choice.
 3. Facts: every name, number, date and claim must match the article. Remove anything the article does not support.
 4. Clarity: a reader who has not seen the article must understand it. Keep the structure and length.
+5. Repetition and meta-comments: remove any repeated facts or phrasing (including between the teaser and the
+   body), and any remarks about the writing or the sources ("розповідаємо", "не вдалося з'ясувати", "джерело не
+   уточнює"); rephrase genuine historical uncertainty as a plain historical fact.
 
 Keep any phrase in [square brackets] marked with brackets (it becomes a link); you may reword it.
 If the draft is already correct, return it unchanged. Reply with JSON only, with exactly the same keys as the draft.
@@ -175,7 +186,7 @@ good magazine feature: engaging, educational and strictly accurate.
 
 - "title": a short, intriguing headline, at most 12 words (no clickbait, no exclamation marks)
 - "teaser": 2-3 sentences (at most 400 characters) for the channel post that make people want to read on; \
-no "читайте далі" phrases.
+no "читайте далі" or "розповідаємо про…" phrases; state the most interesting fact instead.
 - "body": the full article. {opening} Then tell the story in order, giving enough context \
 (where, when, who) for a newcomer who does not know Canadian history, and end with why it matters or what \
 it left behind. Mention a connection to Ukrainians in Canada only if the source supports it.
