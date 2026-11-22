@@ -1135,6 +1135,7 @@ def cmd_rewrite(path, source):
     credit = source_name
     if not image:
         image, credit = commons_image(query), "Wikimedia Commons"
+    print(f"Photo: {image or 'none found'}")
     page = telegraph("editPage", s, path=path, title=post["title"][:256], author_name=config.TELEGRAPH_AUTHOR,
                      author_url=config.TELEGRAPH_AUTHOR_URL,
                      content=json.dumps(telegraph_nodes(post["body"], image, credit, source_name, url),
