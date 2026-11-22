@@ -24,3 +24,23 @@ DRAFT_EXPIRY_HOURS = 24
 
 # Claude model used to pick, write and copy-edit posts (Sonnet 5.5)
 MODEL = "claude-sonnet-5-5"
+
+# ---------- Canadian history column ----------
+# One history draft a day (see .github/workflows/history.yml for the time).
+# Most days: a Canadian story that happened on this date (from Wikipedia "On this day").
+# On this weekday (0 = Monday ... 6 = Sunday) it uses the Ukrainian-Canadian list below instead.
+UKRAINIAN_CANADIAN_DAY = 6
+
+# English Wikipedia article titles, used in order; add your own any time.
+UKRAINIAN_CANADIAN_TOPICS = [
+    "Ivan Pylypiw",
+    "Wasyl Eleniak",
+    "Ukrainian Canadian internment",
+    "Ukrainian Canadian Congress",
+    "Ray Hnatyshyn",
+    "Vegreville egg",
+    "Ukrainian Labour Temple",
+    "Ukrainian Cultural Heritage Village",
+    "Ukrainian Canadians",
+    "Canadian Ukrainian Catholic Church",
+]

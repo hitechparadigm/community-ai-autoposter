@@ -31,3 +31,11 @@ of the two workflow files (times are UTC).
 - `state.json` remembers which stories were already offered and is updated automatically.
 - GitHub pauses scheduled workflows in a repo with no activity for 60 days; if that happens,
   re-enable them in the Actions tab.
+
+## Canadian history column
+
+Every day at 11:30 Toronto time you get one extra draft marked "🍁 Історія Канади":
+a Canadian story that happened on this date (from Wikipedia "On this day"), retold in Ukrainian.
+On Sundays it tells a Ukrainian-Canadian story instead, from the list in `config.py`
+(`UKRAINIAN_CANADIAN_TOPICS`, English Wikipedia article titles; add your own).
+Run it any time from Actions → "Draft history post".

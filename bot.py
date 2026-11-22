@@ -3,6 +3,7 @@
 
   python bot.py draft    - fetch news, have Claude pick and write posts (Ukrainian),
                            send drafts to you in Telegram with Publish / Skip buttons
+  python bot.py history  - draft one "Canadian history" story
   python bot.py approve  - check your button taps and publish approved posts to the channel
 
 No third-party packages needed (standard library only).
@@ -14,6 +15,7 @@ import os
 import re
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
@@ -288,9 +290,10 @@ def fetch_article(url, limit=6000):
 
 # ---------- posts ----------
 
-def format_post(title, body, source, url):
+def format_post(title, body, source, url, header=""):
     e = html.escape
-    return (f"<b>{e(title, quote=False)}</b>\n\n{e(body, quote=False)}\n\n"
+    top = f"{e(header, quote=False)}\n\n" if header else ""
+    return (f"{top}<b>{e(title, quote=False)}</b>\n\n{e(body, quote=False)}\n\n"
             f"🔗 Джерело: <a href=\"{e(url, quote=True)}\">{e(source)}</a>")
 
 
@@ -359,20 +362,154 @@ def cmd_draft():
             post = edited
         else:
             print("Copy edit failed; using the first draft")
-        did = hashlib.sha1(it["url"].encode()).hexdigest()[:10]
         text = format_post(post["title"], post["body"], it["source"], it["url"])
-        msgs = []
-        for admin in ADMIN_IDS:
-            try:
-                msg = tg("sendMessage", chat_id=admin, text=text, parse_mode="HTML",
-                         link_preview_options=preview(it["url"]), reply_markup=buttons(did))
-                msgs.append([admin, msg["message_id"]])
-            except Exception as e:  # e.g. this approver never pressed Start in the bot
-                print(f"Could not send draft to {admin}: {e}")
-        if not msgs:
+        if not send_draft(s, it["url"], text, stamp):
             continue
-        s["pending"][did] = {"url": it["url"], "text": text, "created": stamp, "msgs": msgs}
         print(f"Draft sent: {it['title']}")
+    save_state(s)
+
+
+def send_draft(s, url, text, stamp):
+    """Send a draft with Publish/Skip buttons to every approver and remember it."""
+    did = hashlib.sha1(url.encode()).hexdigest()[:10]
+    msgs = []
+    for admin in ADMIN_IDS:
+        try:
+            msg = tg("sendMessage", chat_id=admin, text=text, parse_mode="HTML",
+                     link_preview_options=preview(url), reply_markup=buttons(did))
+            msgs.append([admin, msg["message_id"]])
+        except Exception as e:  # e.g. this approver never pressed Start in the bot
+            print(f"Could not send draft to {admin}: {e}")
+    if msgs:
+        s["pending"][did] = {"url": url, "text": text, "created": stamp, "msgs": msgs}
+    return bool(msgs)
+
+
+# ---------- Canadian history ----------
+
+CANADA_WORDS = ("Canad", "Quebec", "Québec", "Ontario", "Manitoba", "Saskatchewan", "Alberta",
+                "British Columbia", "Nova Scotia", "New Brunswick", "Newfoundland", "Labrador",
+                "Prince Edward Island", "Yukon", "Nunavut", "Northwest Territories", "Toronto",
+                "Montreal", "Montréal", "Vancouver", "Winnipeg", "Ottawa", "Halifax", "Calgary",
+                "Edmonton", "Regina", "Saskatoon", "Hudson's Bay", "Klondike", "Mountie")
+
+HISTORY_PICK_PROMPT = AUDIENCE + """
+
+For a daily "Canadian history" column, pick the ONE most interesting story from these \
+"on this day" entries. Prefer stories with a human angle, surprising facts, or a connection to \
+immigrants or Ukrainians in Canada. Avoid dry administrative events and anything gruesome.
+
+Reply with JSON only: [<entry id>] (or [] if none is interesting)
+
+Entries:
+{items}
+"""
+
+HISTORY_WRITE_PROMPT = AUDIENCE + "\n\n" + STYLE + """
+
+Write a "Canadian history" post in Ukrainian based on the encyclopedia article below. \
+It should read like a good magazine column: engaging, but strictly accurate.
+
+- "title": a short, intriguing headline, at most 12 words (no clickbait, no exclamation marks)
+- "body": 3-4 short paragraphs (about 900-1400 characters in total), separated by blank lines. \
+Open with a vivid detail or the key moment{date_hint}, then tell the story, then why it matters \
+or what it left behind. Mention a connection to Ukrainians in Canada only if the article supports it.
+- Write in your own words. Use only facts stated in the article; do not invent dialogue, details or numbers.
+
+Reply with JSON only: {{"title": "...", "body": "..."}}
+
+Topic: {topic}
+Article:
+{article}
+"""
+
+
+def wiki_text(title, limit=7000):
+    """Plain-text article from English Wikipedia (empty string if missing)."""
+    q = urllib.parse.urlencode({"action": "query", "prop": "extracts", "explaintext": 1,
+                                "redirects": 1, "titles": title, "format": "json"})
+    try:
+        data = json.loads(http(f"https://en.wikipedia.org/w/api.php?{q}"))
+    except Exception as e:
+        print(f"Wikipedia error for {title}: {e}")
+        return "", ""
+    for page in data.get("query", {}).get("pages", {}).values():
+        text = page.get("extract") or ""
+        if text:
+            real = page.get("title", title)
+            url = "https://en.wikipedia.org/wiki/" + urllib.parse.quote(real.replace(" ", "_"))
+            return text[:limit], url
+    return "", ""
+
+
+def on_this_day():
+    d = now().astimezone(timezone(timedelta(hours=-5)))
+    raw = http(f"https://en.wikipedia.org/api/rest_v1/feed/onthisday/all/{d:%m}/{d:%d}")
+    data = json.loads(raw)
+    entries = []
+    for kind in ("selected", "events", "births", "deaths"):
+        for e in data.get(kind, []):
+            pages = e.get("pages") or []
+            blob = e.get("text", "") + " " + " ".join(p.get("extract", "") for p in pages[:2])
+            if pages and any(w in blob for w in CANADA_WORDS):
+                entries.append({"kind": kind, "year": e.get("year"), "text": e.get("text", ""),
+                                "page": pages[0].get("title", "")})
+    return entries, d
+
+
+def cmd_history():
+    if not ADMIN_IDS:
+        sys.exit("TELEGRAM_ADMIN_ID is not set")
+    s = load_state()
+    s.setdefault("history_done", [])
+    stamp = now().isoformat()
+    topic = page = date_hint = ""
+
+    today = now().astimezone(timezone(timedelta(hours=-5)))
+    use_ukrainian = today.weekday() == config.UKRAINIAN_CANADIAN_DAY
+    if not use_ukrainian:
+        try:
+            entries, d = on_this_day()
+        except Exception as e:
+            print(f"On-this-day error: {e}")
+            entries = []
+        entries = [e for e in entries if e["page"] not in s["history_done"]]
+        print(f"{len(entries)} Canada-related on-this-day entries")
+        if entries:
+            listing = "\n".join(f"[{i}] {e['year']} ({e['kind']}): {e['text']}"
+                                for i, e in enumerate(entries[:40]))
+            picks = parse_picks(ask_claude(HISTORY_PICK_PROMPT.format(items=listing)))
+            if picks and picks[0] < len(entries):
+                e = entries[picks[0]]
+                page = e["page"]
+                topic = f"{e['year']}: {e['text']}"
+                date_hint = f" (this happened on this day, {d.day}.{d.month}.{e['year']})"
+    if not page:  # Ukrainian-Canadian day, or nothing good today
+        left = [t for t in config.UKRAINIAN_CANADIAN_TOPICS if t not in s["history_done"]]
+        if not left:
+            s["history_done"] = [t for t in s["history_done"]
+                                 if t not in config.UKRAINIAN_CANADIAN_TOPICS]
+            left = list(config.UKRAINIAN_CANADIAN_TOPICS)
+        page = topic = left[0]
+
+    article, url = wiki_text(page)
+    if not article:
+        print(f"No article for {page}; skipping")
+        s["history_done"].append(page)
+        save_state(s)
+        return
+    post = parse_post(ask_claude(HISTORY_WRITE_PROMPT.format(
+        topic=topic, article=article, date_hint=date_hint)))
+    if not post:
+        sys.exit("Could not write the history post")
+    edited = parse_post(ask_claude(EDIT_PROMPT.format(
+        draft=json.dumps(post, ensure_ascii=False), title=topic, summary="", article=article)))
+    post = edited or post
+    text = format_post(post["title"], post["body"], "Вікіпедія", url, header="🍁 Історія Канади")
+    if send_draft(s, url, text, stamp):
+        print(f"History draft sent: {page}")
+    s["history_done"].append(page)
+    s["history_done"] = s["history_done"][-500:]
     save_state(s)
 
 
@@ -433,5 +570,7 @@ if __name__ == "__main__":
         cmd_draft()
     elif cmd == "approve":
         cmd_approve()
+    elif cmd == "history":
+        cmd_history()
     else:
-        sys.exit("Usage: python bot.py draft|approve")
+        sys.exit("Usage: python bot.py draft|approve|history")
