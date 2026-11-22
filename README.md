@@ -34,6 +34,10 @@ of the two workflow files (times are UTC).
 
 ## Canadian history
 
+History posts are long-reads on Telegraph (telegra.ph), which open inside Telegram with Instant View.
+The channel gets a teaser with a photo and a "📖 Читати повністю" link. The bot creates its own Telegraph
+account automatically (token kept in `state.json`); a skipped or expired draft's page is blanked.
+
 Two extra drafts a day, approved the same way. Canadian sources come first; Wikipedia is only a
 fallback. Posts show a photo above the text: the source's own picture, or, if it has no real photo
 (only a logo or banner), a freely licensed photo of the subject from Wikimedia Commons.

@@ -95,6 +95,8 @@ def merge_state(base, ours, theirs):
     done = out.get("history_done", [])
     out["history_done"] = done + [x for x in ours.get("history_done", []) if x not in done]
     out["tg_offset"] = max(theirs.get("tg_offset", 0), ours.get("tg_offset", 0))
+    if ours.get("telegraph_token") and not out.get("telegraph_token"):
+        out["telegraph_token"] = ours["telegraph_token"]
     return out
 
 
@@ -254,7 +256,7 @@ Check and fix:
 3. Facts: every name, number, date and claim must match the article. Remove anything the article does not support.
 4. Clarity: a reader who has not seen the article must understand it. Keep the structure and length.
 
-If the draft is already correct, return it unchanged. Reply with JSON only: {{"title": "...", "body": "..."}}
+If the draft is already correct, return it unchanged. Reply with JSON only, with exactly the same keys as the draft.
 
 Draft:
 {draft}
@@ -271,7 +273,7 @@ def ask_claude(prompt):
         sys.exit("ANTHROPIC_API_KEY is not set")
     raw = http(
         "https://api.anthropic.com/v1/messages",
-        {"model": config.MODEL, "max_tokens": 4000,
+        {"model": config.MODEL, "max_tokens": 12000,
          "messages": [{"role": "user", "content": prompt}]},
         {"x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01"},
         timeout=180,
@@ -295,9 +297,9 @@ def parse_picks(text):
     return [int(i) for i in ids if isinstance(i, (int, str)) and str(i).isdigit()]
 
 
-def parse_post(text):
+def parse_post(text, keys=("title", "body")):
     post = _json(text, "{", "}")
-    if isinstance(post, dict) and post.get("title") and post.get("body"):
+    if isinstance(post, dict) and all(post.get(k) for k in keys):
         return post
     return None
 
@@ -482,11 +484,13 @@ def cmd_draft():
     save_state(s)
 
 
-def send_draft(s, url, text, stamp, image=""):
+def send_draft(s, url, text, stamp, image="", preview_url=""):
     """Send a draft with Publish/Skip buttons to every approver and remember it.
     With an image, the picture is shown above the post (via an invisible link) instead of the source preview."""
     did = hashlib.sha1(url.encode()).hexdigest()[:10]
-    if image:
+    if preview_url:
+        lp = {"url": preview_url, "prefer_large_media": True, "show_above_text": True}
+    elif image:
         text = f'<a href="{html.escape(image, quote=True)}">&#8203;</a>' + text
         lp = {"url": image, "prefer_large_media": True, "show_above_text": True}
     else:
@@ -544,20 +548,23 @@ Articles:
 
 HISTORY_WRITE_PROMPT = AUDIENCE + "\n\n" + STYLE + """
 
-Write a Canadian history post in Ukrainian based on the source text below. \
-It should read like a good magazine column: engaging, educational and strictly accurate.
+Write a Canadian history long-read in Ukrainian based on the source text below. It is published as a \
+Telegraph article (opened inside Telegram), with a short teaser post in the channel. It should read like a \
+good magazine feature: engaging, educational and strictly accurate.
 
 - "title": a short, intriguing headline, at most 12 words (no clickbait, no exclamation marks)
-- "body": 3-4 short paragraphs (about 900-1400 characters in total), separated by blank lines. \
-{opening} Then tell the story, then explain why it matters or what it left behind. \
-Give enough context (where, when, who) for a newcomer who does not know Canadian history. \
-Mention a connection to Ukrainians in Canada only if the source supports it.
-- Write in your own words. Use only facts stated in the source; do not invent dialogue, details, dates or numbers.
-
+- "teaser": 2-3 sentences (at most 400 characters) for the channel post that make people want to read on; \
+no "читайте далі" phrases.
+- "body": the full article. {opening} Then tell the story in order, giving enough context \
+(where, when, who) for a newcomer who does not know Canadian history, and end with why it matters or what \
+it left behind. Mention a connection to Ukrainians in Canada only if the source supports it.
+  Length: as long as the source supports, up to about 6000 characters; never pad or repeat. \
+  Short paragraphs separated by blank lines. Add 2-4 subheadings on their own line starting with "## ".
 - "image_query": the main person, place or event in English, as it would be titled on English Wikipedia \
 (e.g. "Maude Abbott"), used to find a photo.
+- Write in your own words. Use only facts stated in the source; do not invent dialogue, details, dates or numbers.
 
-Reply with JSON only: {{"title": "...", "body": "...", "image_query": "..."}}
+Reply with JSON only: {{"title": "...", "teaser": "...", "body": "...", "image_query": "..."}}
 
 Topic: {topic}
 Source: {source}
@@ -568,7 +575,7 @@ Text:
 LOCAL = timezone(timedelta(hours=-5))  # Toronto (standard time is close enough for picking a date)
 
 
-def wiki_text(title, limit=7000):
+def wiki_text(title, limit=15000):
     """Plain-text article from English Wikipedia: (text, url), empty if missing."""
     q = urllib.parse.urlencode({"action": "query", "prop": "extracts", "explaintext": 1,
                                 "redirects": 1, "titles": title, "format": "json"})
@@ -649,22 +656,76 @@ def wiki_on_this_day(d):
     return out
 
 
+def telegraph(method, s, **params):
+    """Call the Telegraph API (telegra.ph). The bot creates its own account once and keeps the token in state."""
+    if method != "createAccount" and not s.get("telegraph_token"):
+        acc = telegraph("createAccount", s, short_name="UkrainianCanada", author_name=config.TELEGRAPH_AUTHOR,
+                        author_url=config.TELEGRAPH_AUTHOR_URL)
+        s["telegraph_token"] = acc["access_token"]
+    if method != "createAccount":
+        params["access_token"] = s["telegraph_token"]
+    resp = json.loads(http(f"https://api.telegra.ph/{method}", params))
+    if not resp.get("ok"):
+        raise RuntimeError(f"Telegraph {method} failed: {resp}")
+    return resp["result"]
+
+
+def telegraph_nodes(body, image, image_credit, source_name, url):
+    """Turn the article text into Telegraph content: photo, paragraphs, subheadings, source."""
+    nodes = []
+    if image:
+        nodes.append({"tag": "figure", "children": [{"tag": "img", "attrs": {"src": image}},
+                                                    {"tag": "figcaption", "children": [f"Фото: {image_credit}"]}]})
+    for block in re.split(r"\n\s*\n", body.strip()):
+        block = block.strip()
+        if block.startswith("#"):
+            nodes.append({"tag": "h4", "children": [block.lstrip("# ").strip()]})
+        elif block:
+            nodes.append({"tag": "p", "children": [block]})
+    nodes.append({"tag": "hr"})
+    nodes.append({"tag": "p", "children": ["Джерело: ", {"tag": "a", "attrs": {"href": url}, "children": [source_name]}]})
+    nodes.append({"tag": "p", "children": [{"tag": "a", "attrs": {"href": config.TELEGRAPH_AUTHOR_URL},
+                                            "children": [config.TELEGRAPH_AUTHOR]}]})
+    return nodes
+
+
 def _write_history(topic, source, article, opening, header, source_name, url, s, stamp, image=""):
+    """Write a long-read, publish it on Telegraph, and send the teaser post as a draft."""
+    keys = ("title", "teaser", "body")
     post = parse_post(ask_claude(HISTORY_WRITE_PROMPT.format(
-        topic=topic, source=source_name, article=article, opening=opening)))
+        topic=topic, source=source_name, article=article, opening=opening)), keys)
     if not post:
         print("Could not write the history post")
         return False
     query = post.get("image_query", "")
     edited = parse_post(ask_claude(EDIT_PROMPT.format(
-        draft=json.dumps({"title": post["title"], "body": post["body"]}, ensure_ascii=False),
-        title=topic, summary="", article=article)))
+        draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False),
+        title=topic, summary="", article=article)), keys)
     post = edited or post
+    credit = source_name
     if not image:  # the source has no usable photo: look for a freely licensed one
         image = commons_image(query)
+        credit = "Wikimedia Commons"
         print(f"Image from Wikimedia Commons for '{query}': {image or 'none'}")
-    text = format_post(post["title"], post["body"], source_name, url, header=header)
-    return send_draft(s, url, text, stamp, image=image)
+    try:
+        page = telegraph("createPage", s, title=post["title"][:256], author_name=config.TELEGRAPH_AUTHOR,
+                         author_url=config.TELEGRAPH_AUTHOR_URL,
+                         content=json.dumps(telegraph_nodes(post["body"], image, credit, source_name, url),
+                                            ensure_ascii=False))
+    except Exception as e:  # Telegraph down: fall back to a normal post
+        print(f"Telegraph error, sending a normal post instead: {e}")
+        text = format_post(post["title"], post["teaser"] + "\n\n" + post["body"].replace("## ", ""),
+                           source_name, url, header=header)
+        return send_draft(s, url, text[:4000], stamp, image=image)
+    e = html.escape
+    text = (f"{e(header, quote=False)}\n\n<b>{e(post['title'], quote=False)}</b>\n\n{e(post['teaser'], quote=False)}"
+            f"\n\n📖 <a href=\"{e(page['url'], quote=True)}\">Читати повністю</a>"
+            f"\n🔗 Джерело: <a href=\"{e(url, quote=True)}\">{e(source_name, quote=False)}</a>")
+    print(f"Telegraph page: {page['url']}")
+    ok = send_draft(s, url, text, stamp, preview_url=page["url"])
+    if ok:
+        s["pending"][hashlib.sha1(url.encode()).hexdigest()[:10]]["telegraph_path"] = page["path"]
+    return ok
 
 
 def _history_state():
@@ -701,7 +762,7 @@ def cmd_thisday():
                 continue
             b = bios[i]
             _done(s, b["url"])
-            article, image = fetch_page(b["url"], 9000)
+            article, image = fetch_page(b["url"], 15000)
             if len(article) < 800:
                 continue
             topic = f"{b['name']} (born or died on {d:%B} {d.day}; the text says which, and the year)"
@@ -741,7 +802,7 @@ def _story_from(candidates, s, stamp, header):
             continue
         c = candidates[i]
         _done(s, c["url"])
-        article, image = fetch_page(c["url"], 8000)
+        article, image = fetch_page(c["url"], 15000)
         if len(article) < 800:
             print(f"Too little text for {c['title']}; trying the next pick")
             continue
@@ -800,6 +861,18 @@ def cmd_history(ukrainian=False):
     save_state(s)
 
 
+def retire_telegraph(d, s):
+    """A long-read that won't be published: replace its Telegraph page with a short notice."""
+    if not d.get("telegraph_path"):
+        return
+    try:
+        telegraph("editPage", s, path=d["telegraph_path"], title="Матеріал не опубліковано",
+                  content=json.dumps([{"tag": "p", "children": ["Цей матеріал не опубліковано."]}],
+                                     ensure_ascii=False))
+    except Exception as e:
+        print(f"Could not retire Telegraph page: {e}")
+
+
 def answer(cq, text, alert=False):
     # Telegram rejects answers to taps older than a few minutes; that's harmless.
     try:
@@ -840,6 +913,7 @@ def cmd_approve():
         else:
             answer(cq, "Skipped")
             close_draft(d, f"❌ Skipped by {who}")
+            retire_telegraph(d, s)
         del s["pending"][did]
         save_state(s)  # save after every tap so a later error can never cause a double post
 
@@ -847,6 +921,7 @@ def cmd_approve():
     for did, d in list(s["pending"].items()):
         if d["created"] < cutoff:
             close_draft(d, "⌛ Expired")
+            retire_telegraph(d, s)
             del s["pending"][did]
     save_state(s)
 

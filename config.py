@@ -26,6 +26,10 @@ DRAFT_EXPIRY_HOURS = 24
 MODEL = "claude-sonnet-5-5"
 
 # ---------- Canadian history ----------
+# History posts are long-reads on Telegraph (telegra.ph, opens inside Telegram); the channel gets a teaser.
+TELEGRAPH_AUTHOR = "Українська Канада"
+TELEGRAPH_AUTHOR_URL = "https://t.me/UkrainianCanada"
+
 # Canadian sources come first; Wikipedia is used only when they give nothing usable.
 # "📅 Цей день в історії Канади" (daily): a person born or died on today's date, from the
 #   Dictionary of Canadian Biography (fallback: Wikipedia "On this day", Canadian entries).
