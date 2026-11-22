@@ -1,101 +1,127 @@
-# Ukrainian Canada autoposter (step 1: Telegram)
+# Ukrainian Canada autoposter
 
-Five times a day (9:00-21:00) it reads Canadian news feeds, has Claude pick the most relevant story and
-write short posts in Ukrainian, and sends them to you in Telegram with **✅ Publish / ❌ Skip**
-buttons. Posts you approve go to @UkrainianCanada within about 5 minutes.
+A bot for the Telegram channel [@UkrainianCanada](https://t.me/UkrainianCanada) (and, optionally, the
+Facebook Page). It reads Canadian news and history sources, has Claude write posts in Ukrainian, and sends
+each one to the approvers in Telegram with **✅ Publish / ❌ Skip** buttons. Approved posts go to the channel
+within about 5 minutes. Everything runs on GitHub Actions; no computer or chat app needs to be open.
 
-## Setup (one time, easiest from a computer)
+## Daily schedule (Toronto time, winter)
 
-1. **Create a private GitHub repo** (e.g. `ukrainiancanada-autopost`) and upload all these files,
-   keeping the `.github/workflows` folder structure.
-2. **Get your Telegram user ID:** message @userinfobot in Telegram; it replies with your numeric ID.
-3. **Open a chat with your bot** and press Start (otherwise it can't message you).
-4. **Make the bot a channel admin** of @UkrainianCanada with "Post messages" on.
-5. **Add secrets:** repo → Settings → Secrets and variables → Actions → New repository secret:
-   - `ANTHROPIC_API_KEY` – from console.anthropic.com
-   - `TELEGRAM_BOT_TOKEN` – from @BotFather
-   - `TELEGRAM_ADMIN_ID` – your numeric ID from step 2. For several approvers, separate IDs with commas: `456360947,123456789`
-6. **Test:** Actions tab → "Draft posts" → Run workflow. Drafts should arrive in Telegram
-   within a minute. Tap ✅ on one, then run "Publish approved posts" by hand to post right away.
+| Time | Draft |
+|---|---|
+| 6:30 | 🗞 Morning digest: yesterday's news, regions, Ukrainian community, what happens today, a referral link |
+| 8:30 | 📅 Цей день в історії Канади: an event or a person on today's date (alternating) |
+| 9:00, 12:00, 15:00, 18:00, 21:00 | 📰 News post (Ukrainian-community stories first) |
+| 11:30 | 🍁 Історія Канади long-read (Sundays: a Ukrainian-Canadian story) |
+| every 5 min, 6:00-midnight | Publisher: posts what was approved; drafts not tapped expire after 24 hours |
 
-## Ukrainian community news
+GitHub schedules run in UTC, so from March to November (daylight time) everything runs an hour later in
+Toronto unless the `cron:` lines are adjusted. Scheduled runs can be a few minutes late when GitHub is busy.
 
-Stories that mention Ukraine or Ukrainians in Canadian feeds, plus everything from New Pathway and UCC Manitoba,
-are always passed to the news picker (even when older than the newest 8 of a feed) and come first:
-church events or incidents, organizations, newcomers. The morning digest has a "🇺🇦 Українська громада"
-section when there are such stories.
+## What each post looks like
 
-## Morning digest
+**News.** Claude picks the most relevant story from the feeds, reads the full article and writes 2-3 short
+paragraphs (what happened, key details, why it matters for Ukrainians in Canada), then a second "copy editor"
+pass checks the Ukrainian and the facts. The post ends with the source link; Telegram shows the article's
+picture.
 
-Every morning at 6:30 Toronto time you get a "🗞 Головне за вчора" draft: the 3-5 most important Canadian
-stories from yesterday, 1-2 stories from 3-4 provinces or territories (rotating, so every region gets
-featured over the week), and "📌 Сьогодні": up to 3 things the news says happen today (a strike starting,
-a deadline, a vote). That section is left out when the news mentions nothing for today. A key phrase in each
-item links to the source article, outlets are mixed (CBC, Global News, Postmedia papers), and the post ends
-with "За матеріалами: ...".
+**Ukrainian community.** Stories in the Canadian feeds that mention Ukraine or Ukrainians, plus everything from
+New Pathway and UCC Manitoba, are always passed to the picker (even when older than a feed's newest 8) and get
+top priority: churches, organizations, events, newcomers, incidents such as vandalism at a church.
 
-News drafts come at 9:00, 12:00, 15:00, 18:00 and 21:00; "This day" at 8:30; the history story at 11:30.
+**Morning digest** ("🗞 Головне за вчора"): the 3-5 most important national stories from yesterday; 1-2
+stories from 3-4 provinces or territories (rotating so every region is featured over the week);
+"🇺🇦 Українська громада" when there is community news; "📌 Сьогодні": up to 3 things the news says happen
+today (left out when there are none). A key phrase in each item links to the source, outlets are mixed
+(CBC, Global News, Postmedia papers), and it ends with "За матеріалами: ..." and a referral link.
+
+**History long-reads.** Written as Telegraph articles (telegra.ph, open inside Telegram with Instant View),
+with photo, subheadings and the source credited at the end. The channel gets a teaser with one bold
+"📖 Читати повністю →" link. A skipped or expired draft's Telegraph page is blanked.
+- 📅 *Цей день*: people from the Dictionary of Canadian Biography; events from Wikipedia "On this day"
+  (Canadian entries), because the Canadian sites with dated events block automated access.
+- 🍁 *Історія Канади*: Canadian sources first (`HISTORY_SOURCES`: CBC Archives, Library and Archives Canada,
+  Ontario Heritage Trust, Quebec Anglophone Heritage Network, Manitoba Historical Society, Encyclopedia of
+  Saskatchewan, RETROactive Alberta). Wikipedia (`WIKI_REGIONAL_TOPICS`) is the fallback and covers BC, the
+  Atlantic provinces and the North, whose history sites can't be read automatically.
+- Sundays: Ukrainian-Canadian stories (`UKRAINIAN_CANADIAN_SOURCES`; fallback `UKRAINIAN_CANADIAN_TOPICS`).
+  For one on another day: Actions → "Draft history story" → tick "Ukrainian-Canadian story".
+- Photos: the source's own picture if it is a real photo (logos and banners are rejected), otherwise a freely
+  licensed photo of the subject from Wikimedia Commons.
+
+**Language.** Every post follows the style guide in `prompts.py` (literary Ukrainian, no russianisms or
+calques, Canadian terms, original English names in brackets on first mention, Ukrainian typography) and goes
+through the copy-edit pass. Still read drafts before approving; add recurring mistakes to the style guide.
 
 ## Referral links
 
-The morning digest ends with one referral link from `REFERRALS` in `config.py`, a different one each day.
-An optional line under it can be set in `REFERRAL_DISCLOSURE`. News posts get a referral line only when an
-offer clearly fits the story (e.g. interest rates -> investing, money to Ukraine -> Wise), never on tragedies,
-war or crime, and at most `REFERRALS_IN_NEWS_PER_DAY` per day. History posts never carry referral links.
+The morning digest ends with one link from `REFERRALS` in `config.py`, a different one each day. A news post
+gets one only when an offer clearly fits the story (e.g. interest rates → investing, money to Ukraine → Wise),
+never on tragedies, war or crime, and at most `REFERRALS_IN_NEWS_PER_DAY` (1) per day. History posts never
+carry referral links. `REFERRAL_DISCLOSURE` can add a line under the link (empty = none). Update the bonus
+amounts in `REFERRALS` when an offer changes.
+
+## Approvers and publishing
+
+- Everyone listed in the `TELEGRAM_ADMIN_ID` secret gets each draft; whoever taps first decides, and every
+  copy then shows "✅ Published by …" or "❌ Skipped by …".
+- To publish an approved post right away: Actions → "Publish approved posts" → Run workflow.
+- **Publishing without approval** is off. In `config.py`, `AUTO_PUBLISH` can switch it on per kind of post
+  (news, digest, thisday, history): such drafts show "⏱ Опублікується автоматично о …" and go out after
+  `AUTO_PUBLISH_AFTER_MINUTES` (60) unless someone taps ❌.
 
 ## Facebook Page
 
-When the secrets `FACEBOOK_PAGE_ID` and `FACEBOOK_PAGE_TOKEN` are set, every post you approve is also
-published to the Facebook Page (as plain text with the link card; long-reads link to the Telegraph article).
-Without them, only Telegram is used. If Facebook fails, the Telegram post still goes out and the draft says
-"Facebook failed".
+When the secrets `FACEBOOK_PAGE_ID` and `FACEBOOK_PAGE_TOKEN` are set, every published post also goes to the
+Facebook Page as plain text with a link card (long-reads link to the Telegraph article). If Facebook fails,
+the Telegram post still goes out and the draft says "Facebook failed".
 
-## Publishing without approval
+Getting the keys (you must be an admin of the Page):
+1. developers.facebook.com → My Apps → Create App → Other → Business.
+2. Tools → Graph API Explorer: select the app; add permissions `pages_show_list`, `pages_read_engagement`,
+   `pages_manage_posts`; Generate Access Token; choose the Page.
+3. ⓘ next to the token → Open in Access Token Tool → Extend Access Token; copy it.
+4. In Graph API Explorer, paste the extended token and request `me/accounts`; copy the Page's `id` and
+   `access_token` (it doesn't expire).
+5. Save them as the secrets `FACEBOOK_PAGE_ID` and `FACEBOOK_PAGE_TOKEN`.
+If posts don't appear publicly, switch the Meta app to Live (it asks for a privacy policy URL).
 
-Off by default. In `config.py`, `AUTO_PUBLISH` switches it on per kind of post (news, digest, thisday,
-history): the draft then goes out automatically after `AUTO_PUBLISH_AFTER_MINUTES` (60) unless an approver
-taps ❌, and the draft says when it will be published.
+## Setup from scratch
+
+1. GitHub repo with these files (keep the `.github/workflows` folder). Public is fine: no keys are stored in
+   files, and GitHub Actions is free for public repos.
+2. Telegram: create a bot with @BotFather; each approver opens the bot and presses Start; make the bot an
+   admin of the channel with "Post messages". Approver IDs: message @userinfobot.
+3. Secrets (Settings → Secrets and variables → Actions):
+   - `ANTHROPIC_API_KEY`: from console.anthropic.com (API usage is billed separately from a Claude plan)
+   - `TELEGRAM_BOT_TOKEN`: from @BotFather
+   - `TELEGRAM_ADMIN_ID`: approver IDs separated by commas, e.g. `456360947,522929986`
+   - `TELEGRAPH_TOKEN`: Telegraph account key (without it, each run uses a temporary account)
+   - optional: `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_TOKEN`
+4. Test: Actions → "Draft posts" → Run workflow; a draft should arrive in Telegram within a minute.
 
 ## Where things are
 
 | What you want to change | Where |
 |---|---|
-| Channel, news sources, history sources, referral links, model, limits | `config.py` |
+| Channel, news sources, history sources, referral links, auto-publish, model, limits | `config.py` |
 | Tone, Ukrainian style guide, what to pick, length and structure of each post | `prompts.py` |
 | Run times (UTC: Toronto + 5 hours in winter, + 4 in summer) | `cron:` lines in `.github/workflows/*.yml` |
-| API keys, bot token, approver IDs, Facebook keys | GitHub → Settings → Secrets and variables → Actions |
+| API keys, bot token, approver IDs, Telegraph and Facebook keys | GitHub → Settings → Secrets and variables → Actions |
 | The program itself | `bot.py` (no settings inside) |
-| What the bot remembers (seen stories, pending drafts) | `state.json` (updated automatically; don't edit by hand) |
+| What the bot remembers (seen stories, pending drafts, rotation) | `state.json` (automatic; don't edit by hand) |
 
-Every workflow can also be started by hand: Actions → pick it → Run workflow.
+Workflows: `draft.yml` (news), `digest.yml`, `thisday.yml`, `history.yml`, `approve.yml` (publisher). Each can
+be started by hand: Actions → pick it → Run workflow. `save_state.sh` saves `state.json` after every run and
+merges safely when two runs finish at the same time.
 
 ## Notes
 
-- Posts are summaries in Claude's own words with a link to the source; Telegram shows the
-  article's preview image from the link.
+- Sources that couldn't be used: National Post (no readable feed for automated requests), The Canadian
+  Encyclopedia (blocks automated access), Canada's History (needs JavaScript), several provincial history
+  sites (BC, Atlantic, North).
 - If a feed breaks, the run log shows `FEED ERROR` and the other feeds still work.
-- `state.json` remembers which stories were already offered and is updated automatically.
-- GitHub pauses scheduled workflows in a repo with no activity for 60 days; if that happens,
-  re-enable them in the Actions tab.
-
-## Canadian history
-
-History posts are long-reads on Telegraph (telegra.ph), which open inside Telegram with Instant View.
-The channel gets a teaser with a photo and a "📖 Читати повністю" link. The bot creates its own Telegraph
-account automatically (token kept in `state.json`); a skipped or expired draft's page is blanked.
-
-Two extra drafts a day, approved the same way. Canadian sources come first; Wikipedia is only a
-fallback. Posts show a photo above the text: the source's own picture, or, if it has no real photo
-(only a logo or banner), a freely licensed photo of the subject from Wikimedia Commons.
-
-- **📅 Цей день в історії Канади** (8:30 Toronto time): alternates between an event that happened on
-  today's date and a person born or died on it. People come from the Dictionary of Canadian Biography;
-  events from Wikipedia "On this day" (Canadian entries), because the Canadian sites with dated events
-  block automated access.
-- **🍁 Історія Канади** (11:30): a story chosen from `HISTORY_SOURCES` in `config.py`: CBC Archives,
-  Library and Archives Canada, Ontario Heritage Trust, Quebec Anglophone Heritage Network, Manitoba
-  Historical Society, Encyclopedia of Saskatchewan, RETROactive Alberta (fallback and coverage for BC,
-  the Atlantic provinces and the North: `WIKI_REGIONAL_TOPICS`).
-- **Sundays:** a Ukrainian-Canadian story from `UKRAINIAN_CANADIAN_SOURCES` (Library and Archives
-  Canada, RETROactive Alberta, the Internment Recognition Fund; fallback: `UKRAINIAN_CANADIAN_TOPICS`).
-  To get one on another day: Actions → "Draft history story" → tick "Ukrainian-Canadian story".
+- Costs: Claude API about $20-25/month with Sonnet for everything (see the Anthropic console);
+  GitHub Actions free (public repo); Telegram and Telegraph free.
+- GitHub pauses scheduled workflows in a repo with no activity for 60 days; the bot's own state commits
+  normally keep it active, but if it happens, re-enable them in the Actions tab.
