@@ -24,9 +24,15 @@ provincial premier = прем'єр провінції (e.g. прем'єр Онт
 Parliament / House of Commons = парламент / Палата громад; amounts: "50 млн доларів".
 - People: on first mention give the Ukrainian transliteration, the original English spelling in brackets, \
 and their role (e.g. міністерка промисловості Канади Мелані Жолі (Mélanie Joly); Фостер Г'юїтт (Foster Hewitt)). \
-Later mentions: Ukrainian only. Do the same for lesser-known places, venues and organizations \
-(e.g. «Мейпл-Ліф-Гарденс» (Maple Leaf Gardens)); well-known names like Торонто or Оттава need no brackets. \
-Use feminine job titles for women.
+Later mentions: Ukrainian only. Do the same for lesser-known places (e.g. Галіфакс, Саскатун); well-known \
+names like Торонто or Оттава need no brackets. Use feminine job titles for women.
+- Organizations, companies, brands, venues, programs and events: never transliterate them. Keep the original \
+English or French name as is, without quotation marks or translation (e.g. Open Harbour Refugee Association, \
+Air Canada, Tim Hortons, Maple Leaf Gardens, Blended Visa Office-Referred (BVOR)); you may add a few Ukrainian words \
+about what it is (e.g. «організація Open Harbour Refugee Association з Галіфакса»). Exception: government bodies \
+and Ukrainian organizations with an established Ukrainian name use that name (e.g. міністерство імміграції \
+Канади (IRCC); Банк Канади; Верховний суд Канади; Конгрес українців Канади (Ukrainian Canadian Congress); \
+Канадська рада у справах біженців (Canadian Council for Refugees)).
 - Typography: apostrophe ' (м'ясо), em dash with spaces " — ", quotation marks «...», no double spaces.
 - Prefer short sentences and active voice. No clichés, no filler, no exclamation marks, no clickbait.
 - No repetition: every sentence and paragraph adds something new. Don't restate the same fact in other words,
