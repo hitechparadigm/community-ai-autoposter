@@ -250,7 +250,13 @@ def ask_claude(prompt, source=None, schema=None):
     if schema:  # structured answer through tool use: always well-formed JSON, no parsing guesswork
         body["tools"] = [{"name": "answer", "description": "Return the answer in this structure.",
                           "input_schema": schema}]
-        body["tool_choice"] = {"type": "tool", "name": "answer"}
+        body["tool_choice"] = {"type": "auto"}  # this model doesn't allow forcing a tool; the prompt asks for it
+        content_last = body["messages"][0]["content"]
+        note = "\n\nGive your answer by calling the `answer` tool."
+        if isinstance(content_last, list):
+            content_last[-1]["text"] += note
+        else:
+            body["messages"][0]["content"] = content_last + note
     raw = http(
         "https://api.anthropic.com/v1/messages",
         body,
@@ -268,7 +274,7 @@ def ask_claude(prompt, source=None, schema=None):
             if b.get("type") == "tool_use":
                 data = b.get("input", {})
                 return json.dumps(data["ids"] if list(data) == ["ids"] else data, ensure_ascii=False)
-        return ""
+        print("(no tool call in the answer; reading the text instead)")  # the text parsers still work
     return "".join(b.get("text", "") for b in resp.get("content", []) if b.get("type") == "text")
 
 
