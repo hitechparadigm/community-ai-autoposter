@@ -29,6 +29,9 @@ Any other community can run its own channel by changing two settings files (see
   fixes it with its own notes and checks again, flagging anything left for the human editors. Output that comes
   back cut off or garbled is rejected and regenerated. A Ukrainian style guide (no russianisms or calques,
   Canadian terminology, typography) is part of every prompt.
+- **Token-efficient.** The source article is sent once as a cached block and reused by the writer, copy editor,
+  reviewer and fixer (prompt caching), and headline lists for story picking are trimmed. Each run's log ends with
+  a "Claude usage" line (input, cache write, cache read, output tokens).
 - **Source-grounded content.** Posts use only facts from the fetched article; history prefers Canadian
   institutions (Dictionary of Canadian Biography, Library and Archives Canada, CBC Archives, provincial
   societies), with Wikipedia only as a fallback. Images are checked to be real photos (not logos or banners),
@@ -285,8 +288,8 @@ merges safely when two runs finish at the same time.
   Encyclopedia (blocks automated access), Canada's History (needs JavaScript), several provincial history
   sites (BC, Atlantic, North).
 - If a feed breaks, the run log shows `FEED ERROR` and the other feeds still work.
-- Costs: Claude API about $25-35/month with Sonnet for everything, including the copy-edit and reviewer passes
-  (see the Anthropic console);
+- Costs: Claude API roughly $18-25/month with Sonnet for everything, including the copy-edit and reviewer passes,
+  thanks to prompt caching (see the Anthropic console);
   GitHub Actions free (public repo); cron-job.org, Telegram and Telegraph free.
 - GitHub pauses scheduled workflows in a repo with no activity for 60 days; the bot's own state commits
   normally keep it active, but if it happens, re-enable them in the Actions tab.
