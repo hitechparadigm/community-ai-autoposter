@@ -71,9 +71,8 @@ DRAFT_EXPIRY_HOURS = 24
 DIGEST_NATIONAL = "3-5"
 DIGEST_REGIONS = "3-4"
 
-# Referral links: one per morning digest, in rotation: (default text, link, what it is).
-# Once a month (python bot.py referrals) the bot reads each offer page and updates the text with the
-# current bonus; the default text is used until then, or when a page can't be read.
+# Referral links: one per morning digest, in rotation: (text, link, what it is).
+# Update the amounts here when an offer changes.
 REFERRALS = [
     ("📈 Почніть інвестувати з Wealthsimple і отримайте $25", "https://www.wealthsimple.com/invite/L4FYWG",
      "Wealthsimple investing and savings account"),

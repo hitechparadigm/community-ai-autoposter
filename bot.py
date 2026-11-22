@@ -637,7 +637,6 @@ def cmd_digest():
     refs = getattr(config, "REFERRALS", [])
     if refs:  # one referral link per digest, rotating
         label, link = refs[s.get("ref_index", 0) % len(refs)][:2]
-        label = s.get("ref_labels", {}).get(link) or label  # current offer, from the monthly check
         s["ref_index"] = s.get("ref_index", 0) + 1
         parts += ["", f"<a href=\"{e(link, quote=True)}\">{e(label, quote=False)}</a>"]
         if config.REFERRAL_DISCLOSURE:
