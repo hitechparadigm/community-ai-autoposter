@@ -23,10 +23,12 @@ Any other community can run its own channel by changing two settings files (see
 
 ### Engineering highlights
 
-- **Writer, copy editor, reviewer.** Claude (Anthropic's AI model, used through the Claude API) writes, then a separate
-  "copy editor" pass checks language and verifies every
-  name, number and date against the source. A Ukrainian style guide (no russianisms or calques, Canadian
-  terminology, typography) is part of every prompt.
+- **Writer, copy editor, reviewer.** Claude (Anthropic's AI model, used through the Claude API) writes; a separate
+  "copy editor" pass checks language and verifies every name, number and date against the source; then a
+  "reviewer" agent checks the result against the source (on topic, facts, repetition, completeness, language),
+  fixes it with its own notes and checks again, flagging anything left for the human editors. Output that comes
+  back cut off or garbled is rejected and regenerated. A Ukrainian style guide (no russianisms or calques,
+  Canadian terminology, typography) is part of every prompt.
 - **Source-grounded content.** Posts use only facts from the fetched article; history prefers Canadian
   institutions (Dictionary of Canadian Biography, Library and Archives Canada, CBC Archives, provincial
   societies), with Wikipedia only as a fallback. Images are checked to be real photos (not logos or banners),
@@ -152,9 +154,10 @@ runs late; a job that is late by less than `CATCH_UP_HOURS` still runs.
 ## What each post looks like
 
 **News.** Claude picks the most relevant story from the feeds, reads the full article and writes 2-3 short
-paragraphs (what happened, key details, why it matters for Ukrainians in Canada), then a second "copy editor"
-pass checks the Ukrainian and the facts. The post ends with the source link; Telegram shows the article's
-picture.
+paragraphs (what happened, key details, why it matters for Ukrainians in Canada). A "copy editor" pass checks the
+Ukrainian and the facts, and the reviewer agent checks the post against the article (see below). The post ends
+with the source link; Telegram shows the article's picture. When an offer clearly fits the story, one referral
+line can be added (see Referral links).
 
 **Ukrainian community.** Stories in the Canadian feeds that mention Ukraine or Ukrainians, plus everything from
 New Pathway and UCC Manitoba, are always passed to the picker (even when older than a feed's newest 8) and get
@@ -180,7 +183,10 @@ with photo, subheadings and the source credited at the end. The channel gets a t
   `COMMUNITY_HISTORY_TOPICS`). For one on another day: Actions → "Draft history story" → tick
   "Community-history story".
 - To fix a published long-read: Actions → "Rewrite a published long-read" → give the page (the part after
-  `telegra.ph/`) and a source (URL or `wiki:Title`). The article is rewritten in place; the link stays the same.
+  `telegra.ph/`) and a source (URL or `wiki:Title`). The article is rewritten in place with the current
+  prompts, copy edit, reviewer and photo search; the link stays the same. Only the Telegraph article changes:
+  the teaser already posted in the channel can't be edited by the bot. The run's log shows the new title,
+  teaser and anything the reviewer still flagged.
 - Photos: the source's own picture if it is a real photo (logos and banners are rejected), otherwise a freely
   licensed photo of the subject from Wikimedia Commons.
 
@@ -188,11 +194,14 @@ with photo, subheadings and the source credited at the end. The channel gets a t
 against its source: on topic (not mainly about something the source only mentions), every fact supported,
 no repetition or padding, no remarks about sources, complete, good Ukrainian. If it finds problems, the bot fixes
 the draft with those notes and checks again; anything still wrong is listed under the draft as
-"⚠️ Перевірка знайшла проблеми…" (shown to approvers only, never published).
+"⚠️ Перевірка знайшла проблеми, перегляньте уважно:" with the problems in Ukrainian (shown to approvers only,
+never published). It adds about 1-3 Claude calls per post. The digest is not reviewed this way (it is built from
+headlines and summaries only).
 
 **Language.** Every post follows the style guide in `prompts.py` (literary Ukrainian, no russianisms or
 calques, Canadian terms, original English names in brackets on first mention, Ukrainian typography) and goes
-through the copy-edit pass. Still read drafts before approving; add recurring mistakes to the style guide.
+through the copy-edit pass and the reviewer. Look-alike Latin letters inside Ukrainian words (a common AI slip)
+are corrected automatically. Still read drafts before approving; add recurring mistakes to the style guide.
 
 ## Referral links
 
@@ -206,6 +215,10 @@ amounts in `REFERRALS` when an offer changes.
 
 - Everyone listed in the `TELEGRAM_ADMIN_ID` secret gets each draft; whoever taps first decides, and every
   copy then shows "✅ Published by …" or "❌ Skipped by …".
+- A draft may carry notes for approvers only (never published): "⚠️ Перевірка знайшла проблеми…" from the
+  reviewer, or "⏱ Опублікується автоматично о …" when auto-publish is on.
+- If taps seem to do nothing (buttons stay, nothing is published), another program may be using the bot's
+  token: replace it in @BotFather (/mybots → API Token → Revoke) and update the `TELEGRAM_BOT_TOKEN` secret.
 - To publish an approved post right away: Actions → "Publish approved posts" → Run workflow.
 - **Publishing without approval** is off. In `config.py`, `AUTO_PUBLISH` can switch it on per kind of post
   (news, digest, thisday, history): such drafts show "⏱ Опублікується автоматично о …" and go out after
@@ -272,7 +285,8 @@ merges safely when two runs finish at the same time.
   Encyclopedia (blocks automated access), Canada's History (needs JavaScript), several provincial history
   sites (BC, Atlantic, North).
 - If a feed breaks, the run log shows `FEED ERROR` and the other feeds still work.
-- Costs: Claude API about $20-25/month with Sonnet for everything (see the Anthropic console);
-  GitHub Actions free (public repo); Telegram and Telegraph free.
+- Costs: Claude API about $25-35/month with Sonnet for everything, including the copy-edit and reviewer passes
+  (see the Anthropic console);
+  GitHub Actions free (public repo); cron-job.org, Telegram and Telegraph free.
 - GitHub pauses scheduled workflows in a repo with no activity for 60 days; the bot's own state commits
   normally keep it active, but if it happens, re-enable them in the Actions tab.
