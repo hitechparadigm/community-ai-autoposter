@@ -51,10 +51,25 @@
   .history h1, .thisday h1 { font-family: "PT Serif", Georgia, "DejaVu Serif", serif; font-weight: 700; }
   .community .tag { background: linear-gradient(90deg, #0057B7 0 50%, #FFD700 50% 100%); color: #fff;
                     text-shadow: 0 1px 3px rgba(0,0,0,.5); }
+
+  /* no photo: the text fills the card, with an embroidery-style ornament band */
+  .ornament { display: none; }
+  .nophoto .ornament { display: block; position: absolute; left: 0; right: 0; top: 160px; height: 72px; opacity: .5;
+    background:
+      linear-gradient(45deg, transparent 37%, var(--yellow) 37% 63%, transparent 63%) 0 0 / 48px 48px,
+      linear-gradient(-45deg, transparent 37%, var(--yellow) 37% 63%, transparent 63%) 0 0 / 48px 48px,
+      linear-gradient(45deg, transparent 37%, #e0423a 37% 63%, transparent 63%) 24px 24px / 48px 48px,
+      linear-gradient(-45deg, transparent 37%, #e0423a 37% 63%, transparent 63%) 24px 24px / 48px 48px; }
+  .nophoto .bottom { top: 270px; display: flex; flex-direction: column; }
+  .nophoto .main { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+  .nophoto h1 { font-size: 98px; line-height: 1.08; }
+  .nophoto.digest h1 { font-size: 76px; }
+  .nophoto .tag { font-size: 32px; }
 </style>
 </head>
 <body>
-<div class="card {{kind}}">
+<div class="card {{kind}} {{layout}}">
+  <div class="ornament"></div>
   {{background}}
   <div class="shade"></div>
   <div class="top">
@@ -62,10 +77,12 @@
     <div class="date">{{date}}</div>
   </div>
   <div class="bottom">
-    {{bigdate}}
-    {{tag}}
-    <h1 id="title">{{title}}</h1>
-    {{items}}
+    <div class="main">
+      {{bigdate}}
+      {{tag}}
+      <h1 id="title">{{title}}</h1>
+      {{items}}
+    </div>
     <div class="footer"><span>{{handle}}</span><span>{{handle2}}</span></div>
   </div>
   {{credit}}
@@ -76,7 +93,10 @@
     const h1 = document.getElementById('title'), bottom = document.querySelector('.bottom');
     let size = parseFloat(getComputedStyle(h1).fontSize), li = document.querySelectorAll('li');
     let liSize = li.length ? parseFloat(getComputedStyle(li[0]).fontSize) : 0;
-    while (bottom.getBoundingClientRect().top < 150 && size > 34) {
+    const main = document.querySelector('.main'), nophoto = document.querySelector('.nophoto');
+    const tooBig = () => nophoto ? main.scrollHeight > main.clientHeight + 1
+                                 : bottom.getBoundingClientRect().top < 150;
+    while (tooBig() && size > 34) {
       size -= 2; h1.style.fontSize = size + 'px';
       if (liSize > 26) { liSize -= 1; li.forEach(x => x.style.fontSize = liSize + 'px'); }
     }
