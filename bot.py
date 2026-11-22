@@ -500,6 +500,11 @@ def matching_referral(s, post):
 
 # ---------- daily digest ----------
 
+def visible_length(text):
+    """Length of a Telegram HTML message as Telegram counts it: tags removed, entities decoded."""
+    return len(html.unescape(re.sub(r"<[^>]+>", "", text)))
+
+
 def outlet(source):
     """Media outlet from a feed name, e.g. "CBC Manitoba" -> "CBC" (prefixes in config.OUTLET_PREFIXES)."""
     for name in config.OUTLET_PREFIXES:
@@ -538,14 +543,13 @@ def cmd_digest():
 
     e = html.escape
 
-    used = []
+    used = {}  # line -> outlet
 
     def line(entry):
         try:
             it = items[int(entry["id"])]
         except (KeyError, ValueError, IndexError, TypeError):
             return ""
-        used.append(outlet(it["source"]))
         text = entry.get("text", "")
         link = f'<a href="{e(it["url"], quote=True)}">'
         m = re.search(r"\[([^\]]+)\]", text)
@@ -554,34 +558,64 @@ def cmd_digest():
         if not m:
             return ""
         before, phrase, after = text[:m.start()], m.group(1), text[m.end():].replace("[", "").replace("]", "")
-        return f"• {e(before, quote=False)}{link}{e(phrase, quote=False)}</a>{e(after, quote=False)}"
+        result = f"• {e(before, quote=False)}{link}{e(phrase, quote=False)}</a>{e(after, quote=False)}"
+        used[result] = outlet(it["source"])
+        return result
 
     y = d - timedelta(days=1)
-    parts = [f"🗞 <b>{config.LABELS['digest_title']} · {y.day} {config.MONTHS[y.month - 1]}</b>", "",
-             f"<b>{config.LABELS['digest_national']}</b>"]
-    parts += [l for l in map(line, digest["national"]) if l]
+    national = [l for l in map(line, digest["national"]) if l]
+    regions = []
     for reg in digest.get("regions", []):
         lines = [l for l in map(line, reg.get("items", [])) if l]
         if lines:
-            parts += ["", f"📍 <b>{e(reg.get('region', ''), quote=False)}</b>"] + lines
-            s["digest_regions"][reg.get("region_en") or reg.get("region", "")] = d.strftime("%Y-%m-%d")
+            regions.append([reg, lines])
     community_lines = [l for l in map(line, digest.get("community") or []) if l]
-    if community_lines:
-        parts += ["", f"<b>{config.LABELS['digest_community']}</b>"] + community_lines
     today_lines = [l for l in map(line, digest.get("today") or []) if l]
-    if today_lines:
-        parts += ["", f"📌 <b>{config.LABELS['digest_today']}, {d.day} {config.MONTHS[d.month - 1]}</b>"] + today_lines
-    outlets = list(dict.fromkeys(used))
-    parts += ["", f"<i>{config.LABELS['digest_sources']}: {e(', '.join(outlets), quote=False)}</i>",
-              f"<a href=\"{config.TELEGRAPH_AUTHOR_URL}\">{e(config.TELEGRAPH_AUTHOR, quote=False)}</a>"]
+
+    def build():
+        parts = [f"🗞 <b>{config.LABELS['digest_title']} · {y.day} {config.MONTHS[y.month - 1]}</b>", "",
+                 f"<b>{config.LABELS['digest_national']}</b>"] + national
+        for reg, lines in regions:
+            parts += ["", f"📍 <b>{e(reg.get('region', ''), quote=False)}</b>"] + lines
+        if community_lines:
+            parts += ["", f"<b>{config.LABELS['digest_community']}</b>"] + community_lines
+        if today_lines:
+            parts += ["", f"📌 <b>{config.LABELS['digest_today']}, {d.day} {config.MONTHS[d.month - 1]}</b>"] + today_lines
+        kept = national + [l for _, ls in regions for l in ls] + community_lines + today_lines
+        outlets = list(dict.fromkeys(used[l] for l in kept if l in used))
+        parts += ["", f"<i>{config.LABELS['digest_sources']}: {e(', '.join(outlets), quote=False)}</i>",
+                  f"<a href=\"{config.TELEGRAPH_AUTHOR_URL}\">{e(config.TELEGRAPH_AUTHOR, quote=False)}</a>"]
+        if referral:
+            parts += ["", referral]
+        return "\n".join(parts)
+
     refs = getattr(config, "REFERRALS", [])
+    referral = ""
     if refs:  # one referral link per digest, rotating
         label, link = refs[s.get("ref_index", 0) % len(refs)][:2]
         s["ref_index"] = s.get("ref_index", 0) + 1
-        parts += ["", f"<a href=\"{e(link, quote=True)}\">{e(label, quote=False)}</a>"]
+        referral = f"<a href=\"{e(link, quote=True)}\">{e(label, quote=False)}</a>"
         if config.REFERRAL_DISCLOSURE:
-            parts.append(f"<i>{e(config.REFERRAL_DISCLOSURE, quote=False)}</i>")
-    text = "\n".join(parts)[:4000]
+            referral += f"\n<i>{e(config.REFERRAL_DISCLOSURE, quote=False)}</i>"
+
+    # Telegram counts only the visible text (max 4096). If too long, drop regional items from the end,
+    # then whole regions, then extra national items - never the ending (sources, channel, referral).
+    while visible_length(build()) > 4000:
+        if regions and len(regions[-1][1]) > 1:
+            regions[-1][1].pop()
+        elif regions:
+            regions.pop()
+        elif len(national) > 3:
+            national.pop()
+        elif today_lines:
+            today_lines.pop()
+        elif community_lines:
+            community_lines.pop()
+        else:
+            break
+    text = build()
+    for reg, _ in regions:
+        s["digest_regions"][reg.get("region_en") or reg.get("region", "")] = d.strftime("%Y-%m-%d")
     try:
         top = items[int(digest["national"][0]["id"])]["url"]
     except (KeyError, ValueError, IndexError, TypeError):
