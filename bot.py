@@ -238,6 +238,27 @@ def parse_picks(text):
     return [int(i) for i in ids if isinstance(i, (int, str)) and str(i).isdigit()]
 
 
+def edit_ok(original, edited):
+    """Accept the copy editor's version only if it is complete: not much shorter than the original,
+    ending like a finished sentence, and without broken words (Latin letters glued to Cyrillic ones)."""
+    if not edited:
+        return False
+    for k, v in original.items():
+        if not isinstance(v, str) or k == "image_query":
+            continue
+        new = edited.get(k, "")
+        if not isinstance(new, str) or len(new) < 0.7 * len(v):
+            print(f"Copy edit rejected: '{k}' came back cut short")
+            return False
+        if re.search(r"[а-яіїєґ][a-z]|[a-z][а-яіїєґ]", new, re.I):
+            print(f"Copy edit rejected: broken word in '{k}'")
+            return False
+        if k in ("body", "teaser") and not re.search(r"[.!?…»)\"]\s*$", new.strip()):
+            print(f"Copy edit rejected: '{k}' doesn't end with a full sentence")
+            return False
+    return True
+
+
 def parse_post(text, keys=("title", "body")):
     post = _json(text, "{", "}")
     if isinstance(post, dict) and all(post.get(k) for k in keys):
@@ -441,7 +462,7 @@ def cmd_draft():
         edited = parse_post(ask_claude(EDIT_PROMPT.format(
             draft=json.dumps(post, ensure_ascii=False), title=it["title"],
             summary=it["summary"], article=article or "(not available)")))
-        if edited:
+        if edit_ok(post, edited):
             post = edited
         else:
             print("Copy edit failed; using the first draft")
@@ -808,7 +829,7 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
     edited = parse_post(ask_claude(EDIT_PROMPT.format(
         draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False),
         title=topic, summary="", article=article)), keys)
-    post = edited or post
+    post = edited if edit_ok(post, edited) else post
     credit = source_name
     if not image:  # the source has no usable photo: look for a freely licensed one
         image = commons_image(query)
@@ -1131,7 +1152,7 @@ def cmd_rewrite(path, source):
     edited = parse_post(ask_claude(EDIT_PROMPT.format(
         draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False),
         title=topic, summary="", article=article)), keys)
-    post = edited or post
+    post = edited if edit_ok(post, edited) else post
     credit = source_name
     if not image:
         image, credit = commons_image(query), "Wikimedia Commons"
