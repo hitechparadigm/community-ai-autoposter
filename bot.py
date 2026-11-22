@@ -98,6 +98,7 @@ def merge_state(base, ours, theirs):
     out["history_done"] = done + [x for x in ours.get("history_done", []) if x not in done]
     out["tg_offset"] = max(theirs.get("tg_offset", 0), ours.get("tg_offset", 0))
     out["digest_regions"] = {**out.get("digest_regions", {}), **ours.get("digest_regions", {})}
+    out["ref_index"] = max(theirs.get("ref_index", 0), ours.get("ref_index", 0))
     if ours.get("thisday_last"):
         out["thisday_last"] = ours["thisday_last"]
     if ours.get("telegraph_token") and not out.get("telegraph_token"):
@@ -631,6 +632,12 @@ def cmd_digest():
     outlets = list(dict.fromkeys(used))
     parts += ["", f"<i>За матеріалами: {e(', '.join(outlets), quote=False)}</i>",
               f"<a href=\"{config.TELEGRAPH_AUTHOR_URL}\">{e(config.TELEGRAPH_AUTHOR, quote=False)}</a>"]
+    refs = getattr(config, "REFERRALS", [])
+    if refs:  # one referral link per digest, rotating, always with the disclosure
+        label, link = refs[s.get("ref_index", 0) % len(refs)]
+        s["ref_index"] = s.get("ref_index", 0) + 1
+        parts += ["", f"<a href=\"{e(link, quote=True)}\">{e(label, quote=False)}</a>",
+                  f"<i>{e(config.REFERRAL_DISCLOSURE, quote=False)}</i>"]
     text = "\n".join(parts)[:4000]
     try:
         top = items[int(digest["national"][0]["id"])]["url"]

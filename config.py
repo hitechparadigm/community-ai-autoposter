@@ -71,6 +71,18 @@ DRAFT_EXPIRY_HOURS = 24
 DIGEST_NATIONAL = "3-5"
 DIGEST_REGIONS = "3-4"
 
+# Referral links: one per morning digest, in rotation, with a disclosure line under it.
+# (text shown in the post, link). The link is put on the text. Keep wording factual: no promises.
+REFERRALS = [
+    ("📈 Інвестиції та заощадження з Wealthsimple", "https://www.wealthsimple.com/invite/L4FYWG"),
+    ("💳 Перевірте свій кредитний рейтинг", "https://bit.ly/my-credit-score"),
+    ("🏦 Банківський рахунок без щомісячної плати в Simplii Financial", "https://blue.mbsy.co/6svHvM"),
+    ("💸 Міжнародні грошові перекази з Wise", "https://bit.ly/3UYzy9r"),
+    ("📊 Інвестиційний рахунок у Questrade", "https://bit.ly/4dUdlWV"),
+    ("💳 Дізнайтеся свій кредитний рейтинг", "https://bit.ly/3cqN99x"),
+]
+REFERRAL_DISCLOSURE = "Реферальне посилання: ми можемо отримати винагороду. #affiliate"
+
 # Claude model used to pick, write and copy-edit posts (Sonnet 5.5)
 MODEL = "claude-sonnet-5-5"
 

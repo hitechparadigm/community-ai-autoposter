@@ -29,6 +29,12 @@ with "За матеріалами: ...".
 
 News drafts come at 9:00, 12:00, 15:00, 18:00 and 21:00; "This day" at 8:30; the history story at 11:30.
 
+## Referral links
+
+The morning digest ends with one referral link from `REFERRALS` in `config.py`, a different one each day,
+followed by the disclosure line (`REFERRAL_DISCLOSURE`), which Canadian advertising rules expect on every
+post with an affiliate link. Other posts carry no referral links.
+
 ## Facebook Page
 
 When the secrets `FACEBOOK_PAGE_ID` and `FACEBOOK_PAGE_TOKEN` are set, every post you approve is also
