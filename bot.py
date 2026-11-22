@@ -296,7 +296,7 @@ def parse_picks(text):
 # Latin letters that look like Cyrillic ones; models sometimes mix them into Ukrainian words
 HOMOGLYPHS = str.maketrans("aceiopxyACEHIKMOPTXB", "асеіорхуАСЕНІКМОРТХВ")
 # A real glitch: Cyrillic letters glued to a run of Latin letters, e.g. "машaccording"
-BROKEN_WORD = re.compile(r"[а-яіїєґ'][a-z]{3,}|[a-z]{3,}[а-яіїєґ]", re.I)
+BROKEN_WORD = re.compile(r"[а-яіїєґ][a-z]{3,}|[a-z]{3,}[а-яіїєґ]", re.I)
 
 
 def fix_homoglyphs(text):
