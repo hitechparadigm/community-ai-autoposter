@@ -189,8 +189,11 @@ and bureaucratic wording.
 постійне резидентство (PR); work permit = дозвіл на роботу; study permit = дозвіл на навчання; \
 provincial premier = прем'єр провінції (e.g. прем'єр Онтаріо); Prime Minister = прем'єр-міністр Канади; \
 Parliament / House of Commons = парламент / Палата громад; amounts: "50 млн доларів".
-- People: full Ukrainian transliteration of the name plus their role on first mention \
-(e.g. міністерка промисловості Канади Мелані Жолі). Use feminine job titles for women.
+- People: on first mention give the Ukrainian transliteration, the original English spelling in brackets, \
+and their role (e.g. міністерка промисловості Канади Мелані Жолі (Mélanie Joly); Фостер Г'юїтт (Foster Hewitt)). \
+Later mentions: Ukrainian only. Do the same for lesser-known places, venues and organizations \
+(e.g. «Мейпл-Ліф-Гарденс» (Maple Leaf Gardens)); well-known names like Торонто or Оттава need no brackets. \
+Use feminine job titles for women.
 - Typography: apostrophe ' (м'ясо), em dash with spaces " — ", quotation marks «...», no double spaces.
 - Prefer short sentences and active voice. No clichés, no filler, no exclamation marks, no clickbait."""
 
