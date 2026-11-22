@@ -90,7 +90,7 @@ HISTORY_SOURCES = [
      "pattern": r"esask\.uregina\.ca/entry/[a-z0-9_]+\.html$"},
     {"name": "RETROactive: Alberta's Historic Places", "region": "Alberta",
      "index": ["https://albertashistoricplaces.com/category/subject/albertas-history-subject/page/{n}/"],
-     "pages": 25, "pattern": r"albertashistoricplaces\.com/\d{4}/\d{2}/\d{2}/[a-z0-9-]+/$"},
+     "pages": 15, "pattern": r"albertashistoricplaces\.com/\d{4}/\d{2}/\d{2}/[a-z0-9-]+/$"},
 ]
 
 # Wikipedia fallback when the sources above give nothing usable, and the main coverage for regions

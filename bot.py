@@ -697,7 +697,10 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
     if not post:
         print("Could not write the history post")
         return False
-    query = post.get("image_query", "")
+    query = (post.get("image_query") or "").strip()
+    if not query and not image:  # ask separately: the English Wikipedia title of the main subject
+        query = ask_claude("Give the exact English Wikipedia article title for the main person, place or event "
+                           f"of this story: {topic}\nReply with the title only.").strip().strip('"')[:100]
     edited = parse_post(ask_claude(EDIT_PROMPT.format(
         draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False),
         title=topic, summary="", article=article)), keys)
