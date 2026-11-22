@@ -259,6 +259,17 @@ def edit_ok(original, edited):
     return True
 
 
+def write_long(prompt, keys, tries=2):
+    """Ask Claude for a post; if it comes back cut off or garbled, ask again."""
+    post = None
+    for _ in range(tries):
+        post = parse_post(ask_claude(prompt), keys)
+        if post and edit_ok({k: post[k] for k in keys}, post):
+            return post
+        print("Draft came back incomplete; asking again")
+    return post
+
+
 def parse_post(text, keys=("title", "body")):
     post = _json(text, "{", "}")
     if isinstance(post, dict) and all(post.get(k) for k in keys):
@@ -817,8 +828,8 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
     """Write a long-read, publish it on Telegraph, and send the teaser post as a draft."""
     kind = "thisday" if header == config.LABELS["thisday_header"] else "history"
     keys = ("title", "teaser", "body")
-    post = parse_post(ask_claude(HISTORY_WRITE_PROMPT.format(
-        topic=topic, source=source_name, article=article, opening=opening)), keys)
+    post = write_long(HISTORY_WRITE_PROMPT.format(
+        topic=topic, source=source_name, article=article, opening=opening), keys)
     if not post:
         print("Could not write the history post")
         return False
@@ -1144,8 +1155,8 @@ def cmd_rewrite(path, source):
         sys.exit(f"Not enough text at {source}")
     keys = ("title", "teaser", "body")
     topic = source[5:] if source.startswith("wiki:") else source
-    post = parse_post(ask_claude(HISTORY_WRITE_PROMPT.format(
-        topic=topic, source=source_name, article=article, opening="Open with a vivid detail or the key moment.")), keys)
+    post = write_long(HISTORY_WRITE_PROMPT.format(
+        topic=topic, source=source_name, article=article, opening="Open with a vivid detail or the key moment."), keys)
     if not post:
         sys.exit("Could not write the article")
     query = post.get("image_query", "")
@@ -1155,7 +1166,7 @@ def cmd_rewrite(path, source):
     post = edited if edit_ok(post, edited) else post
     credit = source_name
     if not image:
-        image, credit = commons_image(query), "Wikimedia Commons"
+        image, credit = commons_image(query) or commons_image(topic), "Wikimedia Commons"
     print(f"Photo: {image or 'none found'}")
     page = telegraph("editPage", s, path=path, title=post["title"][:256], author_name=config.TELEGRAPH_AUTHOR,
                      author_url=config.TELEGRAPH_AUTHOR_URL,
