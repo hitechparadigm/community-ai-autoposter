@@ -6,7 +6,8 @@
   "Komagata Maru incident",
   "http://www.biographi.ca/en/bio/rye_maria_susan_13E.html",
   "https://thediscoverblog.com/2017/08/22/sergeant-filip-konowal-vc/",
-  "https://qahn.org/article/dr-maude-abbott-1869-1940-pioneer-woman-doctor"
+  "https://qahn.org/article/dr-maude-abbott-1869-1940-pioneer-woman-doctor",
+  "https://qahn.org/article/cure-francois-xavier-antoine-labelle-1833-1891-le-roi-du-nord"
  ],
  "pending": {
   "35ba38a8a6": {
@@ -28,6 +29,27 @@
    ],
    "text": "<a href=\"https://thediscoverblog.com/wp-content/uploads/2017/08/a006733-v8.jpg?w=519\">&#8203;</a>🍁 Історія Канади\n\n<b>Капрал Коновал і кулемети на висоті 70</b>\n\nКулемет стримував правий фланг і завдавав багато втрат. Капрал Філіп Коновал (Filip Konowal) кинувся вперед, увірвався в кулеметне гніздо, вбив обслугу й приніс зброю до своїх позицій. Так, згідно з офіційним описом, він діяв під час бою за висоту 70 (Hill 70) поблизу міста Ланс у Франції.\n\nКоновал народився 15 вересня 1888 року в селі Кутківці (Kutkivtsi) на території сучасної України. Він служив у Російській імператорській армії, а 1913 року переїхав до Канади. Був кваліфікованим інструктором зі штикового бою. 1915 року вступив до Канадських експедиційних сил і потрапив до 47-го батальйону (Британська Колумбія), де отримав звання капрала.\n\nУ боях 22–24 серпня Коновал вів своє відділення крізь німецьку оборону: зачищав підвали, вирви від снарядів і кулеметні гнізда. Наступного дня він сам атакував ще одне кулеметне гніздо, вбив трьох членів обслуги, а зброю і саму позицію знищив вибухівкою. Згідно з описом подвигу в «Лондон газетт» (London Gazette), він вбив щонайменше шістнадцятьох ворожих солдатів і продовжував бій, доки не дістав тяжкого поранення. Хрест Вікторії йому вручив король Георг V (George V). Коновала підвищили до сержанта.\n\nПісля одужання його призначили військовим аташе в російському посольстві в Лондоні. Згодом він вступив до Канадських сибірських експедиційних сил. Коновал помер 1959 року в місті Халл у Квебеку. Похований в Оттаві на кладовищі Нотр-Дам-де-Лурд (Notre Dame de Lourdes). Його особову справу зберігає Бібліотека й архіви Канади (Library and Archives Canada).\n\n🔗 Джерело: <a href=\"https://thediscoverblog.com/2017/08/22/sergeant-filip-konowal-vc/\">Library and Archives Canada</a>",
    "url": "https://thediscoverblog.com/2017/08/22/sergeant-filip-konowal-vc/"
+  },
+  "3cc8cfa683": {
+   "created": "2026-11-22T04:01:11.452288+00:00",
+   "lp": {
+    "prefer_large_media": true,
+    "show_above_text": true,
+    "url": "https://telegra.ph/Kyure-yakij-privіv-potyag-u-Lorentіjskі-gori-11-22"
+   },
+   "msgs": [
+    [
+     "456360947",
+     21
+    ],
+    [
+     "522929986",
+     22
+    ]
+   ],
+   "telegraph_path": "Kyure-yakij-privіv-potyag-u-Lorentіjskі-gori-11-22",
+   "text": "🍁 Історія Канади\n\n<b>Кюре, який привів потяг у Лорентійські гори</b>\n\nВзимку 1871–1872 років вулицями Монреаля рушив обоз зі сотні саней: з духовим оркестром, шістьма кіньми з червоними помпонами і священником на чолі. Так кюре Антуан Лабель виборював залізницю для бідного краю на північ від міста. Розповідаємо, як це йому вдалося.\n\n📖 <a href=\"https://telegra.ph/Kyure-yakij-privіv-potyag-u-Lorentіjskі-gori-11-22\">Читати повністю</a>\n🔗 Джерело: <a href=\"https://qahn.org/article/cure-francois-xavier-antoine-labelle-1833-1891-le-roi-du-nord\">Quebec Anglophone Heritage Network</a>",
+   "url": "https://qahn.org/article/cure-francois-xavier-antoine-labelle-1833-1891-le-roi-du-nord"
   },
   "5487897e7b": {
    "created": "2026-11-22T03:52:10.520727+00:00",
@@ -200,5 +222,6 @@
   "https://www.ukrinform.net/rubric-society/4187211-melania-trump-hopes-for-new-ceasefire-between-ukraine-and-russia-by-christmas.html": "2026-11-22T02:54:46.860426+00:00",
   "https://www.ukrinform.net/rubric-society/4187233-prague-pays-tribute-to-ukrainians-who-died-for-freedom.html": "2026-11-22T02:54:46.860426+00:00"
  },
+ "telegraph_token": "54232472749cefe01f8a27d8d1237ce4061fc529827d0f732365b20b200a",
  "tg_offset": 17524581
 }
