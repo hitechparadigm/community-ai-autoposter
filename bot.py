@@ -300,7 +300,8 @@ def parse_post(text):
     return None
 
 
-BAD_IMG = re.compile(r"logo|icon|favicon|header|banner|avatar|sprite|android-chrome|placeholder|\.svg|\.gif", re.I)
+BAD_IMG = re.compile(r"logo|icon|favicon|header|banner|avatar|sprite|android-chrome|placeholder|"
+                     r"MHS_Archives|social|share|default-image|\.svg|\.gif", re.I)
 
 
 def _image_size(data):
@@ -352,20 +353,25 @@ def _find_image(page, url):
 
 
 def commons_image(query):
-    """A freely licensed photo from Wikimedia Commons, via the best-matching English Wikipedia article."""
+    """A freely licensed photo from Wikimedia Commons: the lead image of the English Wikipedia
+    article whose title matches the query (so we never grab a picture of something else)."""
     if not query:
         return ""
-    q = urllib.parse.urlencode({"action": "query", "generator": "search", "gsrsearch": query, "gsrlimit": 3,
-                                "prop": "pageimages", "piprop": "original", "format": "json"})
-    try:
-        pages = json.loads(http(f"https://en.wikipedia.org/w/api.php?{q}")).get("query", {}).get("pages", {})
-    except Exception as e:
-        print(f"Commons image search failed: {e}")
-        return ""
-    for p in sorted(pages.values(), key=lambda p: p.get("index", 99)):
-        src = (p.get("original") or {}).get("source", "")
-        if src and not BAD_IMG.search(src) and image_ok(src):
-            return src
+    words = set(re.findall(r"\w+", query.lower()))
+    for params in ({"titles": query, "redirects": 1},
+                   {"generator": "search", "gsrsearch": query, "gsrlimit": 3}):
+        q = urllib.parse.urlencode({"action": "query", "prop": "pageimages", "piprop": "original",
+                                    "format": "json", **params})
+        try:
+            pages = json.loads(http(f"https://en.wikipedia.org/w/api.php?{q}")).get("query", {}).get("pages", {})
+        except Exception as e:
+            print(f"Commons image search failed: {e}")
+            return ""
+        for p in sorted(pages.values(), key=lambda p: p.get("index", 0)):
+            title = set(re.findall(r"\w+", p.get("title", "").lower()))
+            src = (p.get("original") or {}).get("source", "")
+            if src and words <= title and not BAD_IMG.search(src) and image_ok(src):
+                return src
     return ""
 
 
