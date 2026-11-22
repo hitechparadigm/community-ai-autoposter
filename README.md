@@ -1,6 +1,6 @@
 # Ukrainian Canada autoposter (step 1: Telegram)
 
-Five times a day it reads Canadian news feeds, has Claude pick the most relevant story and
+Five times a day (9:00-21:00) it reads Canadian news feeds, has Claude pick the most relevant story and
 write short posts in Ukrainian, and sends them to you in Telegram with **✅ Publish / ❌ Skip**
 buttons. Posts you approve go to @UkrainianCanada within about 20 minutes.
 
@@ -18,12 +18,16 @@ buttons. Posts you approve go to @UkrainianCanada within about 20 minutes.
 6. **Test:** Actions tab → "Draft posts" → Run workflow. Drafts should arrive in Telegram
    within a minute. Tap ✅ on one, then run "Publish approved posts" by hand to post right away.
 
-## Daily digest
+## Morning digest
 
-Every evening at 20:00 Toronto time you get a "🗞 Головне за день" draft: the 3-5 most important
-Canadian stories of the last 24 hours plus 1-2 stories from 3-4 provinces or territories. Regions rotate,
-so every province and territory gets featured over the week. A key phrase in each item links to the source
-article, outlets are mixed (CBC, Global News, Postmedia papers), and the post ends with "За матеріалами: ...".
+Every morning at 6:30 Toronto time you get a "🗞 Головне за вчора" draft: the 3-5 most important Canadian
+stories from yesterday, 1-2 stories from 3-4 provinces or territories (rotating, so every region gets
+featured over the week), and "📌 Сьогодні": up to 3 things the news says happen today (a strike starting,
+a deadline, a vote). That section is left out when the news mentions nothing for today. A key phrase in each
+item links to the source article, outlets are mixed (CBC, Global News, Postmedia papers), and the post ends
+with "За матеріалами: ...".
+
+News drafts come at 9:00, 12:00, 15:00, 18:00 and 21:00; "This day" at 8:30; the history story at 11:30.
 
 ## Changing things
 

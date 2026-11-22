@@ -538,15 +538,19 @@ UK_MONTHS = ["січня", "лютого", "березня", "квітня", "т
 
 DIGEST_PROMPT = AUDIENCE + "\n\n" + STYLE + """
 
-Write today's evening news digest for the channel, in Ukrainian, from the news items below (last 24 hours, \
-each tagged with its region).
+Write this morning's news digest for the channel, in Ukrainian. Today is {today}. The news items below are from \
+the last day and a half, each tagged with its region and publication time (Toronto time).
 
-1. "national": the {national} most important stories for people living in Canada (federal politics, \
-economy and cost of living, immigration, major events). One item per story.
+1. "national": the {national} most important stories from yesterday for people living in Canada \
+(federal politics, economy and cost of living, immigration, major events). One item per story.
 2. "regions": {regions} provinces or territories with 1-2 notable or interesting stories each. \
 Prefer regions NOT featured recently: {recent}. Use the Ukrainian name of the region \
 (e.g. "Манітоба", "Британська Колумбія", "Нью-Брансвік", "Острів Принца Едварда", "Ньюфаундленд і Лабрадор", \
 "Юкон", "Північно-Західні території", "Нунавут"); for the CBC North feed name the actual territory.
+3. "today": 0-3 things that will happen TODAY ({today}) according to the news items: a strike or shutdown \
+starting, a deadline, a vote, a court decision, a rule taking effect, a severe weather warning. Include an item \
+only if the news explicitly says it happens today or on today's date (check weekdays against today's date). \
+Never guess. If there is nothing, return an empty list.
 - For each item, "text": 1-2 sentences (at most 220 characters) saying what happened and why it matters. \
 Use only facts in the headline and summary. Put square brackets around ONE key phrase of 2-5 words in each \
 text (e.g. "Партія [обрала нового лідера] ..."); that phrase becomes the link to the source article.
@@ -557,7 +561,8 @@ outlets cover a story, choose the one used least so far in this digest.
 
 Reply with JSON only:
 {{"national": [{{"id": 0, "text": "... [key phrase] ..."}}],
-  "regions": [{{"region": "Манітоба", "region_en": "Manitoba", "items": [{{"id": 5, "text": "..."}}]}}]}}
+  "regions": [{{"region": "Манітоба", "region_en": "Manitoba", "items": [{{"id": 5, "text": "..."}}]}}],
+  "today": [{{"id": 7, "text": "..."}}]}}
 
 News items:
 {items}
@@ -570,15 +575,17 @@ def cmd_digest():
     s = load_state()
     s.setdefault("digest_regions", {})
     d = now().astimezone(LOCAL)
-    items = [it for it in fetch_news({}, max_age_hours=24, limit=250) if it["region"] != "Ukraine"]
+    items = [it for it in fetch_news({}, max_age_hours=36, limit=250) if it["region"] != "Ukraine"]
     print(f"{len(items)} items for the digest")
     if len(items) < 5:
         return save_state(s)
     recent = sorted(s["digest_regions"], key=lambda r: s["digest_regions"][r], reverse=True)[:6]
-    listing = "\n".join(f"[{i}] ({it['region']}, {it['source']}) {it['title']} — {it['summary'][:200]}"
-                        for i, it in enumerate(items))
+    listing = "\n".join(
+        f"[{i}] ({it['region']}, {it['source']}, "
+        f"{it['published'].astimezone(LOCAL).strftime('%a %b %d %H:%M') if it['published'] else '?'}) "
+        f"{it['title']} — {it['summary'][:200]}" for i, it in enumerate(items))
     prompt = DIGEST_PROMPT.format(national=config.DIGEST_NATIONAL, regions=config.DIGEST_REGIONS,
-                                  recent=", ".join(recent) or "none", items=listing)
+                                  recent=", ".join(recent) or "none", items=listing, today=f"{d:%A, %B %d, %Y}")
     digest = _json(ask_claude(prompt), "{", "}")
     if not isinstance(digest, dict) or not digest.get("national"):
         sys.exit("Could not write the digest")
@@ -608,13 +615,17 @@ def cmd_digest():
         before, phrase, after = text[:m.start()], m.group(1), text[m.end():].replace("[", "").replace("]", "")
         return f"• {e(before, quote=False)}{link}{e(phrase, quote=False)}</a>{e(after, quote=False)}"
 
-    parts = [f"🗞 <b>Головне за день · {d.day} {UK_MONTHS[d.month - 1]}</b>", "", "🇨🇦 <b>Канада</b>"]
+    y = d - timedelta(days=1)
+    parts = [f"🗞 <b>Головне за вчора · {y.day} {UK_MONTHS[y.month - 1]}</b>", "", "🇨🇦 <b>Канада</b>"]
     parts += [l for l in map(line, digest["national"]) if l]
     for reg in digest.get("regions", []):
         lines = [l for l in map(line, reg.get("items", [])) if l]
         if lines:
             parts += ["", f"📍 <b>{e(reg.get('region', ''), quote=False)}</b>"] + lines
             s["digest_regions"][reg.get("region_en") or reg.get("region", "")] = d.strftime("%Y-%m-%d")
+    today_lines = [l for l in map(line, digest.get("today") or []) if l]
+    if today_lines:
+        parts += ["", f"📌 <b>Сьогодні, {d.day} {UK_MONTHS[d.month - 1]}</b>"] + today_lines
     outlets = list(dict.fromkeys(used))
     parts += ["", f"<i>За матеріалами: {e(', '.join(outlets), quote=False)}</i>",
               f"<a href=\"{config.TELEGRAPH_AUTHOR_URL}\">{e(config.TELEGRAPH_AUTHOR, quote=False)}</a>"]

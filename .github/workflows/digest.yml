@@ -1,8 +1,8 @@
-name: Draft daily digest
+name: Draft morning digest
 
 on:
   schedule:
-    - cron: "0 1 * * *"   # 20:00 Toronto time (winter)
+    - cron: "30 11 * * *"   # 6:30 Toronto time (winter); approve it to publish by ~7:00
   workflow_dispatch:
 
 permissions:
