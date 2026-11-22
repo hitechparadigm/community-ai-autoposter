@@ -1340,6 +1340,7 @@ def cmd_check():
             exp = info.get("expires_at") or 0
             when = "never" if not exp else datetime.fromtimestamp(exp, timezone.utc).strftime("%Y-%m-%d")
             print(f"Facebook: OK, page {page.get('name')}, token type {info.get('type')}, expires {when}")
+            print(f"Facebook permissions: {', '.join(info.get('scopes', []))}")
             if "pages_manage_posts" not in info.get("scopes", []):
                 ok = False
                 print(f"Facebook: the token can't post (missing pages_manage_posts; has {info.get('scopes')})")
