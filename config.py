@@ -75,15 +75,15 @@ DIGEST_REGIONS = "3-4"
 # Once a month (python bot.py referrals) the bot reads each offer page and updates the text with the
 # current bonus; the default text is used until then, or when a page can't be read.
 REFERRALS = [
-    ("📈 Інвестуйте з Wealthsimple", "https://www.wealthsimple.com/invite/L4FYWG",
+    ("📈 Почніть інвестувати з Wealthsimple і отримайте $25", "https://www.wealthsimple.com/invite/L4FYWG",
      "Wealthsimple investing and savings account"),
     ("💳 Дізнайтеся свій кредитний рейтинг безкоштовно", "https://bit.ly/my-credit-score",
      "free credit score check"),
-    ("🏦 Відкрийте рахунок у Simplii без щомісячної плати", "https://blue.mbsy.co/6svHvM",
+    ("🏦 Відкрийте рахунок у Simplii і отримайте $50", "https://blue.mbsy.co/6svHvM",
      "Simplii Financial no-fee bank account"),
     ("💸 Перший переказ в Україну з Wise — без комісії", "https://bit.ly/3UYzy9r",
      "Wise international money transfers (e.g. to Ukraine)"),
-    ("📊 Інвестуйте з Questrade", "https://bit.ly/4dUdlWV", "Questrade investing account"),
+    ("📊 Інвестуйте з Questrade і отримайте $50", "https://bit.ly/4dUdlWV", "Questrade investing account"),
     ("💳 Перевірте свій кредитний рейтинг", "https://bit.ly/3cqN99x", "free credit score check"),
 ]
 REFERRAL_DISCLOSURE = ""  # optional line under the link, e.g. "#реклама"; empty = none
