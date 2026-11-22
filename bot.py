@@ -6,6 +6,7 @@
   python bot.py digest   - draft the morning digest
   python bot.py thisday  - draft one "This day in history" post
   python bot.py history  - draft one history story ("history community" = a community-history story)
+  python bot.py tick     - every 5 minutes: run what's due by config.SCHEDULE, then publish approved posts
   python bot.py approve  - check your button taps and publish approved posts to the channel
 
 No third-party packages needed (standard library only).
@@ -23,6 +24,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
+from zoneinfo import ZoneInfo
 
 import config
 from prompts import (AUDIENCE, DIGEST_PROMPT, EDIT_PROMPT, HISTORY_WRITE_PROMPT, PICK_PROMPT,
@@ -104,6 +106,7 @@ def merge_state(base, ours, theirs):
     out["tg_offset"] = max(theirs.get("tg_offset", 0), ours.get("tg_offset", 0))
     out["digest_regions"] = {**out.get("digest_regions", {}), **ours.get("digest_regions", {})}
     out["ref_index"] = max(theirs.get("ref_index", 0), ours.get("ref_index", 0))
+    out["schedule_done"] = {**out.get("schedule_done", {}), **ours.get("schedule_done", {})}
     rn_t, rn_o = theirs.get("ref_news", {}), ours.get("ref_news", {})
     out["ref_news"] = max((rn_t, rn_o), key=lambda r: (r.get("date", ""), r.get("count", 0)))
     if ours.get("thisday_last"):
@@ -633,7 +636,7 @@ def cmd_digest():
 
 
 WIKI = f"https://{config.WIKIPEDIA_LANG}.wikipedia.org"
-LOCAL = timezone(timedelta(hours=config.UTC_OFFSET_HOURS))  # for picking "today" and showing times
+LOCAL = ZoneInfo(config.TIMEZONE)  # for picking "today", showing times and the schedule
 
 
 def wiki_text(title, limit=15000):
@@ -1074,6 +1077,34 @@ def cmd_approve():
     save_state(s)
 
 
+def cmd_tick():
+    """Runs every 5 minutes: starts the drafts that are due by config.SCHEDULE (local time, catching up on
+    late runs), then publishes approved posts."""
+    jobs = {"digest": cmd_digest, "thisday": cmd_thisday, "news": cmd_draft, "history": cmd_history}
+    local = now().astimezone(LOCAL)
+    for job, slots in config.SCHEDULE.items():
+        for slot in slots:
+            h, m = map(int, slot.split(":"))
+            due = local.replace(hour=h, minute=m, second=0, microsecond=0)
+            key = f"{job} {due:%Y-%m-%d %H:%M}"
+            if not (due <= local < due + timedelta(hours=config.CATCH_UP_HOURS)):
+                continue
+            s = load_state()
+            done = s.setdefault("schedule_done", {})
+            if key in done:
+                continue
+            done[key] = now().isoformat()
+            week_ago = (now() - timedelta(days=7)).isoformat()
+            s["schedule_done"] = {k: v for k, v in done.items() if v > week_ago}
+            save_state(s)  # mark first, so a crash can't make the same draft twice
+            print(f"Running {key}")
+            try:
+                jobs[job]()
+            except (Exception, SystemExit) as e:  # one job failing must not stop the others or publishing
+                print(f"JOB ERROR {key}: {e}")
+    cmd_approve()
+
+
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
     if cmd == "draft":
@@ -1086,6 +1117,8 @@ if __name__ == "__main__":
         cmd_thisday()
     elif cmd == "digest":
         cmd_digest()
+    elif cmd == "tick":
+        cmd_tick()
     elif cmd == "merge-state":  # used by save_state.sh: merge-state BASE OURS (theirs = state.json)
         with open(sys.argv[2], encoding="utf-8") as f:
             base = json.load(f)

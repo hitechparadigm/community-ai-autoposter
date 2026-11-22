@@ -51,7 +51,7 @@ the repo and change only the settings and the prompts:
 | Fixed words in posts (headers, "Source", "Read more", month names) and the language of the channel | `config.py` → `LABELS`, `MONTHS` |
 | Referral offers | `config.py` → `REFERRALS` |
 | Audience, what counts as important, length and structure of posts, style guide for the language | `prompts.py` |
-| Run times | `.github/workflows/schedule.yml` |
+| Run times (local time zone, `TIMEZONE`) | `config.py` → `SCHEDULE` |
 | Bot token, approvers, API and Facebook keys | GitHub secrets |
 
 Examples: a Polish- or Filipino-Canadian channel, a city news channel for newcomers, a diaspora in another
@@ -122,8 +122,8 @@ sequenceDiagram
 | 11:30 | 🍁 Історія Канади long-read (Sundays: a Ukrainian-Canadian story) |
 | every 5 min, around the clock | Publisher: posts what was approved; drafts not tapped expire after 24 hours |
 
-GitHub schedules run in UTC, so from March to November (daylight time) everything runs an hour later in
-Toronto unless the `cron:` lines in `schedule.yml` are adjusted. Scheduled runs can be a few minutes late when GitHub is busy.
+Times are local (`TIMEZONE` in `config.py`), daylight saving time included. GitHub sometimes starts scheduled
+runs late; a job that is late by less than `CATCH_UP_HOURS` still runs.
 
 ## What each post looks like
 
@@ -215,18 +215,21 @@ If posts don't appear publicly, switch the Meta app to Live (it asks for a priva
 |---|---|
 | Channel, time zone, fixed words in posts, news and history sources, referral links, auto-publish, model, limits | `config.py` |
 | Tone, Ukrainian style guide, what to pick, length and structure of each post | `prompts.py` |
-| Run times (UTC: Toronto + 5 hours in winter, + 4 in summer) | `.github/workflows/schedule.yml` |
+| Run times (local time) | `config.py` → `SCHEDULE` |
 | API keys, bot token, approver IDs, Telegraph and Facebook keys | GitHub → Settings → Secrets and variables → Actions |
 | The program itself | `bot.py` (no settings inside) |
 | What the bot remembers (seen stories, pending drafts, rotation) | `state.json` (automatic; don't edit by hand) |
 
-Workflows: `schedule.yml` holds all run times and starts the others: `draft.yml` (news), `digest.yml`,
-`thisday.yml`, `history.yml`, `approve.yml` (publisher). Each can also be started by hand: Actions → pick it →
-Run workflow.
+Workflows: `tick.yml` runs every 5 minutes: it starts whatever is due by `SCHEDULE` (catching up on runs
+GitHub starts late, up to `CATCH_UP_HOURS`) and publishes approved posts. `draft.yml` (news), `digest.yml`,
+`thisday.yml`, `history.yml` and `approve.yml` (publisher) are for running something by hand: Actions → pick
+it → Run workflow.
 
 **Important:** GitHub runs scheduled workflows on behalf of the person who last changed a `cron:` line, and
-only if that is a real user with write access. After forking, or if schedules ever stop, edit a `cron:` line in
-`schedule.yml` yourself on github.com (even a one-minute change) and commit it. `save_state.sh` saves `state.json` after every run and
+only if that is a real user with write access. After forking, or if the tick ever stops, edit the `cron:` line
+in `tick.yml` yourself on github.com and commit it. If GitHub's schedule is unreliable, an external timer
+(e.g. cron-job.org) can start `tick.yml` every 5 minutes through the GitHub API (workflow_dispatch) instead.
+`save_state.sh` saves `state.json` after every run and
 merges safely when two runs finish at the same time.
 
 ## Notes

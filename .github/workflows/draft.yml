@@ -1,7 +1,6 @@
 name: Draft posts
 
 on:
-  workflow_call:
   workflow_dispatch:           # lets you run it by hand from the Actions tab
 
 permissions:

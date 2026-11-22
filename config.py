@@ -7,8 +7,18 @@ CHANNEL = "@UkrainianCanada"
 BOT_NAME = "UkrainianCanadaBot"
 BOT_CONTACT_URL = "https://t.me/UkrainianCanada"
 
-# Local time zone as hours from UTC (Toronto: -5; the schedules themselves are in the workflow files)
-UTC_OFFSET_HOURS = -5
+# Local time zone (daylight saving time is handled automatically)
+TIMEZONE = "America/Toronto"
+
+# When each kind of draft is made, in local time. A job that GitHub starts late still runs if it is
+# less than CATCH_UP_HOURS late. Approved posts are published every 5 minutes, around the clock.
+SCHEDULE = {
+    "digest": ["06:30"],
+    "thisday": ["08:30"],
+    "news": ["09:00", "12:00", "15:00", "18:00", "21:00"],
+    "history": ["11:30"],
+}
+CATCH_UP_HOURS = 2
 
 # Fixed words in posts, in the channel's language
 MONTHS = ["січня", "лютого", "березня", "квітня", "травня", "червня", "липня", "серпня",

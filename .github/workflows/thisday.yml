@@ -1,7 +1,6 @@
 name: Draft this-day post
 
 on:
-  workflow_call:
   workflow_dispatch:
 
 permissions:

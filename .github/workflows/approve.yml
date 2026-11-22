@@ -1,7 +1,6 @@
 name: Publish approved posts
 
 on:
-  workflow_call:
   workflow_dispatch:
 
 permissions:
@@ -12,7 +11,7 @@ jobs:
   approve:
     runs-on: ubuntu-latest
     concurrency:
-      group: publisher
+      group: telegram-updates
       cancel-in-progress: false
     timeout-minutes: 5
     steps:

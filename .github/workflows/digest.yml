@@ -1,7 +1,6 @@
 name: Draft morning digest
 
 on:
-  workflow_call:
   workflow_dispatch:
 
 permissions:

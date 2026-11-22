@@ -1,11 +1,6 @@
 name: Draft history story
 
 on:
-  workflow_call:
-    inputs:
-      community:
-        type: boolean
-        default: false
   workflow_dispatch:
     inputs:
       community:
