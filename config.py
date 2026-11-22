@@ -227,10 +227,20 @@ THISDAY_WORDS = ("Canad", "Quebec", "Québec", "Ontario", "Manitoba", "Saskatche
                 "Montreal", "Montréal", "Vancouver", "Winnipeg", "Ottawa", "Halifax", "Calgary",
                 "Edmonton", "Regina", "Saskatoon", "Hudson's Bay", "Klondike", "Mountie")
 
-# Wikipedia fallback when the sources above give nothing usable, and the main coverage for regions
-# whose history sites can't be read automatically (they block bots or need JavaScript):
-# BC, the Atlantic provinces and the North. Add your own: ("Region", "Article title").
+# Wikipedia fallback when the sources above give nothing usable (topics for every province and territory),
+# and the main coverage for regions whose history sites can't be read automatically (they block bots or
+# need JavaScript): BC, the Atlantic provinces and the North. Add your own: ("Region", "Article title").
 WIKI_REGIONAL_TOPICS = [
+    ("Ontario", "Rideau Canal"),
+    ("Ontario", "Underground Railroad"),
+    ("Quebec", "Battle of the Plains of Abraham"),
+    ("Quebec", "Samuel de Champlain"),
+    ("Manitoba", "Red River Rebellion"),
+    ("Manitoba", "Winnipeg general strike"),
+    ("Saskatchewan", "North-West Rebellion"),
+    ("Saskatchewan", "Tommy Douglas"),
+    ("Alberta", "Head-Smashed-In Buffalo Jump"),
+    ("Alberta", "Calgary Stampede"),
     ("British Columbia", "Komagata Maru incident"),
     ("British Columbia", "Cariboo Gold Rush"),
     ("British Columbia", "Last Spike (Canadian Pacific Railway)"),
