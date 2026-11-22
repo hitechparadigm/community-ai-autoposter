@@ -31,7 +31,7 @@ Any other community can run its own channel by changing two settings files (see
   institutions (Dictionary of Canadian Biography, Library and Archives Canada, CBC Archives, provincial
   societies), with Wikipedia only as a fallback. Images are checked to be real photos (not logos or banners),
   with freely licensed Wikimedia Commons photos as a fallback.
-- **Serverless and free to run.** Scheduled GitHub Actions jobs, Telegram Bot API, Telegraph API and the
+- **Serverless and free to run.** GitHub Actions jobs started every 5 minutes by a free external timer, Telegram Bot API, Telegraph API and the
   Facebook Graph API; state is a JSON file in the repo, with a three-way merge so overlapping runs never lose
   a draft or double-post. No servers, no database, no third-party Python packages.
 - **Configurable, not hard-coded.** Sources, schedules, approvers, referral offers and publishing rules live in
@@ -65,21 +65,26 @@ Telegraph API · Facebook Graph API · RSS/Atom
 
 ```mermaid
 flowchart LR
+    T["⏱ cron-job.org<br/>every 5 min<br/>(+ GitHub schedule as backup)"]
     subgraph Sources
         N["News feeds<br/>CBC · Global News · Postmedia<br/>New Pathway · UCC Manitoba"]
         H["History sources<br/>CBC Archives · LAC · DCB<br/>provincial sites · Wikipedia"]
     end
-    subgraph GH["GitHub Actions (on a schedule)"]
-        D["bot.py<br/>draft · digest · thisday · history"]
-        P["bot.py approve<br/>(publisher, every 5 min)"]
-        S[("state.json<br/>seen stories, pending drafts")]
+    subgraph GH["GitHub Actions"]
+        K["tick.yml → bot.py tick<br/>runs what's due by SCHEDULE<br/>(local time, catches up late runs)"]
+        D["draft · digest · thisday · history"]
+        P["publish approved posts"]
+        S[("state.json<br/>seen stories, pending drafts,<br/>jobs done")]
     end
-    C["Claude API<br/>pick → write → copy-edit"]
+    C["Claude API<br/>pick → write → copy-edit<br/>+ completeness checks"]
     TG["Telegraph<br/>long-read articles"]
     A["Approvers in Telegram<br/>✅ Publish / ❌ Skip"]
     CH["Telegram channel<br/>@UkrainianCanada"]
     FB["Facebook Page<br/>(optional)"]
 
+    T -- "workflow_dispatch" --> K
+    K --> D
+    K --> P
     N --> D
     H --> D
     D <--> C
@@ -96,23 +101,41 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
-    participant GA as GitHub Actions
+    participant Tm as Timer (every 5 min)
+    participant GA as GitHub Actions (tick)
     participant Src as News / history sources
     participant Cl as Claude
     participant Ap as Approvers (Telegram)
     participant Ch as Channel + Facebook
+    Tm->>GA: start tick
+    Note over GA: a job is due by SCHEDULE (e.g. news at 12:00)
     GA->>Src: read feeds / pages
     GA->>Cl: pick the best story
     GA->>Cl: write the post in Ukrainian
     GA->>Cl: copy-edit (language + facts)
+    Note over GA: reject cut-off or garbled text, retry
     GA->>Ap: draft with ✅ / ❌
-    Ap-->>GA: tap ✅ (saved by Telegram)
-    Note over GA: publisher checks every 5 min
+    Ap-->>GA: tap ✅ (waits in Telegram)
+    Tm->>GA: next tick (≤ 5 min)
     GA->>Ch: publish
     GA->>Ap: mark draft "✅ Published by …"
 ```
 
-## Daily schedule (Toronto time, winter)
+### Workflows (Actions tab)
+
+| Workflow | File | What it does |
+|---|---|---|
+| Tick (every 5 minutes) | `tick.yml` | The engine: runs whatever is due by `SCHEDULE`, then publishes approved posts. Started by cron-job.org (and GitHub's schedule as a backup). |
+| Publish approved posts | `approve.yml` | Publish approved posts right now |
+| Draft posts | `draft.yml` | Make a news draft now |
+| Draft morning digest | `digest.yml` | Make the digest now |
+| Draft this-day post | `thisday.yml` | Make a "This day" draft now |
+| Draft history story | `history.yml` | Make a history long-read now (tick "Community-history story" for a Ukrainian-Canadian one) |
+| Rewrite a published long-read | `rewrite.yml` | Rewrite a published Telegraph article in place from a source you give |
+
+All of them except Tick are for running something by hand: Actions → pick it → Run workflow.
+
+## Daily schedule (Toronto time)
 
 | Time | Draft |
 |---|---|
@@ -209,7 +232,15 @@ If posts don't appear publicly, switch the Meta app to Live (it asks for a priva
    - `TELEGRAM_ADMIN_ID`: approver IDs separated by commas, e.g. `456360947,522929986`
    - `TELEGRAPH_TOKEN`: Telegraph account key (without it, each run uses a temporary account)
    - optional: `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_TOKEN`
-4. Test: Actions → "Draft posts" → Run workflow; a draft should arrive in Telegram within a minute.
+4. Timer: GitHub's own schedule can be unreliable (it never fired for this repo), so an external timer starts
+   the tick:
+   - GitHub → Settings → Developer settings → Fine-grained tokens → new token for this repository only,
+     permission **Actions: Read and write**.
+   - cron-job.org → Create cronjob: URL
+     `https://api.github.com/repos/OWNER/REPO/actions/workflows/tick.yml/dispatches`, every 5 minutes,
+     method POST, headers `Authorization: Bearer <token>` and `Accept: application/vnd.github+json`,
+     body `{"ref":"main"}`. A test run returns 204 and a "Tick" run appears in Actions.
+5. Test: Actions → "Draft posts" → Run workflow; a draft should arrive in Telegram within a minute.
 
 ## Where things are
 
@@ -222,15 +253,9 @@ If posts don't appear publicly, switch the Meta app to Live (it asks for a priva
 | The program itself | `bot.py` (no settings inside) |
 | What the bot remembers (seen stories, pending drafts, rotation) | `state.json` (automatic; don't edit by hand) |
 
-Workflows: `tick.yml` runs every 5 minutes: it starts whatever is due by `SCHEDULE` (catching up on runs
-GitHub starts late, up to `CATCH_UP_HOURS`) and publishes approved posts. `draft.yml` (news), `digest.yml`,
-`thisday.yml`, `history.yml` and `approve.yml` (publisher) are for running something by hand: Actions → pick
-it → Run workflow.
-
-**Important:** GitHub runs scheduled workflows on behalf of the person who last changed a `cron:` line, and
-only if that is a real user with write access. After forking, or if the tick ever stops, edit the `cron:` line
-in `tick.yml` yourself on github.com and commit it. If GitHub's schedule is unreliable, an external timer
-(e.g. cron-job.org) can start `tick.yml` every 5 minutes through the GitHub API (workflow_dispatch) instead.
+The timer is cron-job.org (see Setup, step 4); the `cron:` line in `tick.yml` is a backup. GitHub runs its
+own schedules on behalf of the person who last changed a `cron:` line, so after forking, edit that line
+yourself on github.com. Either way the tick never does the same job twice.
 `save_state.sh` saves `state.json` after every run and
 merges safely when two runs finish at the same time.
 
