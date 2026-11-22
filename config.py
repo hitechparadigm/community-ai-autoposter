@@ -163,6 +163,13 @@ HISTORY_SOURCES = [
      "pages": 15, "pattern": r"albertashistoricplaces\.com/\d{4}/\d{2}/\d{2}/[a-z0-9-]+/$"},
 ]
 
+# Words that mark a Wikipedia "On this day" entry as Canadian
+CANADA_WORDS = ("Canad", "Quebec", "Québec", "Ontario", "Manitoba", "Saskatchewan", "Alberta",
+                "British Columbia", "Nova Scotia", "New Brunswick", "Newfoundland", "Labrador",
+                "Prince Edward Island", "Yukon", "Nunavut", "Northwest Territories", "Toronto",
+                "Montreal", "Montréal", "Vancouver", "Winnipeg", "Ottawa", "Halifax", "Calgary",
+                "Edmonton", "Regina", "Saskatoon", "Hudson's Bay", "Klondike", "Mountie")
+
 # Wikipedia fallback when the sources above give nothing usable, and the main coverage for regions
 # whose history sites can't be read automatically (they block bots or need JavaScript):
 # BC, the Atlantic provinces and the North. Add your own: ("Region", "Article title").

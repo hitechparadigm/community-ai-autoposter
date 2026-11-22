@@ -48,10 +48,18 @@ published to the Facebook Page (as plain text with the link card; long-reads lin
 Without them, only Telegram is used. If Facebook fails, the Telegram post still goes out and the draft says
 "Facebook failed".
 
-## Changing things
+## Where things are
 
-Edit `config.py`: news sources, drafts per run, model. Run times are in the `cron:` lines
-of the two workflow files (times are UTC).
+| What you want to change | Where |
+|---|---|
+| Channel, news sources, history sources, referral links, model, limits | `config.py` |
+| Tone, Ukrainian style guide, what to pick, length and structure of each post | `prompts.py` |
+| Run times (UTC: Toronto + 5 hours in winter, + 4 in summer) | `cron:` lines in `.github/workflows/*.yml` |
+| API keys, bot token, approver IDs, Facebook keys | GitHub → Settings → Secrets and variables → Actions |
+| The program itself | `bot.py` (no settings inside) |
+| What the bot remembers (seen stories, pending drafts) | `state.json` (updated automatically; don't edit by hand) |
+
+Every workflow can also be started by hand: Actions → pick it → Run workflow.
 
 ## Notes
 
