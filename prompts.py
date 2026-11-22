@@ -75,9 +75,10 @@ without opening the link.
 - Use only facts stated in the article; do not invent or guess details. If the article text is missing, \
 keep the post shorter and stick to the headline and summary.
 - Neutral, clear, friendly tone. No hashtags, no emojis in the body.
-- "image_query": the English Wikipedia title of a well-known place, building or landmark in the story that
-  would make a fitting photo (e.g. "Manitoba Legislative Building", "Toronto Pearson International Airport");
-  an empty string if nothing specific fits. Never a person.
+- "image_query": up to 3 searches for a fitting photo, in English, separated by " | ", most specific first:
+  the monument, building, place, landmark or object the story is about, as titled on English Wikipedia or
+  Wikimedia Commons (e.g. "Health Sciences Centre Winnipeg | Winnipeg skyline"); never a person. Empty if
+  nothing specific fits.
 
 Reply with JSON only: {{"title": "...", "body": "...", "image_query": "..."}}
 
@@ -198,8 +199,10 @@ paragraph about what the story "shows" newcomers.
   about the topic and keep the article short rather than filling it with unrelated background.
   Length: as long as the source supports, up to about 6000 characters; never pad or repeat. \
   Short paragraphs separated by blank lines. Add 2-4 subheadings on their own line starting with "## ".
-- "image_query": the main person, place or event in English, as it would be titled on English Wikipedia \
-(e.g. "Maude Abbott"), used to find a photo.
+- "image_query": up to 4 searches for a meaningful picture, in English, separated by " | ", most specific
+  first: the main person, event, monument, memorial, building, place or object, as titled on English Wikipedia
+  or Wikimedia Commons (e.g. "Ukrainian Canadian internment | Castle Mountain Internment Camp | internment
+  memorial Ukrainian Canadians"). These find the article's photo and the Facebook picture.
 - Write in your own words. Use only facts stated in the source; do not invent dialogue, details, dates or numbers.
 
 Reply with JSON only: {{"title": "...", "teaser": "...", "body": "...", "image_query": "..."}}

@@ -445,6 +445,8 @@ def commons_image(query):
     article whose title matches the query (so we never grab a picture of something else)."""
     if not query:
         return ""
+    if "|" in query:  # several suggestions: the first that finds a photo
+        return next((u for q in split_queries(query) if (u := commons_image(q))), "")
     words = set(re.findall(r"\w+", query.lower()))
     for params in ({"titles": query, "redirects": 1},
                    {"generator": "search", "gsrsearch": query, "gsrlimit": 3}):
@@ -598,7 +600,7 @@ def cmd_draft():
         community = it.get("community")
         card = {"kind": "community" if community else "news", "title": post["title"],
                 "tag": config.CARD.get("community_tag", region) if community else region,
-                "queries": [photo_query, fallback]}
+                "queries": [*split_queries(photo_query), fallback]}
         if not send_draft(s, it["url"], text, stamp, note=review_note(problems), card=card):
             continue
         if ref:
@@ -1078,7 +1080,13 @@ def telegraph_nodes(body, image, image_credit, source_name, url):
 def history_card(kind, header, title, image, query, topic):
     """Card for a history post: the post's photo if it's freely licensed, otherwise one from Wikimedia Commons."""
     tag = re.sub(r"^\W+", "", header).strip()  # the header without its emoji
-    return {"kind": kind, "title": title, "tag": tag, "photo": card_photo(image), "queries": [query, topic]}
+    return {"kind": kind, "title": title, "tag": tag, "photo": card_photo(image),
+            "queries": [*split_queries(query), topic]}
+
+
+def split_queries(query):
+    """'A | B | C' -> ['A', 'B', 'C'] (the writer suggests several picture searches, best first)."""
+    return [q.strip() for q in (query or "").split("|") if q.strip()][:4]
 
 
 def fb_long(header, post, source_name):

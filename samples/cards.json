@@ -4,7 +4,7 @@
    "queries": ["Manitoba Legislative Building"]},
   {"kind": "community", "tag": "Українська громада",
    "title": "У Вінніпезі відкрили виставку про сто років українських шкіл у Канаді",
-   "queries": ["Ukrainian Canadians"]},
+   "queries": ["Ukrainian Cultural Heritage Village", "Ukrainian Catholic church Canada"]},
   {"kind": "digest", "tag": "21 листопада", "title": "Головне за вчора",
    "items": ["Банк Канади залишив ставку без змін і натякнув на зниження навесні",
              "Онтаріо продовжує програму допомоги з орендою для новоприбулих",
@@ -15,5 +15,5 @@
    "queries": ["The Last Spike (photograph)", "Last Spike"]},
   {"kind": "history", "tag": "Історія Канади",
    "title": "Інтернування 1914 року: сторінка, яку Канада визнала через століття",
-   "queries": ["Canada's first national internment operations"]}
+   "queries": ["Ukrainian Canadian internment", "Castle Mountain Internment Camp", "internment memorial Ukrainian Canadians"]}
 ]
