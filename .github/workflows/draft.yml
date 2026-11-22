@@ -1,21 +1,19 @@
 name: Draft posts
 
 on:
-  schedule:
-    - cron: "0 14,17,20,23 * * *"   # 9:00, 12:00, 15:00, 18:00 Toronto time (winter)
-    - cron: "0 2 * * *"             # 21:00 Toronto time
+  workflow_call:
   workflow_dispatch:           # lets you run it by hand from the Actions tab
 
 permissions:
   contents: write
 
-concurrency:
-  group: ${{ github.workflow }}
-  cancel-in-progress: false
 
 jobs:
   draft:
     runs-on: ubuntu-latest
+    concurrency:
+      group: news
+      cancel-in-progress: false
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4

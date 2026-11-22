@@ -1,20 +1,19 @@
 name: Draft this-day post
 
 on:
-  schedule:
-    - cron: "30 13 * * *"   # 8:30 Toronto time (winter)
+  workflow_call:
   workflow_dispatch:
 
 permissions:
   contents: write
 
-concurrency:
-  group: ${{ github.workflow }}
-  cancel-in-progress: false
 
 jobs:
   thisday:
     runs-on: ubuntu-latest
+    concurrency:
+      group: thisday
+      cancel-in-progress: false
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4

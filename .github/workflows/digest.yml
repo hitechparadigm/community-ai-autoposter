@@ -1,20 +1,19 @@
 name: Draft morning digest
 
 on:
-  schedule:
-    - cron: "30 11 * * *"   # 6:30 Toronto time (winter); approve it to publish by ~7:00
+  workflow_call:
   workflow_dispatch:
 
 permissions:
   contents: write
 
-concurrency:
-  group: ${{ github.workflow }}
-  cancel-in-progress: false
 
 jobs:
   digest:
     runs-on: ubuntu-latest
+    concurrency:
+      group: digest
+      cancel-in-progress: false
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4

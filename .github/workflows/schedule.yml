@@ -1,0 +1,38 @@
+name: Schedule
+
+# All automatic run times live here (UTC: Toronto + 5 hours in winter, + 4 in summer).
+# GitHub runs schedules on behalf of the person who last changed a cron line in this file,
+# so the repository owner should be the last one to edit these lines.
+on:
+  schedule:
+    - cron: "30 11 * * *"           # 6:30 Toronto: morning digest
+    - cron: "30 13 * * *"           # 8:30: This day in history
+    - cron: "30 16 * * *"           # 11:30: history long-read
+    - cron: "0 14,17,20,23 * * *"   # 9:00, 12:00, 15:00, 18:00: news
+    - cron: "0 2 * * *"             # 21:00: news
+    - cron: "*/5 * * * *"           # every 5 minutes: publish approved posts
+
+permissions:
+  contents: write
+
+jobs:
+  digest:
+    if: github.event.schedule == '30 11 * * *'
+    uses: ./.github/workflows/digest.yml
+    secrets: inherit
+  thisday:
+    if: github.event.schedule == '30 13 * * *'
+    uses: ./.github/workflows/thisday.yml
+    secrets: inherit
+  history:
+    if: github.event.schedule == '30 16 * * *'
+    uses: ./.github/workflows/history.yml
+    secrets: inherit
+  news:
+    if: github.event.schedule == '0 14,17,20,23 * * *' || github.event.schedule == '0 2 * * *'
+    uses: ./.github/workflows/draft.yml
+    secrets: inherit
+  publish:
+    if: github.event.schedule == '*/5 * * * *'
+    uses: ./.github/workflows/approve.yml
+    secrets: inherit

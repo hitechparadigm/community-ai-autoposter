@@ -1,8 +1,11 @@
 name: Draft history story
 
 on:
-  schedule:
-    - cron: "30 16 * * *"   # 11:30 Toronto time (winter)
+  workflow_call:
+    inputs:
+      community:
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       community:
@@ -13,13 +16,13 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: ${{ github.workflow }}
-  cancel-in-progress: false
 
 jobs:
   history:
     runs-on: ubuntu-latest
+    concurrency:
+      group: history
+      cancel-in-progress: false
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4

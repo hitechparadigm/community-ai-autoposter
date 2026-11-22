@@ -1,22 +1,19 @@
 name: Publish approved posts
 
 on:
-  schedule:
-    # Every 5 minutes, around the clock (the repo is public, so GitHub Actions minutes are free).
-    # If the repo is public (unlimited free minutes), you can use "*/5 * * * *" instead.
-    - cron: "*/5 * * * *"
+  workflow_call:
   workflow_dispatch:
 
 permissions:
   contents: write
 
-concurrency:
-  group: ${{ github.workflow }}
-  cancel-in-progress: false
 
 jobs:
   approve:
     runs-on: ubuntu-latest
+    concurrency:
+      group: publisher
+      cancel-in-progress: false
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
