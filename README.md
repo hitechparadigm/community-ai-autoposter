@@ -5,6 +5,57 @@ Facebook Page). It reads Canadian news and history sources, has Claude write pos
 each one to the approvers in Telegram with **✅ Publish / ❌ Skip** buttons. Approved posts go to the channel
 within about 5 minutes. Everything runs on GitHub Actions; no computer or chat app needs to be open.
 
+## How it works
+
+```mermaid
+flowchart LR
+    subgraph Sources
+        N["News feeds<br/>CBC · Global News · Postmedia<br/>New Pathway · UCC Manitoba"]
+        H["History sources<br/>CBC Archives · LAC · DCB<br/>provincial sites · Wikipedia"]
+    end
+    subgraph GH["GitHub Actions (on a schedule)"]
+        D["bot.py<br/>draft · digest · thisday · history"]
+        P["bot.py approve<br/>(publisher, every 5 min)"]
+        S[("state.json<br/>seen stories, pending drafts")]
+    end
+    C["Claude API<br/>pick → write → copy-edit"]
+    TG["Telegraph<br/>long-read articles"]
+    A["Approvers in Telegram<br/>✅ Publish / ❌ Skip"]
+    CH["Telegram channel<br/>@UkrainianCanada"]
+    FB["Facebook Page<br/>(optional)"]
+
+    N --> D
+    H --> D
+    D <--> C
+    D --> TG
+    D -- draft --> A
+    D <--> S
+    A -- tap --> P
+    P <--> S
+    P --> CH
+    P --> FB
+```
+
+### Life of a post
+
+```mermaid
+sequenceDiagram
+    participant GA as GitHub Actions
+    participant Src as News / history sources
+    participant Cl as Claude
+    participant Ap as Approvers (Telegram)
+    participant Ch as Channel + Facebook
+    GA->>Src: read feeds / pages
+    GA->>Cl: pick the best story
+    GA->>Cl: write the post in Ukrainian
+    GA->>Cl: copy-edit (language + facts)
+    GA->>Ap: draft with ✅ / ❌
+    Ap-->>GA: tap ✅ (saved by Telegram)
+    Note over GA: publisher checks every 5 min
+    GA->>Ch: publish
+    GA->>Ap: mark draft "✅ Published by …"
+```
+
 ## Daily schedule (Toronto time, winter)
 
 | Time | Draft |
