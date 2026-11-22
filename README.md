@@ -18,6 +18,13 @@ buttons. Posts you approve go to @UkrainianCanada within about 30 minutes.
 6. **Test:** Actions tab → "Draft posts" → Run workflow. Drafts should arrive in Telegram
    within a minute. Tap ✅ on one, then run "Publish approved posts" by hand to post right away.
 
+## Ukrainian community news
+
+Stories that mention Ukraine or Ukrainians in Canadian feeds, plus everything from New Pathway and UCC Manitoba,
+are always passed to the news picker (even when older than the newest 8 of a feed) and come first:
+church events or incidents, organizations, newcomers. The morning digest has a "🇺🇦 Українська громада"
+section when there are such stories.
+
 ## Morning digest
 
 Every morning at 6:30 Toronto time you get a "🗞 Головне за вчора" draft: the 3-5 most important Canadian

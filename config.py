@@ -50,12 +50,17 @@ FEEDS = [
     ("CBC Newfoundland and Labrador", "https://www.cbc.ca/webfeed/rss/rss-canada-newfoundland", "Newfoundland and Labrador"),
     # Yukon, Northwest Territories, Nunavut
     ("CBC North", "https://www.cbc.ca/webfeed/rss/rss-canada-north", "Territories (Yukon, NWT, Nunavut)"),
+    # Ukrainian community in Canada
+    ("New Pathway", "https://newpathway.ca/feed/", "Ukrainian community in Canada"),
+    ("UCC Manitoba", "https://www.uccmanitoba.ca/feed/", "Ukrainian community in Canada"),
     # Ukraine
     ("Ukrinform", "https://www.ukrinform.net/rss/block-lastnews", "Ukraine"),
 ]
 
-# Newest items taken from each feed per run (keeps big feeds from crowding out small ones)
+# Newest items taken from each feed per run (keeps big feeds from crowding out small ones).
+# Stories about the Ukrainian community are always kept, whatever their position in the feed.
 ITEMS_PER_FEED = 8
+COMMUNITY_WORDS = ("Ukrain", "україн", "Україн")
 
 # Drafts each run sends you (it may send fewer). 5 runs a day x 1 = up to 5 posts/day.
 # Set to 2 to get a backup option each run.

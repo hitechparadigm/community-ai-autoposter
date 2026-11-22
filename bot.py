@@ -182,17 +182,20 @@ def fetch_news(seen, max_age_hours=None, limit=200):
         got.sort(key=lambda i: i["published"] or now(), reverse=True)
         taken = 0
         for it in got:
-            if taken >= config.ITEMS_PER_FEED:
-                break
+            community = region != "Ukraine" and any(  # Ukrinform is all about Ukraine: not "community"
+                w in it["title"] + " " + it["summary"] for w in config.COMMUNITY_WORDS)
+            if taken >= config.ITEMS_PER_FEED and not community:
+                continue
             if it["url"] in seen or it["url"] in urls:
                 continue
             if it["published"] and it["published"] < cutoff:
                 continue
             it["region"] = region
+            it["community"] = community or region == "Ukrainian community in Canada"
             urls.add(it["url"])
             items.append(it)
             taken += 1
-    items.sort(key=lambda i: i["published"] or now(), reverse=True)
+    items.sort(key=lambda i: (i.get("community", False), i["published"] or now()), reverse=True)
     return items[:limit]
 
 
@@ -204,7 +207,10 @@ adaptation and life in Canada."""
 
 PICK_PROMPT = AUDIENCE + """
 
-Below are fresh news items. Pick up to {n} that matter most to this audience, for example: immigration, \
+Below are fresh news items. Top priority: news about the Ukrainian community in Canada (items marked \
+[UKRAINIAN COMMUNITY] that are really about Ukrainians in Canada: churches, organizations, events, newcomers, \
+people). Pick such a story whenever there is one, including incidents such as vandalism or theft at a Ukrainian \
+church, which count as community news, not routine crime. Then pick what matters most to this audience: immigration, \
 status and permits, CUAET, government programs and benefits, cost of living, housing, jobs, \
 Canada-Ukraine relations, Canadian support for Ukraine, Ukrainian community life in Canada, \
 or major national news everyone in Canada is talking about. Skip routine crime, celebrity and sports stories. \
@@ -471,7 +477,8 @@ def cmd_draft():
         return
 
     listing = "\n".join(
-        f"[{i}] ({it['region']}, {it['source']}) {it['title']} — {it['summary'][:200]}" for i, it in enumerate(items))
+        f"[{i}] {'[UKRAINIAN COMMUNITY] ' if it.get('community') else ''}({it['region']}, {it['source']}) "
+        f"{it['title']} — {it['summary'][:200]}" for i, it in enumerate(items))
     picks = parse_picks(ask_claude(PICK_PROMPT.format(n=config.DRAFTS_PER_RUN, items=listing)))
     print(f"Claude picked {picks}")
 
@@ -552,6 +559,9 @@ the last day and a half, each tagged with its region and publication time (Toron
 Prefer regions NOT featured recently: {recent}. Use the Ukrainian name of the region \
 (e.g. "Манітоба", "Британська Колумбія", "Нью-Брансвік", "Острів Принца Едварда", "Ньюфаундленд і Лабрадор", \
 "Юкон", "Північно-Західні території", "Нунавут"); for the CBC North feed name the actual territory.
+2b. "community": 0-2 stories about the Ukrainian community in Canada (items marked [UKRAINIAN COMMUNITY] \
+that are really about Ukrainians in Canada, including incidents at Ukrainian churches or organizations). \
+Empty list if there are none.
 3. "today": 0-3 things that will happen TODAY ({today}) according to the news items: a strike or shutdown \
 starting, a deadline, a vote, a court decision, a rule taking effect, a severe weather warning. Include an item \
 only if the news explicitly says it happens today or on today's date (check weekdays against today's date). \
@@ -567,6 +577,7 @@ outlets cover a story, choose the one used least so far in this digest.
 Reply with JSON only:
 {{"national": [{{"id": 0, "text": "... [key phrase] ..."}}],
   "regions": [{{"region": "Манітоба", "region_en": "Manitoba", "items": [{{"id": 5, "text": "..."}}]}}],
+  "community": [{{"id": 9, "text": "..."}}],
   "today": [{{"id": 7, "text": "..."}}]}}
 
 News items:
@@ -586,7 +597,7 @@ def cmd_digest():
         return save_state(s)
     recent = sorted(s["digest_regions"], key=lambda r: s["digest_regions"][r], reverse=True)[:6]
     listing = "\n".join(
-        f"[{i}] ({it['region']}, {it['source']}, "
+        f"[{i}] {'[UKRAINIAN COMMUNITY] ' if it.get('community') else ''}({it['region']}, {it['source']}, "
         f"{it['published'].astimezone(LOCAL).strftime('%a %b %d %H:%M') if it['published'] else '?'}) "
         f"{it['title']} — {it['summary'][:200]}" for i, it in enumerate(items))
     prompt = DIGEST_PROMPT.format(national=config.DIGEST_NATIONAL, regions=config.DIGEST_REGIONS,
@@ -628,6 +639,9 @@ def cmd_digest():
         if lines:
             parts += ["", f"📍 <b>{e(reg.get('region', ''), quote=False)}</b>"] + lines
             s["digest_regions"][reg.get("region_en") or reg.get("region", "")] = d.strftime("%Y-%m-%d")
+    community_lines = [l for l in map(line, digest.get("community") or []) if l]
+    if community_lines:
+        parts += ["", "🇺🇦 <b>Українська громада</b>"] + community_lines
     today_lines = [l for l in map(line, digest.get("today") or []) if l]
     if today_lines:
         parts += ["", f"📌 <b>Сьогодні, {d.day} {UK_MONTHS[d.month - 1]}</b>"] + today_lines
