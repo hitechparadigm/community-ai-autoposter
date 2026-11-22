@@ -29,6 +29,9 @@ Any other community can run its own channel by changing two settings files (see
   fixes it with its own notes and checks again, flagging anything left for the human editors. Output that comes
   back cut off or garbled is rejected and regenerated. A Ukrainian style guide (no russianisms or calques,
   Canadian terminology, typography) is part of every prompt.
+- **Structured outputs through tool use.** Every answer the code relies on (picks, posts, review verdicts, the
+  digest) comes back through Claude's tool use with a JSON schema, so it is always well-formed: no text parsing
+  guesswork and no retries for broken JSON.
 - **Token-efficient.** The source article is sent once as a cached block and reused by the writer, copy editor,
   reviewer and fixer (prompt caching), and headline lists for story picking are trimmed. Each run's log ends with
   a "Claude usage" line (input, cache write, cache read, output tokens).

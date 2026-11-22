@@ -213,7 +213,29 @@ SOURCE_REF = "(the source text is at the beginning of this message)"
 _usage = {"calls": 0, "input": 0, "cache_read": 0, "cache_write": 0, "output": 0}
 
 
-def ask_claude(prompt, source=None):
+def schema_post(keys, optional=()):
+    """Tool schema for a post with these text fields."""
+    return {"type": "object", "properties": {k: {"type": "string"} for k in (*keys, *optional)},
+            "required": list(keys)}
+
+
+SCHEMA_IDS = {"type": "object", "properties": {"ids": {"type": "array", "items": {"type": "integer"}}},
+              "required": ["ids"]}
+SCHEMA_REVIEW = {"type": "object", "properties": {
+    "verdict": {"type": "string", "enum": ["ok", "fix"]},
+    "problems": {"type": "array", "items": {"type": "string"}}}, "required": ["verdict"]}
+SCHEMA_REFERRAL = {"type": "object", "properties": {"id": {"type": ["integer", "null"]}}, "required": ["id"]}
+_ITEMS = {"type": "array", "items": {"type": "object", "properties": {
+    "id": {"type": "integer"}, "text": {"type": "string"}}, "required": ["id", "text"]}}
+SCHEMA_DIGEST = {"type": "object", "properties": {
+    "national": _ITEMS,
+    "regions": {"type": "array", "items": {"type": "object", "properties": {
+        "region": {"type": "string"}, "region_en": {"type": "string"}, "items": _ITEMS},
+        "required": ["region", "items"]}},
+    "community": _ITEMS, "today": _ITEMS}, "required": ["national"]}
+
+
+def ask_claude(prompt, source=None, schema=None):
     """One Claude call. With `source`, the source text goes first as a cached block: the writer, copy editor,
     reviewer and fixer all send the same source within a minute, so later calls read it from the cache at a
     fraction of the price (prompts then refer to it with SOURCE_REF instead of repeating it)."""
@@ -224,10 +246,14 @@ def ask_claude(prompt, source=None):
                    {"type": "text", "text": prompt}]
     else:
         content = prompt
+    body = {"model": config.MODEL, "max_tokens": 12000, "messages": [{"role": "user", "content": content}]}
+    if schema:  # structured answer through tool use: always well-formed JSON, no parsing guesswork
+        body["tools"] = [{"name": "answer", "description": "Return the answer in this structure.",
+                          "input_schema": schema}]
+        body["tool_choice"] = {"type": "tool", "name": "answer"}
     raw = http(
         "https://api.anthropic.com/v1/messages",
-        {"model": config.MODEL, "max_tokens": 12000,
-         "messages": [{"role": "user", "content": content}]},
+        body,
         {"x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01"},
         timeout=180,
     )
@@ -237,6 +263,12 @@ def ask_claude(prompt, source=None):
     for k, f in (("input", "input_tokens"), ("cache_read", "cache_read_input_tokens"),
                  ("cache_write", "cache_creation_input_tokens"), ("output", "output_tokens")):
         _usage[k] += u.get(f) or 0
+    if schema:
+        for b in resp.get("content", []):
+            if b.get("type") == "tool_use":
+                data = b.get("input", {})
+                return json.dumps(data["ids"] if list(data) == ["ids"] else data, ensure_ascii=False)
+        return ""
     return "".join(b.get("text", "") for b in resp.get("content", []) if b.get("type") == "text")
 
 
@@ -299,7 +331,7 @@ def review_post(post, keys, article, topic):
     def review(p):
         r = _json(ask_claude(REVIEW_PROMPT.format(
             topic=topic, draft=json.dumps({k: p[k] for k in keys}, ensure_ascii=False), article=SOURCE_REF),
-            source=article),
+            source=article, schema=SCHEMA_REVIEW),
             "{", "}") or {}
         return [] if r.get("verdict") == "ok" else [str(x) for x in (r.get("problems") or ["unspecified"])]
 
@@ -311,7 +343,7 @@ def review_post(post, keys, article, topic):
     fixed = parse_post(ask_claude(FIX_PROMPT.format(
         problems="\n".join(f"- {p}" for p in problems),
         draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False), article=SOURCE_REF),
-        source=article), keys)
+        source=article, schema=schema_post(keys)), keys)
     if not fixed or not edit_ok({k: post[k] for k in keys}, fixed, min_ratio=0.3):
         print("Review: the fix came back unusable; keeping the draft and flagging it")
         return post, problems
@@ -329,11 +361,11 @@ def review_note(problems):
     return f"\n\n<i>⚠️ {html.escape(config.LABELS['review_warning'])}:\n{items}</i>"
 
 
-def write_long(prompt, keys, tries=2, source=None):
+def write_long(prompt, keys, tries=2, source=None, optional=()):
     """Ask Claude for a post; if it comes back cut off or garbled, ask again."""
     post = None
     for _ in range(tries):
-        post = parse_post(ask_claude(prompt, source=source), keys)
+        post = parse_post(ask_claude(prompt, source=source, schema=schema_post(keys, optional)), keys)
         if post and edit_ok({k: post[k] for k in keys}, post):
             return post
         print("Draft came back incomplete; asking again")
@@ -524,7 +556,7 @@ def cmd_draft():
     listing = "\n".join(
         f"[{i}] {'[UKRAINIAN COMMUNITY] ' if it.get('community') else ''}({it['region']}, {it['source']}) "
         f"{it['title']} — {it['summary'][:120]}" for i, it in enumerate(items))
-    picks = parse_picks(ask_claude(PICK_PROMPT.format(n=config.DRAFTS_PER_RUN, items=listing)))
+    picks = parse_picks(ask_claude(PICK_PROMPT.format(n=config.DRAFTS_PER_RUN, items=listing), schema=SCHEMA_IDS))
     print(f"Claude picked {picks}")
 
     stamp = now().isoformat()
@@ -538,13 +570,14 @@ def cmd_draft():
         article = fetch_article(it["url"])
         src_text = article or "(not available)"
         post = parse_post(ask_claude(WRITE_PROMPT.format(
-            source=it["source"], title=it["title"], summary=it["summary"], article=SOURCE_REF), source=src_text))
+            source=it["source"], title=it["title"], summary=it["summary"], article=SOURCE_REF), source=src_text,
+            schema=schema_post(("title", "body"))))
         if not post:
             print(f"Could not write post for: {it['title']}")
             continue
         edited = parse_post(ask_claude(EDIT_PROMPT.format(
             draft=json.dumps(post, ensure_ascii=False), title=it["title"],
-            summary=it["summary"], article=SOURCE_REF), source=src_text))
+            summary=it["summary"], article=SOURCE_REF), source=src_text, schema=schema_post(("title", "body"))))
         if edit_ok(post, edited):
             post = edited
         else:
@@ -611,7 +644,7 @@ def matching_referral(s, post):
         return None
     offers = "\n".join(f"[{i}] {r[0]} ({r[2] if len(r) > 2 else ''})" for i, r in enumerate(refs))
     pick = _json(ask_claude(REFERRAL_MATCH_PROMPT.format(
-        offers=offers, post=f"{post['title']}\n{post['body']}")), "{", "}") or {}
+        offers=offers, post=f"{post['title']}\n{post['body']}"), schema=SCHEMA_REFERRAL), "{", "}") or {}
     try:
         i = int(pick.get("id"))
     except (TypeError, ValueError):
@@ -656,12 +689,12 @@ def cmd_digest():
         f"{it['title']} — {it['summary'][:120]}" for i, it in enumerate(items))
     prompt = DIGEST_PROMPT.format(national=config.DIGEST_NATIONAL, regions=config.DIGEST_REGIONS,
                                   recent=", ".join(recent) or "none", items=listing, today=f"{d:%A, %B %d, %Y}")
-    digest = _json(ask_claude(prompt), "{", "}")
+    digest = _json(ask_claude(prompt, schema=SCHEMA_DIGEST), "{", "}")
     if not isinstance(digest, dict) or not digest.get("national"):
         sys.exit("Could not write the digest")
     edited = _json(ask_claude(EDIT_PROMPT.format(
         draft=json.dumps(digest, ensure_ascii=False), title="Daily news digest", summary="",
-        article="\n".join(f"{it['title']} — {it['summary']}" for it in items))), "{", "}")
+        article="\n".join(f"{it['title']} — {it['summary']}" for it in items)), schema=SCHEMA_DIGEST), "{", "}")
     if isinstance(edited, dict) and edited.get("national"):
         digest = edited
 
@@ -901,7 +934,8 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
     kind = "thisday" if header == config.LABELS["thisday_header"] else "history"
     keys = ("title", "teaser", "body")
     post = write_long(HISTORY_WRITE_PROMPT.format(
-        topic=topic, source=source_name, article=SOURCE_REF, opening=opening), keys, source=article)
+        topic=topic, source=source_name, article=SOURCE_REF, opening=opening), keys, source=article,
+        optional=("image_query",))
     if not post:
         print("Could not write the history post")
         return False
@@ -911,7 +945,7 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
                            f"of this story: {topic}\nReply with the title only.").strip().strip('"')[:100]
     edited = parse_post(ask_claude(EDIT_PROMPT.format(
         draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False),
-        title=topic, summary="", article=SOURCE_REF), source=article), keys)
+        title=topic, summary="", article=SOURCE_REF), source=article, schema=schema_post(keys)), keys)
     post = edited if edit_ok(post, edited) else post
     post, problems = review_post(post, keys, article, topic)
     credit = source_name
@@ -980,7 +1014,7 @@ def cmd_thisday():
     prompt = THISDAY_PICK_PROMPT.format(items=listing) + (
         f"\nToday choose {'an EVENT (something that happened)' if want == 'event' else 'a PERSON'} "
         "if there is a good one; otherwise the best entry of any kind. Return up to 3 ids, best first.")
-    for i in parse_picks(ask_claude(prompt))[:3]:
+    for i in parse_picks(ask_claude(prompt, schema=SCHEMA_IDS))[:3]:
         if i >= len(cands):
             continue
         c = cands[i]
@@ -1012,7 +1046,7 @@ def cmd_thisday():
 def _story_from(candidates, s, stamp, header):
     """Let Claude rank the candidates, then write the first one that has enough text."""
     listing = "\n".join(f"[{i}] ({c['region']}, {c['source']}) {c['title']}" for i, c in enumerate(candidates))
-    for i in parse_picks(ask_claude(STORY_PICK_PROMPT.format(items=listing)))[:3]:
+    for i in parse_picks(ask_claude(STORY_PICK_PROMPT.format(items=listing), schema=SCHEMA_IDS))[:3]:
         if i >= len(candidates):
             continue
         c = candidates[i]
@@ -1230,13 +1264,13 @@ def cmd_rewrite(path, source):
     topic = source[5:] if source.startswith("wiki:") else source
     post = write_long(HISTORY_WRITE_PROMPT.format(
         topic=topic, source=source_name, article=SOURCE_REF, opening="Open with a vivid detail or the key moment."),
-        keys, source=article)
+        keys, source=article, optional=("image_query",))
     if not post:
         sys.exit("Could not write the article")
     query = post.get("image_query", "")
     edited = parse_post(ask_claude(EDIT_PROMPT.format(
         draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False),
-        title=topic, summary="", article=SOURCE_REF), source=article), keys)
+        title=topic, summary="", article=SOURCE_REF), source=article, schema=schema_post(keys)), keys)
     post = edited if edit_ok(post, edited) else post
     post, problems = review_post(post, keys, article, topic)
     if problems:
