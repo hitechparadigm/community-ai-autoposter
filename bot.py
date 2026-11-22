@@ -154,8 +154,11 @@ def fetch_news(seen):
 
 # ---------- Claude ----------
 
-PROMPT = """You are the editor of "Ukrainian Canada", a Telegram channel for Ukrainians living in Canada \
-(recent arrivals including CUAET, and the long-established community).
+AUDIENCE = """You are the editor of "Ukrainian Canada", a Telegram channel for Ukrainians living in Canada \
+(recent arrivals including CUAET, and the long-established community). The channel covers immigration, \
+adaptation and life in Canada."""
+
+PICK_PROMPT = AUDIENCE + """
 
 Below are fresh news items. Pick up to {n} that matter most to this audience, for example: immigration, \
 status and permits, CUAET, government programs and benefits, cost of living, housing, jobs, \
@@ -163,17 +166,34 @@ Canada-Ukraine relations, Canadian support for Ukraine, Ukrainian community life
 or major national news everyone in Canada is talking about. Skip routine crime, celebrity and sports stories. \
 Never pick two items about the same story. Pick fewer, or none, if nothing is relevant.
 
-For each pick, write a post in Ukrainian:
-- "title": a short headline, at most 12 words
-- "body": 2-4 sentences summarizing the news in your own words (never copy sentences from the source). \
-If useful, add one sentence on why it matters for Ukrainians in Canada. Neutral, clear tone. \
-Use only facts stated in the item; do not invent details.
-
-Reply with JSON only, no other text:
-[{{"id": <item id>, "title": "...", "body": "..."}}]
+Reply with JSON only: a list of the chosen item ids, most important first, e.g. [4, 17]
 
 News items:
 {items}
+"""
+
+WRITE_PROMPT = AUDIENCE + """
+
+Write a Telegram post in Ukrainian about the news article below. Readers should understand the story \
+without opening the link.
+
+- "title": a short headline, at most 12 words
+- "body": 2-3 short paragraphs (about 600-1000 characters in total), separated by blank lines:
+  1. What happened, in plain words.
+  2. The key details: who, numbers, dates, deadlines, who is eligible or affected.
+  3. Why it matters for Ukrainians in Canada, and what they can do next if anything (only if it really applies).
+- Write in your own words; never copy sentences from the article.
+- Use only facts stated in the article; do not invent or guess details. If the article text is missing, \
+keep the post shorter and stick to the headline and summary.
+- Neutral, clear, friendly tone. No hashtags, no emojis in the body.
+
+Reply with JSON only: {{"title": "...", "body": "..."}}
+
+Source: {source}
+Headline: {title}
+Summary: {summary}
+Article text:
+{article}
 """
 
 
@@ -191,15 +211,39 @@ def ask_claude(prompt):
     return "".join(b.get("text", "") for b in resp.get("content", []) if b.get("type") == "text")
 
 
-def parse_picks(text):
-    start, end = text.find("["), text.rfind("]")
+def _json(text, open_ch, close_ch):
+    start, end = text.find(open_ch), text.rfind(close_ch)
     if start == -1 or end == -1:
-        return []
+        return None
     try:
-        picks = json.loads(text[start:end + 1])
+        return json.loads(text[start:end + 1], strict=False)
     except json.JSONDecodeError:
-        return []
-    return [p for p in picks if isinstance(p, dict) and {"id", "title", "body"} <= p.keys()]
+        return None
+
+
+def parse_picks(text):
+    ids = _json(text, "[", "]") or []
+    return [int(i) for i in ids if isinstance(i, (int, str)) and str(i).isdigit()]
+
+
+def parse_post(text):
+    post = _json(text, "{", "}")
+    if isinstance(post, dict) and post.get("title") and post.get("body"):
+        return post
+    return None
+
+
+def fetch_article(url, limit=6000):
+    """Best-effort plain text of a news article (paragraph text only)."""
+    try:
+        page = http(url, timeout=20).decode("utf-8", errors="replace")
+    except Exception as e:
+        print(f"Could not fetch article: {e}")
+        return ""
+    page = re.sub(r"(?is)<(script|style|noscript)[^>]*>.*?</\1>", " ", page)
+    paras = [_clean(p, 2000) for p in re.findall(r"(?is)<p[^>]*>(.*?)</p>", page)]
+    text = "\n".join(p for p in paras if len(p) > 60)
+    return text[:limit]
 
 
 # ---------- posts ----------
@@ -248,20 +292,26 @@ def cmd_draft():
 
     listing = "\n".join(
         f"[{i}] ({it['source']}) {it['title']} — {it['summary']}" for i, it in enumerate(items))
-    picks = parse_picks(ask_claude(PROMPT.format(n=config.DRAFTS_PER_RUN, items=listing)))
-    print(f"Claude picked {len(picks)}")
+    picks = parse_picks(ask_claude(PICK_PROMPT.format(n=config.DRAFTS_PER_RUN, items=listing)))
+    print(f"Claude picked {picks}")
 
     stamp = now().isoformat()
     for it in items:  # don't offer the same stories again next run
         s["seen"][it["url"]] = stamp
 
-    for p in picks[:config.DRAFTS_PER_RUN]:
-        try:
-            it = items[int(p["id"])]
-        except (ValueError, IndexError):
+    for i in picks[:config.DRAFTS_PER_RUN]:
+        if i >= len(items):
+            continue
+        it = items[i]
+        article = fetch_article(it["url"])
+        post = parse_post(ask_claude(WRITE_PROMPT.format(
+            source=it["source"], title=it["title"], summary=it["summary"],
+            article=article or "(not available)")))
+        if not post:
+            print(f"Could not write post for: {it['title']}")
             continue
         did = hashlib.sha1(it["url"].encode()).hexdigest()[:10]
-        text = format_post(p["title"], p["body"], it["source"], it["url"])
+        text = format_post(post["title"], post["body"], it["source"], it["url"])
         msg = tg("sendMessage", chat_id=ADMIN_ID, text=text, parse_mode="HTML",
                  link_preview_options=preview(it["url"]), reply_markup=buttons(did))
         s["pending"][did] = {"url": it["url"], "text": text, "created": stamp,

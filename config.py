@@ -12,8 +12,9 @@ FEEDS = [
     ("Ukrinform", "https://www.ukrinform.net/rss/block-lastnews"),
 ]
 
-# How many drafts each run sends you for approval (it may send fewer)
-DRAFTS_PER_RUN = 2
+# Drafts each run sends you (it may send fewer). 5 runs a day x 1 = up to 5 posts/day.
+# Set to 2 to get a backup option each run.
+DRAFTS_PER_RUN = 1
 
 # Ignore news older than this
 MAX_AGE_HOURS = 36

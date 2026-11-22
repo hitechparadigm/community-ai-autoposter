@@ -2,7 +2,8 @@ name: Draft posts
 
 on:
   schedule:
-    - cron: "0 12,20 * * *"   # 7:00 and 15:00 Toronto time (winter); GitHub may run it a few minutes late
+    - cron: "0 12,15,18,21 * * *"   # 7:00, 10:00, 13:00, 16:00 Toronto time (winter)
+    - cron: "0 0 * * *"             # 19:00 Toronto time
   workflow_dispatch:           # lets you run it by hand from the Actions tab
 
 permissions:

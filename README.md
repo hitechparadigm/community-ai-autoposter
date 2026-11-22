@@ -1,6 +1,6 @@
 # Ukrainian Canada autoposter (step 1: Telegram)
 
-Twice a day it reads Canadian news feeds, has Claude pick the 2 most relevant stories and
+Five times a day it reads Canadian news feeds, has Claude pick the most relevant story and
 write short posts in Ukrainian, and sends them to you in Telegram with **✅ Publish / ❌ Skip**
 buttons. Posts you approve go to @UkrainianCanada within about 20 minutes.
 
