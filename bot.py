@@ -816,8 +816,8 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
         return send_draft(s, url, text[:4000], stamp, image=image)
     e = html.escape
     text = (f"{e(header, quote=False)}\n\n<b>{e(post['title'], quote=False)}</b>\n\n{e(post['teaser'], quote=False)}"
-            f"\n\n📖 <a href=\"{e(page['url'], quote=True)}\">Читати повністю</a>"
-            f"\n🔗 Джерело: <a href=\"{e(url, quote=True)}\">{e(source_name, quote=False)}</a>")
+            f"\n\n📖 <b><a href=\"{e(page['url'], quote=True)}\">Читати повністю →</a></b>")
+    # the source is credited at the end of the Telegraph article, not in the post
     print(f"Telegraph page: {page['url']}")
     ok = send_draft(s, url, text, stamp, preview_url=page["url"])
     if ok:
