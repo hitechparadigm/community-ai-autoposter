@@ -29,7 +29,7 @@ names like Торонто or Оттава need no brackets. Use feminine job tit
 - Organizations, companies, brands, venues, programs and events: never transliterate them. Keep the original \
 English or French name as is, without quotation marks or translation (e.g. Open Harbour Refugee Association, \
 Air Canada, Tim Hortons, Maple Leaf Gardens, Blended Visa Office-Referred (BVOR)); you may add a few Ukrainian words \
-about what it is (e.g. «організація Open Harbour Refugee Association з Галіфакса»). Exception: government bodies \
+about what it is (e.g. організація Open Harbour Refugee Association з Галіфакса). Exception: government bodies \
 and Ukrainian organizations with an established Ukrainian name use that name (e.g. міністерство імміграції \
 Канади (IRCC); Банк Канади; Верховний суд Канади; Конгрес українців Канади (Ukrainian Canadian Congress); \
 Канадська рада у справах біженців (Canadian Council for Refugees)).
