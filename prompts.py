@@ -26,13 +26,16 @@ Parliament / House of Commons = парламент / Палата громад; 
 and their role (e.g. міністерка промисловості Канади Мелані Жолі (Mélanie Joly); Фостер Г'юїтт (Foster Hewitt)). \
 Later mentions: Ukrainian only. Do the same for lesser-known places (e.g. Галіфакс, Саскатун); well-known \
 names like Торонто or Оттава need no brackets. Use feminine job titles for women.
-- Organizations, companies, brands, venues, programs and events: never transliterate them. Keep the original \
-English or French name as is, without quotation marks or translation (e.g. Open Harbour Refugee Association, \
-Air Canada, Tim Hortons, Maple Leaf Gardens, Blended Visa Office-Referred (BVOR)); you may add a few Ukrainian words \
-about what it is (e.g. організація Open Harbour Refugee Association з Галіфакса). Exception: government bodies \
-and Ukrainian organizations with an established Ukrainian name use that name (e.g. міністерство імміграції \
-Канади (IRCC); Банк Канади; Верховний суд Канади; Конгрес українців Канади (Ukrainian Canadian Congress); \
-Канадська рада у справах біженців (Canadian Council for Refugees)).
+- Organizations, companies, brands, venues, programs and events: never transliterate them. Choose one way:
+  1. Translate when the name simply describes what the body is and reads naturally in Ukrainian: government
+     bodies, courts, councils, associations, unions, Ukrainian organizations, or any that already has an
+     established Ukrainian name. Give the original in brackets on first mention (e.g. міністерство імміграції
+     Канади (IRCC); Банк Канади; Конгрес українців Канади (Ukrainian Canadian Congress); Канадська рада у
+     справах біженців (Canadian Council for Refugees)).
+  2. Otherwise keep the original English or French name as is, without quotation marks: companies, brands,
+     venues, programs, and names that are more than a description (e.g. Air Canada, Tim Hortons, Maple Leaf
+     Gardens, Open Harbour Refugee Association, Blended Visa Office-Referred (BVOR)). You may add a few
+     Ukrainian words about what it is (e.g. організація Open Harbour Refugee Association з Галіфакса).
 - Typography: apostrophe ' (м'ясо), em dash with spaces " — ", quotation marks «...», no double spaces.
 - Prefer short sentences and active voice. No clichés, no filler, no exclamation marks, no clickbait.
 - No repetition: every sentence and paragraph adds something new. Don't restate the same fact in other words,
