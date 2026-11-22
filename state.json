@@ -1,9 +1,9 @@
 {
  "digest_regions": {
-  "Alberta": "2026-11-22",
-  "British Columbia": "2026-11-22",
-  "Nova Scotia": "2026-11-22",
-  "Saskatchewan": "2026-11-22"
+  "Alberta": "2026-11-21",
+  "British Columbia": "2026-11-21",
+  "Nova Scotia": "2026-11-21",
+  "Saskatchewan": "2026-11-21"
  },
  "history_done": [
   "Foster_Hewitt",
@@ -15,9 +15,32 @@
   "https://qahn.org/article/dr-maude-abbott-1869-1940-pioneer-woman-doctor",
   "https://qahn.org/article/cure-francois-xavier-antoine-labelle-1833-1891-le-roi-du-nord",
   "http://www.biographi.ca/en/bio/delorme_pierre_14E.html",
-  "Canadian_National_Railway"
+  "Canadian_National_Railway",
+  "René-Robert_Cavelier,_Sieur_de_La_Salle"
  ],
  "pending": {
+  "0c1af4c048": {
+   "created": "2026-11-22T13:46:57.305477+00:00",
+   "kind": "thisday",
+   "lp": {
+    "prefer_large_media": true,
+    "show_above_text": true,
+    "url": "https://telegra.ph/La-Sal-doslіdnik-yakij-dav-іmya-Luizіanі-і-zaginuv-u-Tehasі-11-22"
+   },
+   "msgs": [
+    [
+     "7bb2c834ae",
+     40
+    ],
+    [
+     "74c991a120",
+     41
+    ]
+   ],
+   "telegraph_path": "La-Sal-doslіdnik-yakij-dav-іmya-Luizіanі-і-zaginuv-u-Tehasі-11-22",
+   "text": "📅 Цей день в історії Канади\n\n<b>Ла Саль: дослідник, який дав ім'я Луїзіані і загинув у Техасі</b>\n\nВін збудував форт на місці сучасного Кінгстона, разом із Тонті першим із європейців документально засвідчив Ніагарський водоспад і проголосив басейн Міссісіпі володінням Франції. Рене-Робер Ла Саль народився 22 листопада 1643 року. Його життя — це відкриття, суперечки істориків і трагічний кінець.\n\n📖 <b><a href=\"https://telegra.ph/La-Sal-doslіdnik-yakij-dav-іmya-Luizіanі-і-zaginuv-u-Tehasі-11-22\">Читати повністю →</a></b>",
+   "url": "https://en.wikipedia.org/wiki/Ren%C3%A9-Robert_Cavelier%2C_Sieur_de_La_Salle"
+  },
   "35ba38a8a6": {
    "created": "2026-11-22T03:50:51.723433+00:00",
    "lp": {
@@ -500,5 +523,5 @@
   "https://www.ukrinform.net/rubric-society/4187233-prague-pays-tribute-to-ukrainians-who-died-for-freedom.html": "2026-11-22T02:54:46.860426+00:00"
  },
  "tg_offset": 17524593,
- "thisday_last": "event"
+ "thisday_last": "person"
 }
