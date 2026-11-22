@@ -22,7 +22,8 @@ buttons. Posts you approve go to @UkrainianCanada within about 20 minutes.
 
 Every evening at 20:00 Toronto time you get a "🗞 Головне за день" draft: the 3-5 most important
 Canadian stories of the last 24 hours plus 1-2 stories from 3-4 provinces or territories. Regions rotate,
-so every province and territory gets featured over the week. Each item links to its source.
+so every province and territory gets featured over the week. A key phrase in each item links to the source
+article, outlets are mixed (CBC, Global News, Postmedia papers), and the post ends with "За матеріалами: ...".
 
 ## Changing things
 

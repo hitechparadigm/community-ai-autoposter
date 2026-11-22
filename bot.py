@@ -205,7 +205,8 @@ Canada-Ukraine relations, Canadian support for Ukraine, Ukrainian community life
 or major national news everyone in Canada is talking about. Skip routine crime, celebrity and sports stories. \
 Items are tagged with their region. A regional story qualifies when it matters to people living there \
 (Ukrainians live in every province); vary regions over the day rather than always picking Ontario. \
-CBC and Global News often cover the same story: never pick two items about the same story. \
+Several outlets often cover the same story: never pick two items about the same story, and when \
+several cover it, prefer the outlet other than CBC (CBC dominates the list). \
 Pick fewer, or none, if nothing is relevant.
 
 Reply with JSON only: a list of the chosen item ids, most important first, e.g. [4, 17]
@@ -269,6 +270,7 @@ Check and fix:
 3. Facts: every name, number, date and claim must match the article. Remove anything the article does not support.
 4. Clarity: a reader who has not seen the article must understand it. Keep the structure and length.
 
+Keep any phrase in [square brackets] marked with brackets (it becomes a link); you may reword it.
 If the draft is already correct, return it unchanged. Reply with JSON only, with exactly the same keys as the draft.
 
 Draft:
@@ -523,6 +525,14 @@ def send_draft(s, url, text, stamp, image="", preview_url=""):
 
 # ---------- daily digest ----------
 
+def outlet(source):
+    """Media outlet from a feed name: "CBC Manitoba" -> "CBC", "Global News Winnipeg" -> "Global News"."""
+    for name in ("CBC", "Global News"):
+        if source.startswith(name):
+            return name
+    return source
+
+
 UK_MONTHS = ["січня", "лютого", "березня", "квітня", "травня", "червня", "липня", "серпня",
              "вересня", "жовтня", "листопада", "грудня"]
 
@@ -538,11 +548,15 @@ Prefer regions NOT featured recently: {recent}. Use the Ukrainian name of the re
 (e.g. "Манітоба", "Британська Колумбія", "Нью-Брансвік", "Острів Принца Едварда", "Ньюфаундленд і Лабрадор", \
 "Юкон", "Північно-Західні території", "Нунавут"); for the CBC North feed name the actual territory.
 - For each item, "text": 1-2 sentences (at most 220 characters) saying what happened and why it matters. \
-Use only facts in the headline and summary. CBC and Global News often cover the same story: use it once.
+Use only facts in the headline and summary. Put square brackets around ONE key phrase of 2-5 words in each \
+text (e.g. "Партія [обрала нового лідера] ..."); that phrase becomes the link to the source article.
+- Several outlets often cover the same story: use the story once. Use a mix of outlets across the digest \
+(CBC, Global News, Postmedia papers such as Vancouver Sun, Calgary Herald, Ottawa Citizen): when several \
+outlets cover a story, choose the one used least so far in this digest.
 - Skip routine crime, celebrity and sports stories unless they are major.
 
 Reply with JSON only:
-{{"national": [{{"id": 0, "text": "..."}}],
+{{"national": [{{"id": 0, "text": "... [key phrase] ..."}}],
   "regions": [{{"region": "Манітоба", "region_en": "Manitoba", "items": [{{"id": 5, "text": "..."}}]}}]}}
 
 News items:
@@ -576,12 +590,23 @@ def cmd_digest():
 
     e = html.escape
 
+    used = []
+
     def line(entry):
         try:
             it = items[int(entry["id"])]
         except (KeyError, ValueError, IndexError, TypeError):
             return ""
-        return f"• {e(entry.get('text', ''), quote=False)} <a href=\"{e(it['url'], quote=True)}\">{e(it['source'].split(' ')[0], quote=False)}</a>"
+        used.append(outlet(it["source"]))
+        text = entry.get("text", "")
+        link = f'<a href="{e(it["url"], quote=True)}">'
+        m = re.search(r"\[([^\]]+)\]", text)
+        if not m:  # no marked phrase: link the first few words
+            m = re.match(r"\s*((?:\S+\s+){0,3}\S+)", text)
+        if not m:
+            return ""
+        before, phrase, after = text[:m.start()], m.group(1), text[m.end():].replace("[", "").replace("]", "")
+        return f"• {e(before, quote=False)}{link}{e(phrase, quote=False)}</a>{e(after, quote=False)}"
 
     parts = [f"🗞 <b>Головне за день · {d.day} {UK_MONTHS[d.month - 1]}</b>", "", "🇨🇦 <b>Канада</b>"]
     parts += [l for l in map(line, digest["national"]) if l]
@@ -590,7 +615,9 @@ def cmd_digest():
         if lines:
             parts += ["", f"📍 <b>{e(reg.get('region', ''), quote=False)}</b>"] + lines
             s["digest_regions"][reg.get("region_en") or reg.get("region", "")] = d.strftime("%Y-%m-%d")
-    parts += ["", f"<a href=\"{config.TELEGRAPH_AUTHOR_URL}\">{e(config.TELEGRAPH_AUTHOR, quote=False)}</a>"]
+    outlets = list(dict.fromkeys(used))
+    parts += ["", f"<i>За матеріалами: {e(', '.join(outlets), quote=False)}</i>",
+              f"<a href=\"{config.TELEGRAPH_AUTHOR_URL}\">{e(config.TELEGRAPH_AUTHOR, quote=False)}</a>"]
     text = "\n".join(parts)[:4000]
     try:
         top = items[int(digest["national"][0]["id"])]["url"]

@@ -5,6 +5,8 @@ CHANNEL = "@UkrainianCanada"
 
 # News sources: (display name, RSS/Atom feed URL, region)
 # If a feed stops working, the run log shows "FEED ERROR" and the rest still run.
+# National Post isn't here: its feeds don't return a readable feed to automated requests.
+# Its sister Postmedia papers below (Vancouver Sun, Calgary Herald, ...) work.
 FEEDS = [
     # National
     ("CBC News", "https://www.cbc.ca/webfeed/rss/rss-canada", "Canada"),
@@ -14,11 +16,14 @@ FEEDS = [
     # British Columbia
     ("CBC British Columbia", "https://www.cbc.ca/webfeed/rss/rss-canada-britishcolumbia", "British Columbia"),
     ("Global News BC", "https://globalnews.ca/bc/feed/", "British Columbia"),
+    ("Vancouver Sun", "https://vancouversun.com/feed/", "British Columbia"),
     # Alberta
     ("CBC Calgary", "https://www.cbc.ca/webfeed/rss/rss-canada-calgary", "Alberta"),
     ("CBC Edmonton", "https://www.cbc.ca/webfeed/rss/rss-canada-edmonton", "Alberta"),
     ("Global News Calgary", "https://globalnews.ca/calgary/feed/", "Alberta"),
     ("Global News Edmonton", "https://globalnews.ca/edmonton/feed/", "Alberta"),
+    ("Calgary Herald", "https://calgaryherald.com/feed/", "Alberta"),
+    ("Edmonton Journal", "https://edmontonjournal.com/feed/", "Alberta"),
     # Saskatchewan
     ("CBC Saskatchewan", "https://www.cbc.ca/webfeed/rss/rss-canada-saskatchewan", "Saskatchewan"),
     ("Global News Regina", "https://globalnews.ca/regina/feed/", "Saskatchewan"),
@@ -31,6 +36,8 @@ FEEDS = [
     ("CBC Ottawa", "https://www.cbc.ca/webfeed/rss/rss-canada-ottawa", "Ontario"),
     ("Global News Toronto", "https://globalnews.ca/toronto/feed/", "Ontario"),
     ("Global News Ottawa", "https://globalnews.ca/ottawa/feed/", "Ontario"),
+    ("Ottawa Citizen", "https://ottawacitizen.com/feed/", "Ontario"),
+    ("Toronto Sun", "https://torontosun.com/feed/", "Ontario"),
     # Quebec
     ("CBC Montreal", "https://www.cbc.ca/webfeed/rss/rss-canada-montreal", "Quebec"),
     ("Global News Montreal", "https://globalnews.ca/montreal/feed/", "Quebec"),
