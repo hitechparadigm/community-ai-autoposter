@@ -5,7 +5,7 @@ name: Schedule
 # so the repository owner should be the last one to edit these lines.
 on:
   schedule:
-    - cron: "30 11 * * *"           # 6:30 Toronto: morning digest
+    - cron: "31 11 * * *"           # 6:30 Toronto: morning digest
     - cron: "30 13 * * *"           # 8:30: This day in history
     - cron: "30 16 * * *"           # 11:30: history long-read
     - cron: "0 14,17,20,23 * * *"   # 9:00, 12:00, 15:00, 18:00: news
