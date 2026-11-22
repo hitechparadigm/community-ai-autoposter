@@ -29,6 +29,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 STATE_FILE = os.path.join(HERE, "state.json")
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/131.0 Safari/537.36")
+# Wikimedia asks bots to identify themselves (and throttles generic browser user agents)
+WIKI_UA = "UkrainianCanadaBot/1.0 (https://t.me/UkrainianCanada; Telegram news channel)"
 ATOM = "{http://www.w3.org/2005/Atom}"
 DC = "{http://purl.org/dc/elements/1.1/}"
 
@@ -45,7 +47,7 @@ def now():
 
 
 def http(url, data=None, headers=None, timeout=30):
-    h = {"User-Agent": UA}
+    h = {"User-Agent": WIKI_UA if re.search(r"wiki[mp]edia\.org", url) else UA}
     h.update(headers or {})
     body = None
     if data is not None:
@@ -324,7 +326,8 @@ def _image_size(data):
 def image_ok(url):
     """A real photo: big enough and not a wide banner or a logo strip."""
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": UA, "Range": "bytes=0-131071"})
+        ua = WIKI_UA if "wikimedia.org" in url else UA
+        req = urllib.request.Request(url, headers={"User-Agent": ua, "Range": "bytes=0-131071"})
         with urllib.request.urlopen(req, timeout=20) as r:
             data = r.read(131072)
     except Exception:
