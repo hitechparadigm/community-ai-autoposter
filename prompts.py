@@ -189,7 +189,10 @@ good magazine feature: engaging, educational and strictly accurate.
 no "читайте далі" or "розповідаємо про…" phrases; state the most interesting fact instead.
 - "body": the full article. {opening} Then tell the story in order, giving enough context \
 (where, when, who) for a newcomer who does not know Canadian history, and end with why it matters or what \
-it left behind. Mention a connection to Ukrainians in Canada only if the source supports it.
+it left behind. Mention a connection to Ukrainians in Canada only if the source supports it; never add a closing
+paragraph about what the story "shows" newcomers.
+  If the source is mostly about something else (e.g. a company rather than the event), write only what it says
+  about the topic and keep the article short rather than filling it with unrelated background.
   Length: as long as the source supports, up to about 6000 characters; never pad or repeat. \
   Short paragraphs separated by blank lines. Add 2-4 subheadings on their own line starting with "## ".
 - "image_query": the main person, place or event in English, as it would be titled on English Wikipedia \

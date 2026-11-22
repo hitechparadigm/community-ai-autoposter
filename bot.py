@@ -705,6 +705,20 @@ def people_of_the_day():
     return [{"url": u, "name": n} for u, n in out.items()]
 
 
+def best_page(text, pages):
+    """The linked page that is about the event itself (e.g. "Canoe River train crash"), not a page about
+    something it mentions (e.g. "Canadian National Railway"): most of its title's words appear in the text,
+    preferring longer, more specific titles."""
+    words = set(re.findall(r"\w+", text.lower()))
+
+    def score(p):
+        title = re.sub(r"_", " ", p.get("title", ""))
+        tw = [w for w in re.findall(r"\w+", title.lower()) if len(w) > 2]
+        hit = sum(w in words for w in tw) / len(tw) if tw else 0
+        return (hit, len(tw))
+    return max(pages, key=score).get("title", "")
+
+
 def wiki_on_this_day(d):
     try:
         data = json.loads(http(f"{WIKI}/api/rest_v1/feed/onthisday/all/{d:%m}/{d:%d}"))
@@ -718,7 +732,7 @@ def wiki_on_this_day(d):
             blob = e.get("text", "") + " " + " ".join(p.get("extract", "") for p in pages[:2])
             if pages and any(w in blob for w in config.THISDAY_WORDS):
                 out.append({"kind": kind, "year": e.get("year"), "text": e.get("text", ""),
-                            "page": pages[0].get("title", "")})
+                            "page": best_page(e.get("text", ""), pages)})
     return out
 
 
