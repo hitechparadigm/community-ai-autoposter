@@ -2,7 +2,7 @@
 
 Five times a day (9:00-21:00) it reads Canadian news feeds, has Claude pick the most relevant story and
 write short posts in Ukrainian, and sends them to you in Telegram with **✅ Publish / ❌ Skip**
-buttons. Posts you approve go to @UkrainianCanada within about 30 minutes.
+buttons. Posts you approve go to @UkrainianCanada within about 5 minutes.
 
 ## Setup (one time, easiest from a computer)
 
