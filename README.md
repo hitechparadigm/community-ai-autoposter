@@ -33,6 +33,8 @@ News drafts come at 9:00, 12:00, 15:00, 18:00 and 21:00; "This day" at 8:30; the
 
 The morning digest ends with one referral link from `REFERRALS` in `config.py`, a different one each day.
 An optional line under it can be set in `REFERRAL_DISCLOSURE`. Other posts carry no referral links.
+On the 1st of every month ("Check referral offers") the bot reads each offer page, updates the text with the
+current bonus (only what the page states), and sends you a report in Telegram.
 
 ## Facebook Page
 

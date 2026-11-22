@@ -99,6 +99,8 @@ def merge_state(base, ours, theirs):
     out["tg_offset"] = max(theirs.get("tg_offset", 0), ours.get("tg_offset", 0))
     out["digest_regions"] = {**out.get("digest_regions", {}), **ours.get("digest_regions", {})}
     out["ref_index"] = max(theirs.get("ref_index", 0), ours.get("ref_index", 0))
+    if "ref_labels" in ours:
+        out["ref_labels"] = ours["ref_labels"]
     if ours.get("thisday_last"):
         out["thisday_last"] = ours["thisday_last"]
     if ours.get("telegraph_token") and not out.get("telegraph_token"):
@@ -634,7 +636,8 @@ def cmd_digest():
               f"<a href=\"{config.TELEGRAPH_AUTHOR_URL}\">{e(config.TELEGRAPH_AUTHOR, quote=False)}</a>"]
     refs = getattr(config, "REFERRALS", [])
     if refs:  # one referral link per digest, rotating
-        label, link = refs[s.get("ref_index", 0) % len(refs)]
+        label, link = refs[s.get("ref_index", 0) % len(refs)][:2]
+        label = s.get("ref_labels", {}).get(link) or label  # current offer, from the monthly check
         s["ref_index"] = s.get("ref_index", 0) + 1
         parts += ["", f"<a href=\"{e(link, quote=True)}\">{e(label, quote=False)}</a>"]
         if config.REFERRAL_DISCLOSURE:
@@ -647,6 +650,62 @@ def cmd_digest():
     key = f"digest:{d:%Y-%m-%d}"
     if send_draft(s, key, text, now().isoformat(), preview_url=top):
         print("Digest draft sent")
+    save_state(s)
+
+
+# ---------- referral offers ----------
+
+REFERRAL_PROMPT = """Below is the text of a referral landing page for: {what}.
+Write a short Ukrainian call to action for a Telegram channel (at most 50 characters, starting with one emoji) \
+that says what the product is and what a new customer gets, e.g. "🎁 Інвестуйте з Wealthsimple і отримайте $25". \
+Use an amount or condition only if the page states it; never guess. If the page states no offer, just name the \
+product and its main benefit.
+
+Reply with JSON only: {{"label": "...", "offer_found": true, "summary": "the offer and its main conditions in one English sentence"}}
+
+Page text:
+{text}
+"""
+
+
+def _page_text(url):
+    """Visible text of a page (follows redirects such as bit.ly)."""
+    text, _ = fetch_page(url, 6000)
+    if len(text) < 300:  # pages without <p> paragraphs: take all visible text
+        raw = _get_page(url)
+        raw = re.sub(r"(?is)<(script|style|noscript)[^>]*>.*?</\1>", " ", raw)
+        text = _clean(re.sub(r"<[^>]+>", " ", raw), 6000)
+    return text
+
+
+def cmd_referrals():
+    """Monthly: read each referral page, update the post text with the current offer, and report to the approvers."""
+    s = load_state()
+    labels = s.setdefault("ref_labels", {})
+    report = ["🔎 <b>Перевірка реферальних пропозицій</b>"]
+    for default, link, what in config.REFERRALS:
+        text = _page_text(link)
+        if len(text) < 200:
+            labels.pop(link, None)
+            report.append(f"\n• {html.escape(default)}\n  ⚠️ Сторінку не вдалося прочитати — залишаю текст за замовчуванням.")
+            continue
+        r = _json(ask_claude(REFERRAL_PROMPT.format(what=what, text=text)), "{", "}") or {}
+        label = (r.get("label") or "").strip()
+        if label and len(label) <= 70:
+            old = labels.get(link, default)
+            labels[link] = label
+            change = "" if old == label else f" (було: {html.escape(old)})"
+            report.append(f"\n• {html.escape(label)}{change}\n  {html.escape(r.get('summary', ''))}")
+        else:
+            report.append(f"\n• {html.escape(default)}\n  ⚠️ Не вдалося визначити пропозицію — залишаю як є.")
+    report.append(f"\nЗмінити тексти можна в config.py (REFERRALS).")
+    for admin in ADMIN_IDS:
+        try:
+            tg("sendMessage", chat_id=admin, text="\n".join(report), parse_mode="HTML",
+               link_preview_options={"is_disabled": True})
+        except Exception as e:
+            print(f"Could not send report to {admin}: {e}")
+    print("\n".join(report))
     save_state(s)
 
 
@@ -1131,6 +1190,8 @@ if __name__ == "__main__":
         cmd_thisday()
     elif cmd == "digest":
         cmd_digest()
+    elif cmd == "referrals":
+        cmd_referrals()
     elif cmd == "merge-state":  # used by save_state.sh: merge-state BASE OURS (theirs = state.json)
         with open(sys.argv[2], encoding="utf-8") as f:
             base = json.load(f)

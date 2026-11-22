@@ -71,15 +71,19 @@ DRAFT_EXPIRY_HOURS = 24
 DIGEST_NATIONAL = "3-5"
 DIGEST_REGIONS = "3-4"
 
-# Referral links: one per morning digest, in rotation. (text shown in the post, link).
-# Put the exact bonus from each program's referral page in the text, e.g. "Отримайте $25".
+# Referral links: one per morning digest, in rotation: (default text, link, what it is).
+# Once a month (python bot.py referrals) the bot reads each offer page and updates the text with the
+# current bonus; the default text is used until then, or when a page can't be read.
 REFERRALS = [
-    ("🎁 Бонус від Wealthsimple", "https://www.wealthsimple.com/invite/L4FYWG"),
-    ("💳 Ваш кредитний рейтинг — безкоштовно", "https://bit.ly/my-credit-score"),
-    ("🏦 Рахунок у Simplii без щомісячної плати", "https://blue.mbsy.co/6svHvM"),
-    ("💸 Перший переказ через Wise без комісії", "https://bit.ly/3UYzy9r"),
-    ("📊 Бонус від Questrade", "https://bit.ly/4dUdlWV"),
-    ("💳 Перевірте кредитний рейтинг безкоштовно", "https://bit.ly/3cqN99x"),
+    ("📈 Інвестуйте з Wealthsimple", "https://www.wealthsimple.com/invite/L4FYWG",
+     "Wealthsimple investing and savings account"),
+    ("💳 Дізнайтеся свій кредитний рейтинг безкоштовно", "https://bit.ly/my-credit-score",
+     "free credit score check"),
+    ("🏦 Відкрийте рахунок у Simplii без щомісячної плати", "https://blue.mbsy.co/6svHvM",
+     "Simplii Financial no-fee bank account"),
+    ("💸 Перекази за кордон з Wise", "https://bit.ly/3UYzy9r", "Wise international money transfers"),
+    ("📊 Інвестуйте з Questrade", "https://bit.ly/4dUdlWV", "Questrade investing account"),
+    ("💳 Перевірте свій кредитний рейтинг", "https://bit.ly/3cqN99x", "free credit score check"),
 ]
 REFERRAL_DISCLOSURE = ""  # optional line under the link, e.g. "#реклама"; empty = none
 
