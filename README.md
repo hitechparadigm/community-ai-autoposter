@@ -35,7 +35,8 @@ of the two workflow files (times are UTC).
 ## Canadian history
 
 Two extra drafts a day, approved the same way. Canadian sources come first; Wikipedia is only a
-fallback. Posts show the source's main picture above the text.
+fallback. Posts show a photo above the text: the source's own picture, or, if it has no real photo
+(only a logo or banner), a freely licensed photo of the subject from Wikimedia Commons.
 
 - **📅 Цей день в історії Канади** (8:30 Toronto time): a person born or died on today's date, from
   the Dictionary of Canadian Biography (fallback: Wikipedia "On this day", Canadian entries).
