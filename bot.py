@@ -318,6 +318,23 @@ def commons_image(query):
             src = (p.get("original") or {}).get("source", "")
             if src and words <= title and not BAD_IMG.search(src) and image_ok(src):
                 return src
+    # The article has no lead photo: search Wikimedia Commons files whose name shares the key words
+    key = {w for w in words if len(w) > 3} or words
+    q = urllib.parse.urlencode({"action": "query", "generator": "search", "gsrnamespace": 6, "gsrlimit": 10,
+                                "gsrsearch": query, "prop": "imageinfo", "iiprop": "url", "iiurlwidth": 1280,
+                                "format": "json"})
+    try:
+        files = json.loads(http(f"https://commons.wikimedia.org/w/api.php?{q}")).get("query", {}).get("pages", {})
+    except Exception as e:
+        print(f"Commons file search failed: {e}")
+        return ""
+    for f in sorted(files.values(), key=lambda p: p.get("index", 99)):
+        name = set(re.findall(r"\w+", f.get("title", "").lower()))
+        info = (f.get("imageinfo") or [{}])[0]
+        src = info.get("thumburl") or info.get("url", "")
+        if (len(key & name) >= min(2, len(key)) and re.search(r"\.(jpe?g|png)", src, re.I)
+                and not BAD_IMG.search(src) and image_ok(src)):
+            return src
     return ""
 
 
