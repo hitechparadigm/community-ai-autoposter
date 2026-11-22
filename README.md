@@ -23,7 +23,8 @@ Any other community can run its own channel by changing two settings files (see
 
 ### Engineering highlights
 
-- **Two-pass generation.** Claude writes, then a separate "copy editor" pass checks language and verifies every
+- **Two-pass generation.** Claude (Anthropic's AI model, used through the Claude API) writes, then a separate
+  "copy editor" pass checks language and verifies every
   name, number and date against the source. A Ukrainian style guide (no russianisms or calques, Canadian
   terminology, typography) is part of every prompt.
 - **Source-grounded content.** Posts use only facts from the fetched article; history prefers Canadian
@@ -57,7 +58,7 @@ Examples: a Polish- or Filipino-Canadian channel, a city news channel for newcom
 country, a university or church community, a professional association. Facebook is optional; the history
 columns can use any country's archives, or be switched off by removing their schedules.
 
-**Stack:** Python 3 (standard library only) · Claude API (Sonnet) · GitHub Actions · Telegram Bot API ·
+**Stack:** Python 3 (standard library only) · Claude API (Claude Sonnet 5.5 by Anthropic) · GitHub Actions · Telegram Bot API ·
 Telegraph API · Facebook Graph API · RSS/Atom
 
 ## How it works
