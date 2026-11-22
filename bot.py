@@ -1524,6 +1524,13 @@ def cmd_check():
             when = "never" if not exp else datetime.fromtimestamp(exp, timezone.utc).strftime("%Y-%m-%d")
             print(f"Facebook: OK, page {page.get('name')}, token type {info.get('type')}, expires {when}")
             print(f"Facebook permissions: {', '.join(info.get('scopes', []))}")
+            group = getattr(config, "FB_GROUP_ID", "")
+            if group:
+                try:
+                    g = json.loads(http(f"https://graph.facebook.com/{group}?fields=name,privacy&access_token={tok}"))
+                    print(f"Facebook group: the Page can see it: {g.get('name')} ({g.get('privacy')})")
+                except Exception as ex:
+                    print(f"Facebook group: the Page can't reach it ({str(ex).replace(FB_TOKEN, '***')[:300]})")
             if "pages_manage_posts" not in info.get("scopes", []):
                 ok = False
                 print(f"Facebook: the token can't post (missing pages_manage_posts; has {info.get('scopes')})")
