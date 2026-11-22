@@ -50,6 +50,12 @@ published to the Facebook Page (as plain text with the link card; long-reads lin
 Without them, only Telegram is used. If Facebook fails, the Telegram post still goes out and the draft says
 "Facebook failed".
 
+## Publishing without approval
+
+Off by default. In `config.py`, `AUTO_PUBLISH` switches it on per kind of post (news, digest, thisday,
+history): the draft then goes out automatically after `AUTO_PUBLISH_AFTER_MINUTES` (60) unless an approver
+taps ❌, and the draft says when it will be published.
+
 ## Where things are
 
 | What you want to change | Where |

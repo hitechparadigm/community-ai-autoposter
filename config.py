@@ -72,6 +72,17 @@ MAX_AGE_HOURS = 36
 # Drafts not approved within this time are dropped
 DRAFT_EXPIRY_HOURS = 24
 
+# Publishing without approval, per kind of post. True = the draft is published automatically after
+# AUTO_PUBLISH_AFTER_MINUTES unless an approver taps ❌ (✅ still publishes it right away).
+# False = it waits for ✅ as before.
+AUTO_PUBLISH = {
+    "news": False,      # news posts (5 a day)
+    "digest": False,    # morning digest
+    "thisday": False,   # 📅 Цей день в історії Канади
+    "history": False,   # 🍁 Історія Канади long-reads
+}
+AUTO_PUBLISH_AFTER_MINUTES = 60
+
 # Daily digest (python bot.py digest): top national news plus 3-4 provinces/territories, rotating
 DIGEST_NATIONAL = "3-5"
 DIGEST_REGIONS = "3-4"

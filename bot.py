@@ -435,7 +435,11 @@ def cmd_draft():
     save_state(s)
 
 
-def send_draft(s, url, text, stamp, image="", preview_url=""):
+def auto_publish_on(kind):
+    return bool(getattr(config, "AUTO_PUBLISH", {}).get(kind))
+
+
+def send_draft(s, url, text, stamp, image="", preview_url="", kind="news"):
     """Send a draft with Publish/Skip buttons to every approver and remember it.
     With an image, the picture is shown above the post (via an invisible link) instead of the source preview."""
     did = hashlib.sha1(url.encode()).hexdigest()[:10]
@@ -446,16 +450,21 @@ def send_draft(s, url, text, stamp, image="", preview_url=""):
         lp = {"url": image, "prefer_large_media": True, "show_above_text": True}
     else:
         lp = preview(url)
+    note = ""
+    if auto_publish_on(kind):
+        at = (now() + timedelta(minutes=config.AUTO_PUBLISH_AFTER_MINUTES)).astimezone(LOCAL)
+        note = f"\n\n<i>⏱ Опублікується автоматично о {at:%H:%M}, якщо не натиснути ❌</i>"
     msgs = []
     for admin in ADMIN_IDS:
         try:
-            msg = tg("sendMessage", chat_id=admin, text=text, parse_mode="HTML",
+            msg = tg("sendMessage", chat_id=admin, text=text + note, parse_mode="HTML",
                      link_preview_options=lp, reply_markup=buttons(did))
             msgs.append([admin_key(admin), msg["message_id"]])
         except Exception as e:  # e.g. this approver never pressed Start in the bot
             print(f"Could not send a draft to approver #{ADMIN_IDS.index(admin) + 1}: {e}")
     if msgs:
-        s["pending"][did] = {"url": url, "text": text, "created": stamp, "msgs": msgs, "lp": lp}
+        s["pending"][did] = {"url": url, "text": text, "created": now().isoformat(), "msgs": msgs, "lp": lp,
+                             "kind": kind}
     return bool(msgs)
 
 
@@ -577,7 +586,7 @@ def cmd_digest():
     except (KeyError, ValueError, IndexError, TypeError):
         top = ""
     key = f"digest:{d:%Y-%m-%d}"
-    if send_draft(s, key, text, now().isoformat(), preview_url=top):
+    if send_draft(s, key, text, now().isoformat(), preview_url=top, kind="digest"):
         print("Digest draft sent")
     save_state(s)
 
@@ -713,6 +722,7 @@ def telegraph_nodes(body, image, image_credit, source_name, url):
 
 def _write_history(topic, source, article, opening, header, source_name, url, s, stamp, image=""):
     """Write a long-read, publish it on Telegraph, and send the teaser post as a draft."""
+    kind = "thisday" if "Цей день" in header else "history"
     keys = ("title", "teaser", "body")
     post = parse_post(ask_claude(HISTORY_WRITE_PROMPT.format(
         topic=topic, source=source_name, article=article, opening=opening)), keys)
@@ -741,13 +751,13 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
         print(f"Telegraph error, sending a normal post instead: {e}")
         text = format_post(post["title"], post["teaser"] + "\n\n" + post["body"].replace("## ", ""),
                            source_name, url, header=header)
-        return send_draft(s, url, text[:4000], stamp, image=image)
+        return send_draft(s, url, text[:4000], stamp, image=image, kind=kind)
     e = html.escape
     text = (f"{e(header, quote=False)}\n\n<b>{e(post['title'], quote=False)}</b>\n\n{e(post['teaser'], quote=False)}"
             f"\n\n📖 <b><a href=\"{e(page['url'], quote=True)}\">Читати повністю →</a></b>")
     # the source is credited at the end of the Telegraph article, not in the post
     print(f"Telegraph page: {page['url']}")
-    ok = send_draft(s, url, text, stamp, preview_url=page["url"])
+    ok = send_draft(s, url, text, stamp, preview_url=page["url"], kind=kind)
     if ok:
         s["pending"][hashlib.sha1(url.encode()).hexdigest()[:10]]["telegraph_path"] = page["path"]
     return ok
@@ -963,6 +973,28 @@ def answer(cq, text, alert=False):
         print(f"(could not answer tap: {e})")
 
 
+def publish_draft(d, s):
+    """Post a draft to the channel (and Facebook). Returns a status suffix, or None if Telegram failed."""
+    try:
+        tg("sendMessage", chat_id=config.CHANNEL, text=d["text"], parse_mode="HTML",
+           link_preview_options=d.get("lp") or preview(d["url"]))
+    except Exception as e:
+        print(f"PUBLISH ERROR: {e}")
+        return None
+    fb = ""
+    try:
+        if post_to_facebook(d):
+            fb = " + Facebook"
+    except Exception as e:
+        print(f"FACEBOOK ERROR: {e}")
+        fb = " (Facebook failed: check the token)"
+    if d.get("referral"):
+        today = now().astimezone(LOCAL).strftime("%Y-%m-%d")
+        s["ref_news"] = {"date": today, "count": _ref_today(s) + 1}
+    print(f"Published {d['url']}")
+    return fb
+
+
 def cmd_approve():
     s = load_state()
     updates = tg("getUpdates", offset=s["tg_offset"], timeout=0,
@@ -982,32 +1014,28 @@ def cmd_approve():
             answer(cq, "Already handled or expired")
             continue
         if action == "pub":
-            try:
-                tg("sendMessage", chat_id=config.CHANNEL, text=d["text"], parse_mode="HTML",
-                   link_preview_options=d.get("lp") or preview(d["url"]))
-            except Exception as e:
-                print(f"PUBLISH ERROR: {e}")
+            result = publish_draft(d, s)
+            if result is None:
                 answer(cq, "Publishing failed, check the bot is a channel admin", alert=True)
                 continue
-            fb = ""
-            try:
-                if post_to_facebook(d):
-                    fb = " + Facebook"
-            except Exception as e:
-                print(f"FACEBOOK ERROR: {e}")
-                fb = " (Facebook failed: check the token)"
-            if d.get("referral"):
-                today = now().astimezone(LOCAL).strftime("%Y-%m-%d")
-                s["ref_news"] = {"date": today, "count": _ref_today(s) + 1}
-            answer(cq, "Published" + fb)
-            close_draft(d, f"✅ Published by {who}{fb}")
-            print(f"Published {d['url']}")
+            answer(cq, "Published" + result)
+            close_draft(d, f"✅ Published by {who}{result}")
         else:
             answer(cq, "Skipped")
             close_draft(d, f"❌ Skipped by {who}")
             retire_telegraph(d, s)
         del s["pending"][did]
         save_state(s)  # save after every tap so a later error can never cause a double post
+
+    # Auto-publish: drafts of the kinds switched on in config.AUTO_PUBLISH go out after the waiting time
+    due = (now() - timedelta(minutes=getattr(config, "AUTO_PUBLISH_AFTER_MINUTES", 60))).isoformat()
+    for did, d in list(s["pending"].items()):
+        if auto_publish_on(d.get("kind", "news")) and d["created"] < due:
+            result = publish_draft(d, s)
+            if result is not None:
+                close_draft(d, f"✅ Published automatically{result}")
+                del s["pending"][did]
+                save_state(s)
 
     cutoff = (now() - timedelta(hours=config.DRAFT_EXPIRY_HOURS)).isoformat()
     for did, d in list(s["pending"].items()):
