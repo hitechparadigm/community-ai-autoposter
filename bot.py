@@ -3,6 +3,7 @@
 
   python bot.py draft    - fetch news, have Claude pick and write posts (Ukrainian),
                            send drafts to you in Telegram with Publish / Skip buttons
+  python bot.py thisday  - draft one "This day in Canadian history" post
   python bot.py history  - draft one "Canadian history" story
   python bot.py approve  - check your button taps and publish approved posts to the channel
 
@@ -12,6 +13,7 @@ import hashlib
 import html
 import json
 import os
+import random
 import re
 import sys
 import urllib.error
@@ -286,7 +288,12 @@ def fetch_article(url, limit=6000):
     except Exception as e:
         print(f"Could not fetch article: {e}")
         return ""
-    page = re.sub(r"(?is)<(script|style|noscript)[^>]*>.*?</\1>", " ", page)
+    page = re.sub(r"(?is)<(script|style|noscript|nav|header|footer)[^>]*>.*?</\1>", " ", page)
+    for tag in ("article", "main"):  # prefer the main content area when the page marks it
+        m = re.search(rf"(?is)<{tag}\b[^>]*>(.*)</{tag}>", page)
+        if m and len(m.group(1)) > 2000:
+            page = m.group(1)
+            break
     paras = [_clean(p, 2000) for p in re.findall(r"(?is)<p[^>]*>(.*?)</p>", page)]
     text = "\n".join(p for p in paras if len(p) > 60)
     return text[:limit]
@@ -390,6 +397,9 @@ def send_draft(s, url, text, stamp):
 
 
 # ---------- Canadian history ----------
+# Two daily columns, both approved like the news:
+#   "📅 Цей день в історії Канади" (python bot.py thisday) - an event, birth or death on today's date
+#   "🍁 Історія Канади"            (python bot.py history) - a story from the history sources in config.py
 
 CANADA_WORDS = ("Canad", "Quebec", "Québec", "Ontario", "Manitoba", "Saskatchewan", "Alberta",
                 "British Columbia", "Nova Scotia", "New Brunswick", "Newfoundland", "Labrador",
@@ -397,39 +407,58 @@ CANADA_WORDS = ("Canad", "Quebec", "Québec", "Ontario", "Manitoba", "Saskatchew
                 "Montreal", "Montréal", "Vancouver", "Winnipeg", "Ottawa", "Halifax", "Calgary",
                 "Edmonton", "Regina", "Saskatoon", "Hudson's Bay", "Klondike", "Mountie")
 
-HISTORY_PICK_PROMPT = AUDIENCE + """
+THISDAY_PICK_PROMPT = AUDIENCE + """
 
-For a daily "Canadian history" column, pick the ONE most interesting story from these \
-"on this day" entries. Prefer stories with a human angle, surprising facts, or a connection to \
-immigrants or Ukrainians in Canada. Avoid dry administrative events and anything gruesome.
+For the daily "This day in Canadian history" post, pick the ONE most interesting entry below. \
+Prefer events and people that teach readers something important or surprising about Canada: \
+nation-building moments, firsts, discoveries, remarkable people, immigration and community history. \
+Avoid trivia, dry administrative events and anything gruesome.
 
-Reply with JSON only: [<entry id>] (or [] if none is interesting)
+Reply with JSON only: [<entry id>] (or [] if none is worth a post)
 
 Entries:
 {items}
 """
 
+STORY_PICK_PROMPT = AUDIENCE + """
+
+For the daily "Canadian history" column, rank the 3 most promising articles below. \
+Goal: educate newcomers about Canada's history across all provinces and territories, with stories \
+that are interesting to read: remarkable people, turning points, how places and communities began, \
+immigration, daily life in the past. Skip routine notices, events listings, obituaries of minor figures \
+and anything without a real story.
+
+Reply with JSON only: a list of up to 3 ids, best first, e.g. [7, 2, 11]
+
+Articles:
+{items}
+"""
+
 HISTORY_WRITE_PROMPT = AUDIENCE + "\n\n" + STYLE + """
 
-Write a "Canadian history" post in Ukrainian based on the encyclopedia article below. \
-It should read like a good magazine column: engaging, but strictly accurate.
+Write a Canadian history post in Ukrainian based on the source text below. \
+It should read like a good magazine column: engaging, educational and strictly accurate.
 
 - "title": a short, intriguing headline, at most 12 words (no clickbait, no exclamation marks)
 - "body": 3-4 short paragraphs (about 900-1400 characters in total), separated by blank lines. \
-Open with a vivid detail or the key moment{date_hint}, then tell the story, then why it matters \
-or what it left behind. Mention a connection to Ukrainians in Canada only if the article supports it.
-- Write in your own words. Use only facts stated in the article; do not invent dialogue, details or numbers.
+{opening} Then tell the story, then explain why it matters or what it left behind. \
+Give enough context (where, when, who) for a newcomer who does not know Canadian history. \
+Mention a connection to Ukrainians in Canada only if the source supports it.
+- Write in your own words. Use only facts stated in the source; do not invent dialogue, details, dates or numbers.
 
 Reply with JSON only: {{"title": "...", "body": "..."}}
 
 Topic: {topic}
-Article:
+Source: {source}
+Text:
 {article}
 """
 
+LOCAL = timezone(timedelta(hours=-5))  # Toronto (standard time is close enough for picking a date)
+
 
 def wiki_text(title, limit=7000):
-    """Plain-text article from English Wikipedia (empty string if missing)."""
+    """Plain-text article from English Wikipedia: (text, url), empty if missing."""
     q = urllib.parse.urlencode({"action": "query", "prop": "extracts", "explaintext": 1,
                                 "redirects": 1, "titles": title, "format": "json"})
     try:
@@ -446,74 +475,179 @@ def wiki_text(title, limit=7000):
     return "", ""
 
 
-def on_this_day():
-    d = now().astimezone(timezone(timedelta(hours=-5)))
-    raw = http(f"https://en.wikipedia.org/api/rest_v1/feed/onthisday/all/{d:%m}/{d:%d}")
-    data = json.loads(raw)
-    entries = []
+def _get_page(url, timeout=40):
+    try:
+        return http(url, timeout=timeout).decode("utf-8", errors="replace")
+    except Exception as e:
+        print(f"Could not load {url}: {e}")
+        return ""
+
+
+def harvest(src):
+    """Links (url, title) to articles listed on one random index page of a source."""
+    tmpl = random.choice(src["index"])
+    url = (tmpl.replace("{n}", str(random.randint(src.get("first_page", 1), src.get("pages", 1))))
+               .replace("{letter}", random.choice("abcdefghijklmnoprstw"))
+               .replace("{LETTER}", random.choice("ABCDEFGHIJKLMNOPRSTW")))
+    page = _get_page(url)
+    found = {}
+    if "<urlset" in page[:2000]:
+        pairs = [(u, "") for u in re.findall(r"<loc>([^<]+)</loc>", page)]
+    else:
+        pairs = re.findall(r'(?is)<a\b[^>]*?href="([^"#]+)"[^>]*>(.*?)</a>', page)
+    for href, text in pairs:
+        full = urllib.parse.urljoin(url, html.unescape(href))
+        if not re.search(src["pattern"], full) or full in found:
+            continue
+        title = _clean(text, 150)
+        if len(title) < 4:
+            slug = full.rstrip("/").rsplit("/", 1)[-1]
+            title = re.sub(r"\.\w+$|-1\.\d+$", "", slug).replace("-", " ").replace("_", " ")
+        found[full] = title
+    print(f"{src['name']}: {len(found)} links from {url}")
+    return list(found.items())
+
+
+def dcb_bio_of_the_day():
+    """Dictionary of Canadian Biography: today's featured person (born or died on this day)."""
+    page = _get_page("http://www.biographi.ca/en/bio_of_the_day.html")
+    m = re.search(r'href="((?:https?://www\.biographi\.ca)?/en/bio/[a-z0-9_]+\.html)"[^>]*>(.*?)</a>', page, re.S)
+    if not m:
+        return None
+    url = urllib.parse.urljoin("http://www.biographi.ca/", m.group(1))
+    return {"url": url, "name": _clean(m.group(2), 120)}
+
+
+def wiki_on_this_day(d):
+    try:
+        data = json.loads(http(f"https://en.wikipedia.org/api/rest_v1/feed/onthisday/all/{d:%m}/{d:%d}"))
+    except Exception as e:
+        print(f"On-this-day error: {e}")
+        return []
+    out = []
     for kind in ("selected", "events", "births", "deaths"):
         for e in data.get(kind, []):
             pages = e.get("pages") or []
             blob = e.get("text", "") + " " + " ".join(p.get("extract", "") for p in pages[:2])
             if pages and any(w in blob for w in CANADA_WORDS):
-                entries.append({"kind": kind, "year": e.get("year"), "text": e.get("text", ""),
-                                "page": pages[0].get("title", "")})
-    return entries, d
+                out.append({"kind": kind, "year": e.get("year"), "text": e.get("text", ""),
+                            "page": pages[0].get("title", "")})
+    return out
 
 
-def cmd_history():
+def _write_history(topic, source, article, opening, header, source_name, url, s, stamp):
+    post = parse_post(ask_claude(HISTORY_WRITE_PROMPT.format(
+        topic=topic, source=source_name, article=article, opening=opening)))
+    if not post:
+        print("Could not write the history post")
+        return False
+    edited = parse_post(ask_claude(EDIT_PROMPT.format(
+        draft=json.dumps(post, ensure_ascii=False), title=topic, summary="", article=article)))
+    post = edited or post
+    text = format_post(post["title"], post["body"], source_name, url, header=header)
+    return send_draft(s, url, text, stamp)
+
+
+def _history_state():
     if not ADMIN_IDS:
         sys.exit("TELEGRAM_ADMIN_ID is not set")
     s = load_state()
     s.setdefault("history_done", [])
+    return s
+
+
+def _done(s, key):
+    s["history_done"].append(key)
+    s["history_done"] = s["history_done"][-1000:]
+
+
+def cmd_thisday():
+    s = _history_state()
     stamp = now().isoformat()
-    topic = page = date_hint = ""
+    d = now().astimezone(LOCAL)
+    entries = [e for e in wiki_on_this_day(d) if e["page"] not in s["history_done"]]
+    bio = dcb_bio_of_the_day()
+    if bio and bio["url"] not in s["history_done"]:
+        entries.insert(0, {"kind": "biography (born or died on this day)", "year": "",
+                           "text": f"{bio['name']} — Dictionary of Canadian Biography", "dcb": bio})
+    print(f"{len(entries)} candidates for {d:%B %d}")
+    if not entries:
+        return save_state(s)
+    listing = "\n".join(f"[{i}] {e['year']} ({e['kind']}): {e['text']}" for i, e in enumerate(entries[:40]))
+    picks = parse_picks(ask_claude(THISDAY_PICK_PROMPT.format(items=listing)))
+    for i in picks:
+        if i >= len(entries):
+            continue
+        e = entries[i]
+        if "dcb" in e:
+            article, url, source_name, key = fetch_article(e["dcb"]["url"], 8000), e["dcb"]["url"], \
+                "Dictionary of Canadian Biography", e["dcb"]["url"]
+            topic = f"{e['text']} (born or died on {d:%B} {d.day})"
+        else:
+            article, url = wiki_text(e["page"])
+            source_name, key, topic = "Вікіпедія", e["page"], f"{e['year']}: {e['text']}"
+        if len(article) < 500:
+            _done(s, key)
+            continue
+        opening = (f"Start with the date: this happened on this day, {d.day}.{d.month:02d}"
+                   + (f".{e['year']}" if e.get("year") else "") + " (write the date in Ukrainian words, "
+                   "e.g. «22 листопада 1902 року»).")
+        if _write_history(topic, source_name, article, opening, "📅 Цей день в історії Канади",
+                          source_name, url, s, stamp):
+            print(f"This-day draft sent: {topic}")
+        _done(s, key)
+        break
+    save_state(s)
 
-    today = now().astimezone(timezone(timedelta(hours=-5)))
-    use_ukrainian = today.weekday() == config.UKRAINIAN_CANADIAN_DAY
-    if not use_ukrainian:
-        try:
-            entries, d = on_this_day()
-        except Exception as e:
-            print(f"On-this-day error: {e}")
-            entries = []
-        entries = [e for e in entries if e["page"] not in s["history_done"]]
-        print(f"{len(entries)} Canada-related on-this-day entries")
-        if entries:
-            listing = "\n".join(f"[{i}] {e['year']} ({e['kind']}): {e['text']}"
-                                for i, e in enumerate(entries[:40]))
-            picks = parse_picks(ask_claude(HISTORY_PICK_PROMPT.format(items=listing)))
-            if picks and picks[0] < len(entries):
-                e = entries[picks[0]]
-                page = e["page"]
-                topic = f"{e['year']}: {e['text']}"
-                date_hint = f" (this happened on this day, {d.day}.{d.month}.{e['year']})"
-    if not page:  # Ukrainian-Canadian day, or nothing good today
-        left = [t for t in config.UKRAINIAN_CANADIAN_TOPICS if t not in s["history_done"]]
-        if not left:
-            s["history_done"] = [t for t in s["history_done"]
-                                 if t not in config.UKRAINIAN_CANADIAN_TOPICS]
-            left = list(config.UKRAINIAN_CANADIAN_TOPICS)
-        page = topic = left[0]
 
-    article, url = wiki_text(page)
-    if not article:
-        print(f"No article for {page}; skipping")
-        s["history_done"].append(page)
-        save_state(s)
-        return
-    post = parse_post(ask_claude(HISTORY_WRITE_PROMPT.format(
-        topic=topic, article=article, date_hint=date_hint)))
-    if not post:
-        sys.exit("Could not write the history post")
-    edited = parse_post(ask_claude(EDIT_PROMPT.format(
-        draft=json.dumps(post, ensure_ascii=False), title=topic, summary="", article=article)))
-    post = edited or post
-    text = format_post(post["title"], post["body"], "Вікіпедія", url, header="🍁 Історія Канади")
-    if send_draft(s, url, text, stamp):
-        print(f"History draft sent: {page}")
-    s["history_done"].append(page)
-    s["history_done"] = s["history_done"][-500:]
+def cmd_history():
+    s = _history_state()
+    stamp = now().isoformat()
+    today = now().astimezone(LOCAL)
+
+    if today.weekday() == config.UKRAINIAN_CANADIAN_DAY:
+        left = [t for t in config.UKRAINIAN_CANADIAN_TOPICS if t not in s["history_done"]] \
+            or list(config.UKRAINIAN_CANADIAN_TOPICS)
+        topic = left[0]
+        article, url = wiki_text(topic)
+        if article and _write_history(topic, "Вікіпедія", article,
+                                      "Open with a vivid detail or the key moment.",
+                                      "🍁 Історія Канади", "Вікіпедія", url, s, stamp):
+            print(f"History draft sent: {topic}")
+        _done(s, topic)
+        return save_state(s)
+
+    # Gather candidates from a few random sources, plus regional Wikipedia topics
+    candidates = []
+    for src in random.sample(config.HISTORY_SOURCES, min(4, len(config.HISTORY_SOURCES))):
+        links = [(u, t) for u, t in harvest(src) if u not in s["history_done"]]
+        for u, t in random.sample(links, min(6, len(links))):
+            candidates.append({"url": u, "title": t, "source": src["name"], "region": src["region"]})
+    wiki_left = [w for w in config.WIKI_REGIONAL_TOPICS if w[1] not in s["history_done"]]
+    for region, title in random.sample(wiki_left, min(4, len(wiki_left))):
+        candidates.append({"wiki": title, "title": title, "source": "Вікіпедія", "region": region})
+    print(f"{len(candidates)} candidates")
+    if not candidates:
+        return save_state(s)
+
+    listing = "\n".join(f"[{i}] ({c['region']}, {c['source']}) {c['title']}" for i, c in enumerate(candidates))
+    for i in parse_picks(ask_claude(STORY_PICK_PROMPT.format(items=listing)))[:3]:
+        if i >= len(candidates):
+            continue
+        c = candidates[i]
+        if "wiki" in c:
+            article, url = wiki_text(c["wiki"])
+            key = c["wiki"]
+        else:
+            article, url, key = fetch_article(c["url"], 8000), c["url"], c["url"]
+        _done(s, key)
+        if len(article) < 800:
+            print(f"Too little text for {c['title']}; trying the next pick")
+            continue
+        if _write_history(c["title"], c["source"], article, "Open with a vivid detail or the key moment.",
+                          "🍁 Історія Канади", c["source"], url, s, stamp):
+            print(f"History draft sent: {c['title']} ({c['source']})")
+        break
     save_state(s)
 
 
@@ -576,5 +710,7 @@ if __name__ == "__main__":
         cmd_approve()
     elif cmd == "history":
         cmd_history()
+    elif cmd == "thisday":
+        cmd_thisday()
     else:
-        sys.exit("Usage: python bot.py draft|approve|history")
+        sys.exit("Usage: python bot.py draft|approve|history|thisday")

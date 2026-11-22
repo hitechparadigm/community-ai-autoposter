@@ -32,10 +32,18 @@ of the two workflow files (times are UTC).
 - GitHub pauses scheduled workflows in a repo with no activity for 60 days; if that happens,
   re-enable them in the Actions tab.
 
-## Canadian history column
+## Canadian history
 
-Every day at 11:30 Toronto time you get one extra draft marked "🍁 Історія Канади":
-a Canadian story that happened on this date (from Wikipedia "On this day"), retold in Ukrainian.
-On Sundays it tells a Ukrainian-Canadian story instead, from the list in `config.py`
-(`UKRAINIAN_CANADIAN_TOPICS`, English Wikipedia article titles; add your own).
-Run it any time from Actions → "Draft history post".
+Two extra drafts a day, approved the same way:
+
+- **📅 Цей день в історії Канади** (8:30 Toronto time): something that happened on today's date,
+  from Wikipedia "On this day" (Canadian entries) or the Dictionary of Canadian Biography's
+  person of the day (born or died on this date).
+- **🍁 Історія Канади** (11:30): a story chosen from the sources in `config.py`
+  (`HISTORY_SOURCES`: CBC Archives, Library and Archives Canada, Ontario Heritage Trust, Quebec
+  Anglophone Heritage Network, Manitoba Historical Society, Encyclopedia of Saskatchewan,
+  RETROactive Alberta) plus Wikipedia topics for the other provinces and territories
+  (`WIKI_REGIONAL_TOPICS`). On Sundays it tells a Ukrainian-Canadian story
+  (`UKRAINIAN_CANADIAN_TOPICS`).
+
+Run either any time from the Actions tab.
