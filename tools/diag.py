@@ -1,33 +1,38 @@
-import re, urllib.request, gzip
-UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36"
+import re, sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import bot
+from urllib.parse import urljoin
 def get(u):
-    try:
-        with urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": UA}), timeout=40) as r:
-            b = r.read()
-            if b[:2] == b"\x1f\x8b": b = gzip.decompress(b)
-            return r.status, b.decode("utf-8", "replace")
-    except Exception as e:
-        return str(e)[:80], ""
-def show(name, url, pat=r'<loc>([^<]+)</loc>', n=8):
-    st, html = get(url)
-    links = re.findall(pat, html)
-    print(f"\n### {name} | {st} | {len(html)} bytes | {len(links)} matches")
-    for l in links[:n]: print("   ", l[:140])
-show("Canada's History sitemap", "https://www.canadashistory.ca/sitemap.xml")
-show("DCB sitemap", "http://www.biographi.ca/sitemap.xml")
-show("DCB hrefs", "http://www.biographi.ca/en/", r'href="([^"]*bio[^"]*)"')
-show("Pier21 sitemap", "https://pier21.ca/sitemap.xml")
-show("Pier21 hrefs", "https://pier21.ca/research/immigration-history", r'href="(/research/[^"]+)"', 15)
-show("NL sitemap", "https://www.heritage.nf.ca/sitemap.xml")
-show("BCHF sitemap", "https://www.bchistory.ca/sitemap.xml")
-show("OHT sitemap", "https://www.heritagetrust.on.ca/sitemap.xml")
-show("NS Archives", "https://archives.novascotia.ca/", r'href="([^"]+)"', 15)
-show("PEI Museum", "https://www.peimuseum.ca/", r'href="([^"]+)"', 15)
-show("NB Archives", "https://archives.gnb.ca/Archives/default.aspx?culture=en-CA", r'href="([^"]+)"', 10)
-show("Yukon Archives", "https://yukon.ca/en/yukon-archives", r'href="([^"]+)"', 10)
-show("PWNHC NWT", "https://www.pwnhc.ca/", r'href="([^"]+)"', 15)
-show("Inuit Heritage Trust", "https://www.ihti.ca/", r'href="([^"]+)"', 10)
-show("Encyclopedia of Ukraine", "https://www.encyclopediaofukraine.com/display.asp?linkpath=pages%5CU%5CK%5CUkrainiansinCanada.htm", r'<p[^>]*>', 2)
-show("TCE no-www", "https://thecanadianencyclopedia.ca/en/article/manitoba", r'<p[^>]*>', 2)
-show("LAC feed", "https://thediscoverblog.com/feed/", r'<title>([^<]+)</title>', 4)
-show("Parks Canada heritage", "https://parks.canada.ca/culture/designation", r'href="([^"]+)"', 5)
+    try: return bot.http(u, timeout=40).decode("utf-8", "replace")
+    except Exception as e: return "ERR " + str(e)[:80]
+S = [
+ ("CBC Archives", "https://www.cbc.ca/archives/history", r'/archives/[a-z0-9-]+-1\.\d+'),
+ ("MHS people K", "https://www.mhs.mb.ca/docs/people/index_k.shtml", r'/docs/people/[a-z][a-z0-9_]*_[a-z0-9_]+\.shtml'),
+ ("MHS sites buildings", "https://www.mhs.mb.ca/docs/sites/index_buildings.shtml", r'/docs/sites/(?!index)[a-z0-9_]+\.shtml'),
+ ("eSask B", "https://esask.uregina.ca/entry_list-l=B.html", r'entry/[a-z0-9_]+\.html'),
+ ("RETROactive", "https://albertashistoricplaces.com/category/subject/albertas-history-subject/page/3/", r'https://albertashistoricplaces\.com/\d{4}/\d{2}/\d{2}/[a-z0-9-]+/'),
+ ("QAHN", "https://qahn.org/article?page=3", r'/article/[a-z0-9-]+'),
+ ("LAC blog p5", "https://thediscoverblog.com/page/5/", r'https://thediscoverblog\.com/\d{4}/\d{2}/\d{2}/[a-z0-9-]+/'),
+ ("OHT articles", "https://www.heritagetrust.on.ca/sitemaps-1-section-articles-1-sitemap.xml", r'<loc>([^<]+)</loc>'),
+ ("OHT bios", "https://www.heritagetrust.on.ca/sitemaps-1-section-biographyItems-1-sitemap.xml", r'<loc>([^<]+)</loc>'),
+ ("DCB new", "http://www.biographi.ca/en/new_biographies.html", r'href="([^"]*bio[^"#]*\.html)"'),
+ ("Pier21 search", "https://pier21.ca/search?page=31", r'href="(/research/[^"]+/[^"]+)"'),
+ ("Pier21 immig hist p1", "https://pier21.ca/research/immigration-history?page=1", r'href="(/[^"]*immigration-history/[^"]+)"'),
+ ("PWNHC exhibits", "https://www.pwnhc.ca/en/exhibits/past", r'href="(/en/exhibits/[a-z0-9-]+)"'),
+ ("Royal BC Museum", "https://royalbcmuseum.bc.ca/", r'href="([^"]*(?:blog|stories|learn)[^"]*)"'),
+ ("NB Museum", "https://www.nbm-mnb.ca/", r'href="([^"]+)"'),
+ ("NS Museum", "https://museum.novascotia.ca/", r'href="([^"]+)"'),
+ ("Vancouver History", "https://www.vancouverheritagefoundation.org/", r'href="([^"]*(?:stor|blog|histor)[^"]*)"'),
+]
+for name, url, pat in S:
+    html = get(url)
+    links = []
+    for l in re.findall(pat, html):
+        l = urljoin(url, l)
+        if l not in links: links.append(l)
+    print(f"\n### {name} | {'ERR' if html.startswith('ERR') else len(html)} | {len(links)} links  {html[:80] if html.startswith('ERR') else ''}")
+    for l in links[:5]: print("    ", l[:130])
+    pick = next((l for l in links[3:] + links[:3] if not l.endswith('.xml')), None)
+    if pick:
+        txt = bot.fetch_article(pick)
+        print(f"    ARTICLE {pick[:90]} -> {len(txt)} chars: {txt[:160]!r}")
