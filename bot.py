@@ -25,7 +25,8 @@ import config
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATE_FILE = os.path.join(HERE, "state.json")
-UA = "Mozilla/5.0 (compatible; UkrainianCanadaBot/1.0)"
+UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/131.0 Safari/537.36")
 ATOM = "{http://www.w3.org/2005/Atom}"
 DC = "{http://purl.org/dc/elements/1.1/}"
 
@@ -139,7 +140,7 @@ def fetch_news(seen):
     items, urls = [], set()
     for name, url in config.FEEDS:
         try:
-            got = parse_feed(http(url), name)
+            got = parse_feed(http(url, timeout=45), name)
             print(f"{name}: {len(got)} items")
         except Exception as e:  # one bad feed shouldn't stop the run
             print(f"FEED ERROR {name}: {e}")
