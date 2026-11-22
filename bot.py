@@ -25,7 +25,7 @@ from email.utils import parsedate_to_datetime
 
 import config
 from prompts import (AUDIENCE, DIGEST_PROMPT, EDIT_PROMPT, HISTORY_WRITE_PROMPT, PICK_PROMPT,
-                     STORY_PICK_PROMPT, STYLE, THISDAY_PICK_PROMPT, WRITE_PROMPT)
+                     REFERRAL_MATCH_PROMPT, STORY_PICK_PROMPT, STYLE, THISDAY_PICK_PROMPT, WRITE_PROMPT)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATE_FILE = os.path.join(HERE, "state.json")
@@ -101,6 +101,8 @@ def merge_state(base, ours, theirs):
     out["tg_offset"] = max(theirs.get("tg_offset", 0), ours.get("tg_offset", 0))
     out["digest_regions"] = {**out.get("digest_regions", {}), **ours.get("digest_regions", {})}
     out["ref_index"] = max(theirs.get("ref_index", 0), ours.get("ref_index", 0))
+    rn_t, rn_o = theirs.get("ref_news", {}), ours.get("ref_news", {})
+    out["ref_news"] = max((rn_t, rn_o), key=lambda r: (r.get("date", ""), r.get("count", 0)))
     if ours.get("thisday_last"):
         out["thisday_last"] = ours["thisday_last"]
     if ours.get("telegraph_token") and not out.get("telegraph_token"):
@@ -413,8 +415,13 @@ def cmd_draft():
         else:
             print("Copy edit failed; using the first draft")
         text = format_post(post["title"], post["body"], it["source"], it["url"])
+        ref = matching_referral(s, post)
+        if ref:
+            text += f'\n\n<a href="{html.escape(ref[1], quote=True)}">{html.escape(ref[0], quote=False)}</a>'
         if not send_draft(s, it["url"], text, stamp):
             continue
+        if ref:
+            s["pending"][hashlib.sha1(it["url"].encode()).hexdigest()[:10]]["referral"] = True
         print(f"Draft sent: {it['title']}")
     save_state(s)
 
@@ -441,6 +448,34 @@ def send_draft(s, url, text, stamp, image="", preview_url=""):
     if msgs:
         s["pending"][did] = {"url": url, "text": text, "created": stamp, "msgs": msgs, "lp": lp}
     return bool(msgs)
+
+
+# ---------- referral lines in news ----------
+
+def _ref_today(s):
+    today = now().astimezone(LOCAL).strftime("%Y-%m-%d")
+    r = s.get("ref_news", {})
+    return r.get("count", 0) if r.get("date") == today else 0
+
+
+def matching_referral(s, post):
+    """A (text, link) offer that clearly fits this news story, within the daily limit; otherwise None."""
+    refs = getattr(config, "REFERRALS", [])
+    cap = getattr(config, "REFERRALS_IN_NEWS_PER_DAY", 0)
+    waiting = sum(1 for d in s["pending"].values() if d.get("referral"))
+    if not refs or _ref_today(s) + waiting >= cap:
+        return None
+    offers = "\n".join(f"[{i}] {r[0]} ({r[2] if len(r) > 2 else ''})" for i, r in enumerate(refs))
+    pick = _json(ask_claude(REFERRAL_MATCH_PROMPT.format(
+        offers=offers, post=f"{post['title']}\n{post['body']}")), "{", "}") or {}
+    try:
+        i = int(pick.get("id"))
+    except (TypeError, ValueError):
+        return None
+    if 0 <= i < len(refs):
+        print(f"Referral added: {refs[i][0]}")
+        return refs[i][:2]
+    return None
 
 
 # ---------- daily digest ----------
@@ -930,6 +965,9 @@ def cmd_approve():
             except Exception as e:
                 print(f"FACEBOOK ERROR: {e}")
                 fb = " (Facebook failed: check the token)"
+            if d.get("referral"):
+                today = now().astimezone(LOCAL).strftime("%Y-%m-%d")
+                s["ref_news"] = {"date": today, "count": _ref_today(s) + 1}
             answer(cq, "Published" + fb)
             close_draft(d, f"✅ Published by {who}{fb}")
             print(f"Published {d['url']}")

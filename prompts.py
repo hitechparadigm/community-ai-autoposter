@@ -192,3 +192,20 @@ Source: {source}
 Text:
 {article}
 """
+
+
+REFERRAL_MATCH_PROMPT = """Below is a news post for a Telegram channel for Ukrainians in Canada, and a list of partner offers.
+Choose an offer ONLY if it clearly fits the topic of this news, so that readers would see it as a useful tip,
+not an ad. Examples of a good fit: interest rates, savings or inflation -> investing; sending money abroad or
+helping family in Ukraine -> money transfers; mortgages, renting, loans or credit -> credit score; newcomers
+settling in or bank fees -> bank account.
+Never choose one for tragedies, deaths, war, crime, disasters or political conflict, or when the fit is weak.
+
+Reply with JSON only: {{"id": <offer id>}} or {{"id": null}}
+
+Offers:
+{offers}
+
+News post:
+{post}
+"""

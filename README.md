@@ -39,7 +39,9 @@ News drafts come at 9:00, 12:00, 15:00, 18:00 and 21:00; "This day" at 8:30; the
 ## Referral links
 
 The morning digest ends with one referral link from `REFERRALS` in `config.py`, a different one each day.
-An optional line under it can be set in `REFERRAL_DISCLOSURE`. Other posts carry no referral links.
+An optional line under it can be set in `REFERRAL_DISCLOSURE`. News posts get a referral line only when an
+offer clearly fits the story (e.g. interest rates -> investing, money to Ukraine -> Wise), never on tragedies,
+war or crime, and at most `REFERRALS_IN_NEWS_PER_DAY` per day. History posts never carry referral links.
 
 ## Facebook Page
 

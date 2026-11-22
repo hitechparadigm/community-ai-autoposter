@@ -90,6 +90,9 @@ REFERRALS = [
     ("📊 Інвестуйте з Questrade і отримайте $50", "https://bit.ly/4dUdlWV", "Questrade investing account"),
     ("💳 Перевірте свій кредитний рейтинг", "https://bit.ly/3cqN99x", "free credit score check"),
 ]
+# Besides the digest, news posts may get one referral line when an offer clearly fits the story
+# (Claude decides; never on tragedies, war or crime). At most this many per day:
+REFERRALS_IN_NEWS_PER_DAY = 1
 REFERRAL_DISCLOSURE = ""  # optional line under the link, e.g. "#реклама"; empty = none
 
 # Claude model used to pick, write and copy-edit posts (Sonnet 5.5)
