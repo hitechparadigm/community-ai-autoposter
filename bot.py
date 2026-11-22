@@ -633,11 +633,12 @@ def cmd_digest():
     parts += ["", f"<i>За матеріалами: {e(', '.join(outlets), quote=False)}</i>",
               f"<a href=\"{config.TELEGRAPH_AUTHOR_URL}\">{e(config.TELEGRAPH_AUTHOR, quote=False)}</a>"]
     refs = getattr(config, "REFERRALS", [])
-    if refs:  # one referral link per digest, rotating, always with the disclosure
+    if refs:  # one referral link per digest, rotating
         label, link = refs[s.get("ref_index", 0) % len(refs)]
         s["ref_index"] = s.get("ref_index", 0) + 1
-        parts += ["", f"<a href=\"{e(link, quote=True)}\">{e(label, quote=False)}</a>",
-                  f"<i>{e(config.REFERRAL_DISCLOSURE, quote=False)}</i>"]
+        parts += ["", f"<a href=\"{e(link, quote=True)}\">{e(label, quote=False)}</a>"]
+        if config.REFERRAL_DISCLOSURE:
+            parts.append(f"<i>{e(config.REFERRAL_DISCLOSURE, quote=False)}</i>")
     text = "\n".join(parts)[:4000]
     try:
         top = items[int(digest["national"][0]["id"])]["url"]
