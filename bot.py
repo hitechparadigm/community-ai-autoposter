@@ -238,6 +238,22 @@ def parse_picks(text):
     return [int(i) for i in ids if isinstance(i, (int, str)) and str(i).isdigit()]
 
 
+# Latin letters that look like Cyrillic ones; models sometimes mix them into Ukrainian words
+HOMOGLYPHS = str.maketrans("aceiopxyACEHIKMOPTXB", "асеіорхуАСЕНІКМОРТХВ")
+# A real glitch: Cyrillic letters glued to a run of Latin letters, e.g. "машaccording"
+BROKEN_WORD = re.compile(r"[а-яіїєґ'][a-z]{3,}|[a-z]{3,}[а-яіїєґ]", re.I)
+
+
+def fix_homoglyphs(text):
+    """Replace look-alike Latin letters inside Ukrainian words with the Cyrillic ones."""
+    text = re.sub(r"\b\w*[а-яіїєґ]\w*\b",
+                  lambda m: m.group(0).translate(HOMOGLYPHS) if re.search(r"[a-z]", m.group(0), re.I) else m.group(0),
+                  text, flags=re.I)
+    # the conjunction "і" typed with a Latin "i" between Ukrainian words
+    return re.sub(r"(?<=[а-яіїєґ,»)]\s)([iI])(?=\s+[а-яіїєґ«(])",
+                  lambda m: "і" if m.group(1) == "i" else "І", text, flags=re.I)
+
+
 def edit_ok(original, edited):
     """Accept the copy editor's version only if it is complete: not much shorter than the original,
     ending like a finished sentence, and without broken words (Latin letters glued to Cyrillic ones)."""
@@ -250,8 +266,9 @@ def edit_ok(original, edited):
         if not isinstance(new, str) or len(new) < 0.7 * len(v):
             print(f"Copy edit rejected: '{k}' came back cut short")
             return False
-        if re.search(r"[а-яіїєґ][a-z]|[a-z][а-яіїєґ]", new, re.I):
-            print(f"Copy edit rejected: broken word in '{k}'")
+        m = BROKEN_WORD.search(new)
+        if m:
+            print(f"Copy edit rejected: broken word in '{k}': …{new[max(0, m.start() - 20):m.end() + 20]}…")
             return False
         if k in ("body", "teaser") and not re.search(r"[.!?…»)\"]\s*$", new.strip()):
             print(f"Copy edit rejected: '{k}' doesn't end with a full sentence")
@@ -272,6 +289,8 @@ def write_long(prompt, keys, tries=2):
 
 def parse_post(text, keys=("title", "body")):
     post = _json(text, "{", "}")
+    if isinstance(post, dict):
+        post = {k: fix_homoglyphs(v) if isinstance(v, str) and k != "image_query" else v for k, v in post.items()}
     if isinstance(post, dict) and all(post.get(k) for k in keys):
         return post
     return None
