@@ -77,6 +77,25 @@ def save_state(s):
         json.dump(s, f, ensure_ascii=False, indent=1, sort_keys=True)
 
 
+def merge_state(base, ours, theirs):
+    """Three-way merge when two runs saved state at the same time.
+    theirs = state already on GitHub, ours = this run's state, base = what this run started from."""
+    out = json.loads(json.dumps(theirs))
+    for k in ("seen", "pending"):
+        out.setdefault(k, {})
+    for did, d in ours.get("pending", {}).items():
+        if did not in base.get("pending", {}):
+            out["pending"][did] = d            # we added a draft
+    for did in base.get("pending", {}):
+        if did not in ours.get("pending", {}):
+            out["pending"].pop(did, None)      # we published, skipped or expired it
+    out["seen"].update(ours.get("seen", {}))
+    done = out.get("history_done", [])
+    out["history_done"] = done + [x for x in ours.get("history_done", []) if x not in done]
+    out["tg_offset"] = max(theirs.get("tg_offset", 0), ours.get("tg_offset", 0))
+    return out
+
+
 def tg(method, **params):
     if not TG_TOKEN:
         sys.exit("TELEGRAM_BOT_TOKEN is not set")
@@ -712,5 +731,11 @@ if __name__ == "__main__":
         cmd_history()
     elif cmd == "thisday":
         cmd_thisday()
+    elif cmd == "merge-state":  # used by save_state.sh: merge-state BASE OURS (theirs = state.json)
+        with open(sys.argv[2], encoding="utf-8") as f:
+            base = json.load(f)
+        with open(sys.argv[3], encoding="utf-8") as f:
+            ours = json.load(f)
+        save_state(merge_state(base, ours, load_state()))
     else:
         sys.exit("Usage: python bot.py draft|approve|history|thisday")
