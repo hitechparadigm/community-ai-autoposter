@@ -14,9 +14,10 @@ permissions:
 
 jobs:
   history:
+    environment: manitoba
     runs-on: ubuntu-latest
     concurrency:
-      group: history
+      group: history-manitoba
       cancel-in-progress: false
     timeout-minutes: 10
     steps:

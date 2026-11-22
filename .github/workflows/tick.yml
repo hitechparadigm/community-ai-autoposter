@@ -1,21 +1,22 @@
 name: Tick (every 5 minutes)
 
 # Runs what is due by SCHEDULE in config.py (local time) and publishes approved posts.
-# GitHub runs schedules on behalf of the person who last changed the cron line below,
-# so the repository owner should be the last one to edit it.
+# This is the ManitobaBotNews branch. GitHub only runs "schedule" triggers from the default branch,
+# so there is no cron here: an external timer (cron-job.org) starts this workflow every 5 minutes with
+# POST /repos/hitechparadigm/community-ai-autoposter/actions/workflows/tick.yml/dispatches
+# and body {"ref": "ManitobaBotNews"}.
 on:
-  schedule:
-    - cron: "*/5 * * * *"
-  workflow_dispatch:      # also lets an external timer (e.g. cron-job.org) start it
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   tick:
+    environment: manitoba
     runs-on: ubuntu-latest
     concurrency:
-      group: telegram-updates   # one reader of Telegram button taps at a time
+      group: telegram-updates-manitoba   # one reader of Telegram button taps at a time
       cancel-in-progress: false
     timeout-minutes: 30
     steps:

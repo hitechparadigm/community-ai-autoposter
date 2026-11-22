@@ -9,9 +9,10 @@ permissions:
 
 jobs:
   thisday:
+    environment: manitoba
     runs-on: ubuntu-latest
     concurrency:
-      group: thisday
+      group: thisday-manitoba
       cancel-in-progress: false
     timeout-minutes: 10
     steps:

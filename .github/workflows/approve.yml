@@ -9,9 +9,10 @@ permissions:
 
 jobs:
   approve:
+    environment: manitoba
     runs-on: ubuntu-latest
     concurrency:
-      group: telegram-updates
+      group: telegram-updates-manitoba
       cancel-in-progress: false
     timeout-minutes: 5
     steps:

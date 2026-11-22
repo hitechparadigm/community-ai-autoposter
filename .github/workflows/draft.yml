@@ -9,9 +9,10 @@ permissions:
 
 jobs:
   draft:
+    environment: manitoba
     runs-on: ubuntu-latest
     concurrency:
-      group: news
+      group: news-manitoba
       cancel-in-progress: false
     timeout-minutes: 10
     steps:

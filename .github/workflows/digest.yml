@@ -9,9 +9,10 @@ permissions:
 
 jobs:
   digest:
+    environment: manitoba
     runs-on: ubuntu-latest
     concurrency:
-      group: digest
+      group: digest-manitoba
       cancel-in-progress: false
     timeout-minutes: 10
     steps:
