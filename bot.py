@@ -175,7 +175,7 @@ def parse_feed(xml_bytes, source):
     return out
 
 
-def fetch_news(seen, max_age_hours=None, limit=200):
+def fetch_news(seen, max_age_hours=None, limit=150):
     """Recent items from all feeds that aren't in `seen`, newest first, each tagged with its region."""
     cutoff = now() - timedelta(hours=max_age_hours or config.MAX_AGE_HOURS)
     items, urls = [], set()
@@ -209,17 +209,34 @@ def fetch_news(seen, max_age_hours=None, limit=200):
 # ---------- Claude ----------
 
 
-def ask_claude(prompt):
+SOURCE_REF = "(the source text is at the beginning of this message)"
+_usage = {"calls": 0, "input": 0, "cache_read": 0, "cache_write": 0, "output": 0}
+
+
+def ask_claude(prompt, source=None):
+    """One Claude call. With `source`, the source text goes first as a cached block: the writer, copy editor,
+    reviewer and fixer all send the same source within a minute, so later calls read it from the cache at a
+    fraction of the price (prompts then refer to it with SOURCE_REF instead of repeating it)."""
     if not ANTHROPIC_KEY:
         sys.exit("ANTHROPIC_API_KEY is not set")
+    if source:
+        content = [{"type": "text", "text": f"SOURCE TEXT:\n{source}", "cache_control": {"type": "ephemeral"}},
+                   {"type": "text", "text": prompt}]
+    else:
+        content = prompt
     raw = http(
         "https://api.anthropic.com/v1/messages",
         {"model": config.MODEL, "max_tokens": 12000,
-         "messages": [{"role": "user", "content": prompt}]},
+         "messages": [{"role": "user", "content": content}]},
         {"x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01"},
         timeout=180,
     )
     resp = json.loads(raw)
+    u = resp.get("usage", {})
+    _usage["calls"] += 1
+    for k, f in (("input", "input_tokens"), ("cache_read", "cache_read_input_tokens"),
+                 ("cache_write", "cache_creation_input_tokens"), ("output", "output_tokens")):
+        _usage[k] += u.get(f) or 0
     return "".join(b.get("text", "") for b in resp.get("content", []) if b.get("type") == "text")
 
 
@@ -281,7 +298,8 @@ def review_post(post, keys, article, topic):
     Returns (post, remaining problems)."""
     def review(p):
         r = _json(ask_claude(REVIEW_PROMPT.format(
-            topic=topic, draft=json.dumps({k: p[k] for k in keys}, ensure_ascii=False), article=article)),
+            topic=topic, draft=json.dumps({k: p[k] for k in keys}, ensure_ascii=False), article=SOURCE_REF),
+            source=article),
             "{", "}") or {}
         return [] if r.get("verdict") == "ok" else [str(x) for x in (r.get("problems") or ["unspecified"])]
 
@@ -292,7 +310,8 @@ def review_post(post, keys, article, topic):
     print("Review found:", "; ".join(problems))
     fixed = parse_post(ask_claude(FIX_PROMPT.format(
         problems="\n".join(f"- {p}" for p in problems),
-        draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False), article=article)), keys)
+        draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False), article=SOURCE_REF),
+        source=article), keys)
     if not fixed or not edit_ok({k: post[k] for k in keys}, fixed, min_ratio=0.3):
         print("Review: the fix came back unusable; keeping the draft and flagging it")
         return post, problems
@@ -310,11 +329,11 @@ def review_note(problems):
     return f"\n\n<i>⚠️ {html.escape(config.LABELS['review_warning'])}:\n{items}</i>"
 
 
-def write_long(prompt, keys, tries=2):
+def write_long(prompt, keys, tries=2, source=None):
     """Ask Claude for a post; if it comes back cut off or garbled, ask again."""
     post = None
     for _ in range(tries):
-        post = parse_post(ask_claude(prompt), keys)
+        post = parse_post(ask_claude(prompt, source=source), keys)
         if post and edit_ok({k: post[k] for k in keys}, post):
             return post
         print("Draft came back incomplete; asking again")
@@ -504,7 +523,7 @@ def cmd_draft():
 
     listing = "\n".join(
         f"[{i}] {'[UKRAINIAN COMMUNITY] ' if it.get('community') else ''}({it['region']}, {it['source']}) "
-        f"{it['title']} — {it['summary'][:200]}" for i, it in enumerate(items))
+        f"{it['title']} — {it['summary'][:120]}" for i, it in enumerate(items))
     picks = parse_picks(ask_claude(PICK_PROMPT.format(n=config.DRAFTS_PER_RUN, items=listing)))
     print(f"Claude picked {picks}")
 
@@ -517,15 +536,15 @@ def cmd_draft():
             continue
         it = items[i]
         article = fetch_article(it["url"])
+        src_text = article or "(not available)"
         post = parse_post(ask_claude(WRITE_PROMPT.format(
-            source=it["source"], title=it["title"], summary=it["summary"],
-            article=article or "(not available)")))
+            source=it["source"], title=it["title"], summary=it["summary"], article=SOURCE_REF), source=src_text))
         if not post:
             print(f"Could not write post for: {it['title']}")
             continue
         edited = parse_post(ask_claude(EDIT_PROMPT.format(
             draft=json.dumps(post, ensure_ascii=False), title=it["title"],
-            summary=it["summary"], article=article or "(not available)")))
+            summary=it["summary"], article=SOURCE_REF), source=src_text))
         if edit_ok(post, edited):
             post = edited
         else:
@@ -626,7 +645,7 @@ def cmd_digest():
     s = load_state()
     s.setdefault("digest_regions", {})
     d = now().astimezone(LOCAL)
-    items = [it for it in fetch_news({}, max_age_hours=36, limit=250) if it["region"] not in config.DIGEST_EXCLUDE_REGIONS]
+    items = [it for it in fetch_news({}, max_age_hours=36, limit=180) if it["region"] not in config.DIGEST_EXCLUDE_REGIONS]
     print(f"{len(items)} items for the digest")
     if len(items) < 5:
         return save_state(s)
@@ -634,7 +653,7 @@ def cmd_digest():
     listing = "\n".join(
         f"[{i}] {'[UKRAINIAN COMMUNITY] ' if it.get('community') else ''}({it['region']}, {it['source']}, "
         f"{it['published'].astimezone(LOCAL).strftime('%a %b %d %H:%M') if it['published'] else '?'}) "
-        f"{it['title']} — {it['summary'][:200]}" for i, it in enumerate(items))
+        f"{it['title']} — {it['summary'][:120]}" for i, it in enumerate(items))
     prompt = DIGEST_PROMPT.format(national=config.DIGEST_NATIONAL, regions=config.DIGEST_REGIONS,
                                   recent=", ".join(recent) or "none", items=listing, today=f"{d:%A, %B %d, %Y}")
     digest = _json(ask_claude(prompt), "{", "}")
@@ -882,7 +901,7 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
     kind = "thisday" if header == config.LABELS["thisday_header"] else "history"
     keys = ("title", "teaser", "body")
     post = write_long(HISTORY_WRITE_PROMPT.format(
-        topic=topic, source=source_name, article=article, opening=opening), keys)
+        topic=topic, source=source_name, article=SOURCE_REF, opening=opening), keys, source=article)
     if not post:
         print("Could not write the history post")
         return False
@@ -892,7 +911,7 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
                            f"of this story: {topic}\nReply with the title only.").strip().strip('"')[:100]
     edited = parse_post(ask_claude(EDIT_PROMPT.format(
         draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False),
-        title=topic, summary="", article=article)), keys)
+        title=topic, summary="", article=SOURCE_REF), source=article), keys)
     post = edited if edit_ok(post, edited) else post
     post, problems = review_post(post, keys, article, topic)
     credit = source_name
@@ -1210,13 +1229,14 @@ def cmd_rewrite(path, source):
     keys = ("title", "teaser", "body")
     topic = source[5:] if source.startswith("wiki:") else source
     post = write_long(HISTORY_WRITE_PROMPT.format(
-        topic=topic, source=source_name, article=article, opening="Open with a vivid detail or the key moment."), keys)
+        topic=topic, source=source_name, article=SOURCE_REF, opening="Open with a vivid detail or the key moment."),
+        keys, source=article)
     if not post:
         sys.exit("Could not write the article")
     query = post.get("image_query", "")
     edited = parse_post(ask_claude(EDIT_PROMPT.format(
         draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False),
-        title=topic, summary="", article=article)), keys)
+        title=topic, summary="", article=SOURCE_REF), source=article), keys)
     post = edited if edit_ok(post, edited) else post
     post, problems = review_post(post, keys, article, topic)
     if problems:
@@ -1261,7 +1281,15 @@ def cmd_tick():
     cmd_approve()
 
 
+def _print_usage():
+    if _usage["calls"]:
+        print(f"Claude usage: {_usage['calls']} calls, input {_usage['input']}, cache write {_usage['cache_write']}, "
+              f"cache read {_usage['cache_read']}, output {_usage['output']} tokens")
+
+
 if __name__ == "__main__":
+    import atexit
+    atexit.register(_print_usage)
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
     if cmd == "draft":
         cmd_draft()
