@@ -1576,6 +1576,30 @@ def outlet_name(url):
     return host
 
 
+def cmd_post():
+    """A draft from your own text (POST_TEXT: headline on the first line, then the body; POST_SOURCE: optional
+    source link; POST_PHOTO: optional picture searches 'A | B'). It goes to the approvers like any draft,
+    with its Facebook card, and is published to the channel and Facebook when approved."""
+    text = os.environ.get("POST_TEXT", "").strip()
+    if not text:
+        sys.exit("POST_TEXT is empty")
+    title, _, body = text.partition("\n")
+    source = os.environ.get("POST_SOURCE", "").strip()
+    s = load_state()
+    if source:
+        post = format_post(title.strip(), body.strip(), outlet_name(source), source)
+        key = source
+    else:
+        post = f"<b>{html.escape(title.strip(), quote=False)}</b>\n\n{html.escape(body.strip(), quote=False)}"
+        key = "own:" + hashlib.sha1(text.encode()).hexdigest()[:10]
+    region = getattr(config, "REGIONS", {}).get("Canada", ("", ""))
+    card = {"kind": "news", "title": title.strip(), "tag": region[0],
+            "queries": [*split_queries(os.environ.get("POST_PHOTO", "")), region[1]]}
+    if send_draft(s, key, post, now().isoformat(), card=card):
+        print("Draft sent")
+    save_state(s)
+
+
 def _print_usage():
     if _usage["calls"]:
         print(f"Claude usage: {_usage['calls']} calls, input {_usage['input']}, cache write {_usage['cache_write']}, "
@@ -1604,6 +1628,8 @@ if __name__ == "__main__":
         cmd_cards(*sys.argv[2:3])
     elif cmd == "edit":  # edit POST_LINK (text in EDIT_TEXT, source link in EDIT_SOURCE)
         cmd_edit(sys.argv[2] if len(sys.argv) > 2 else "")
+    elif cmd == "post":  # a draft from your own text (POST_TEXT, POST_SOURCE, POST_PHOTO)
+        cmd_post()
     elif cmd == "check":  # test the connections, posts nothing
         cmd_check()
     elif cmd == "merge-state":  # used by save_state.sh: merge-state BASE OURS (theirs = state.json)

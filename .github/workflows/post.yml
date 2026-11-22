@@ -1,0 +1,40 @@
+name: Draft from your own text
+
+on:
+  workflow_dispatch:
+    inputs:
+      text:
+        description: "Post text: first line is the headline, then the body"
+        required: true
+      source:
+        description: "Source article link (optional; added as the source line)"
+        required: false
+      photo:
+        description: "Picture searches for the Facebook card, best first (optional, e.g. 'Halifax Harbour | Parliament Hill')"
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: news
+      cancel-in-progress: false
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Send the draft to the approvers
+        run: python3 bot.py post
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ADMIN_ID: ${{ secrets.TELEGRAM_ADMIN_ID }}
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+          FACEBOOK_PAGE_TOKEN: ${{ secrets.FACEBOOK_PAGE_TOKEN }}
+          POST_TEXT: ${{ inputs.text }}
+          POST_SOURCE: ${{ inputs.source }}
+          POST_PHOTO: ${{ inputs.photo }}
+      - name: Save state
+        if: always()
+        run: bash save_state.sh
