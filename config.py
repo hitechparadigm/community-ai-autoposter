@@ -3,14 +3,52 @@
 # Telegram channel where approved posts go
 CHANNEL = "@UkrainianCanada"
 
-# News sources: (display name, RSS/Atom feed URL)
+# News sources: (display name, RSS/Atom feed URL, region)
 # If a feed stops working, the run log shows "FEED ERROR" and the rest still run.
 FEEDS = [
-    ("CBC News", "https://www.cbc.ca/webfeed/rss/rss-canada"),
-    ("CBC Manitoba", "https://www.cbc.ca/webfeed/rss/rss-canada-manitoba"),
-    ("Global News", "https://globalnews.ca/canada/feed/"),
-    ("Ukrinform", "https://www.ukrinform.net/rss/block-lastnews"),
+    # National
+    ("CBC News", "https://www.cbc.ca/webfeed/rss/rss-canada", "Canada"),
+    ("CBC Politics", "https://www.cbc.ca/webfeed/rss/rss-politics", "Canada"),
+    ("Global News", "https://globalnews.ca/canada/feed/", "Canada"),
+    ("Global News Politics", "https://globalnews.ca/politics/feed/", "Canada"),
+    # British Columbia
+    ("CBC British Columbia", "https://www.cbc.ca/webfeed/rss/rss-canada-britishcolumbia", "British Columbia"),
+    ("Global News BC", "https://globalnews.ca/bc/feed/", "British Columbia"),
+    # Alberta
+    ("CBC Calgary", "https://www.cbc.ca/webfeed/rss/rss-canada-calgary", "Alberta"),
+    ("CBC Edmonton", "https://www.cbc.ca/webfeed/rss/rss-canada-edmonton", "Alberta"),
+    ("Global News Calgary", "https://globalnews.ca/calgary/feed/", "Alberta"),
+    ("Global News Edmonton", "https://globalnews.ca/edmonton/feed/", "Alberta"),
+    # Saskatchewan
+    ("CBC Saskatchewan", "https://www.cbc.ca/webfeed/rss/rss-canada-saskatchewan", "Saskatchewan"),
+    ("Global News Regina", "https://globalnews.ca/regina/feed/", "Saskatchewan"),
+    ("Global News Saskatoon", "https://globalnews.ca/saskatoon/feed/", "Saskatchewan"),
+    # Manitoba
+    ("CBC Manitoba", "https://www.cbc.ca/webfeed/rss/rss-canada-manitoba", "Manitoba"),
+    ("Global News Winnipeg", "https://globalnews.ca/winnipeg/feed/", "Manitoba"),
+    # Ontario
+    ("CBC Toronto", "https://www.cbc.ca/webfeed/rss/rss-canada-toronto", "Ontario"),
+    ("CBC Ottawa", "https://www.cbc.ca/webfeed/rss/rss-canada-ottawa", "Ontario"),
+    ("Global News Toronto", "https://globalnews.ca/toronto/feed/", "Ontario"),
+    ("Global News Ottawa", "https://globalnews.ca/ottawa/feed/", "Ontario"),
+    # Quebec
+    ("CBC Montreal", "https://www.cbc.ca/webfeed/rss/rss-canada-montreal", "Quebec"),
+    ("Global News Montreal", "https://globalnews.ca/montreal/feed/", "Quebec"),
+    # Atlantic
+    ("CBC New Brunswick", "https://www.cbc.ca/webfeed/rss/rss-canada-newbrunswick", "New Brunswick"),
+    ("Global News New Brunswick", "https://globalnews.ca/new-brunswick/feed/", "New Brunswick"),
+    ("CBC Nova Scotia", "https://www.cbc.ca/webfeed/rss/rss-canada-novascotia", "Nova Scotia"),
+    ("Global News Halifax", "https://globalnews.ca/halifax/feed/", "Nova Scotia"),
+    ("CBC PEI", "https://www.cbc.ca/webfeed/rss/rss-canada-pei", "Prince Edward Island"),
+    ("CBC Newfoundland and Labrador", "https://www.cbc.ca/webfeed/rss/rss-canada-newfoundland", "Newfoundland and Labrador"),
+    # Yukon, Northwest Territories, Nunavut
+    ("CBC North", "https://www.cbc.ca/webfeed/rss/rss-canada-north", "Territories (Yukon, NWT, Nunavut)"),
+    # Ukraine
+    ("Ukrinform", "https://www.ukrinform.net/rss/block-lastnews", "Ukraine"),
 ]
+
+# Newest items taken from each feed per run (keeps big feeds from crowding out small ones)
+ITEMS_PER_FEED = 8
 
 # Drafts each run sends you (it may send fewer). 5 runs a day x 1 = up to 5 posts/day.
 # Set to 2 to get a backup option each run.
@@ -21,6 +59,10 @@ MAX_AGE_HOURS = 36
 
 # Drafts not approved within this time are dropped
 DRAFT_EXPIRY_HOURS = 24
+
+# Daily digest (python bot.py digest): top national news plus 3-4 provinces/territories, rotating
+DIGEST_NATIONAL = "3-5"
+DIGEST_REGIONS = "3-4"
 
 # Claude model used to pick, write and copy-edit posts (Sonnet 5.5)
 MODEL = "claude-sonnet-5-5"

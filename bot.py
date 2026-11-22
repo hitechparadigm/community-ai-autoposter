@@ -95,6 +95,9 @@ def merge_state(base, ours, theirs):
     done = out.get("history_done", [])
     out["history_done"] = done + [x for x in ours.get("history_done", []) if x not in done]
     out["tg_offset"] = max(theirs.get("tg_offset", 0), ours.get("tg_offset", 0))
+    out["digest_regions"] = {**out.get("digest_regions", {}), **ours.get("digest_regions", {})}
+    if ours.get("thisday_last"):
+        out["thisday_last"] = ours["thisday_last"]
     if ours.get("telegraph_token") and not out.get("telegraph_token"):
         out["telegraph_token"] = ours["telegraph_token"]
     return out
@@ -160,25 +163,32 @@ def parse_feed(xml_bytes, source):
     return out
 
 
-def fetch_news(seen):
-    cutoff = now() - timedelta(hours=config.MAX_AGE_HOURS)
+def fetch_news(seen, max_age_hours=None, limit=200):
+    """Recent items from all feeds that aren't in `seen`, newest first, each tagged with its region."""
+    cutoff = now() - timedelta(hours=max_age_hours or config.MAX_AGE_HOURS)
     items, urls = [], set()
-    for name, url in config.FEEDS:
+    for name, url, region in config.FEEDS:
         try:
             got = parse_feed(http(url, timeout=45), name)
             print(f"{name}: {len(got)} items")
         except Exception as e:  # one bad feed shouldn't stop the run
             print(f"FEED ERROR {name}: {e}")
             continue
+        got.sort(key=lambda i: i["published"] or now(), reverse=True)
+        taken = 0
         for it in got:
+            if taken >= config.ITEMS_PER_FEED:
+                break
             if it["url"] in seen or it["url"] in urls:
                 continue
             if it["published"] and it["published"] < cutoff:
                 continue
+            it["region"] = region
             urls.add(it["url"])
             items.append(it)
+            taken += 1
     items.sort(key=lambda i: i["published"] or now(), reverse=True)
-    return items[:60]
+    return items[:limit]
 
 
 # ---------- Claude ----------
@@ -193,7 +203,10 @@ Below are fresh news items. Pick up to {n} that matter most to this audience, fo
 status and permits, CUAET, government programs and benefits, cost of living, housing, jobs, \
 Canada-Ukraine relations, Canadian support for Ukraine, Ukrainian community life in Canada, \
 or major national news everyone in Canada is talking about. Skip routine crime, celebrity and sports stories. \
-Never pick two items about the same story. Pick fewer, or none, if nothing is relevant.
+Items are tagged with their region. A regional story qualifies when it matters to people living there \
+(Ukrainians live in every province); vary regions over the day rather than always picking Ontario. \
+CBC and Global News often cover the same story: never pick two items about the same story. \
+Pick fewer, or none, if nothing is relevant.
 
 Reply with JSON only: a list of the chosen item ids, most important first, e.g. [4, 17]
 
@@ -451,7 +464,7 @@ def cmd_draft():
         return
 
     listing = "\n".join(
-        f"[{i}] ({it['source']}) {it['title']} — {it['summary']}" for i, it in enumerate(items))
+        f"[{i}] ({it['region']}, {it['source']}) {it['title']} — {it['summary'][:200]}" for i, it in enumerate(items))
     picks = parse_picks(ask_claude(PICK_PROMPT.format(n=config.DRAFTS_PER_RUN, items=listing)))
     print(f"Claude picked {picks}")
 
@@ -506,6 +519,87 @@ def send_draft(s, url, text, stamp, image="", preview_url=""):
     if msgs:
         s["pending"][did] = {"url": url, "text": text, "created": stamp, "msgs": msgs, "lp": lp}
     return bool(msgs)
+
+
+# ---------- daily digest ----------
+
+UK_MONTHS = ["січня", "лютого", "березня", "квітня", "травня", "червня", "липня", "серпня",
+             "вересня", "жовтня", "листопада", "грудня"]
+
+DIGEST_PROMPT = AUDIENCE + "\n\n" + STYLE + """
+
+Write today's evening news digest for the channel, in Ukrainian, from the news items below (last 24 hours, \
+each tagged with its region).
+
+1. "national": the {national} most important stories for people living in Canada (federal politics, \
+economy and cost of living, immigration, major events). One item per story.
+2. "regions": {regions} provinces or territories with 1-2 notable or interesting stories each. \
+Prefer regions NOT featured recently: {recent}. Use the Ukrainian name of the region \
+(e.g. "Манітоба", "Британська Колумбія", "Нью-Брансвік", "Острів Принца Едварда", "Ньюфаундленд і Лабрадор", \
+"Юкон", "Північно-Західні території", "Нунавут"); for the CBC North feed name the actual territory.
+- For each item, "text": 1-2 sentences (at most 220 characters) saying what happened and why it matters. \
+Use only facts in the headline and summary. CBC and Global News often cover the same story: use it once.
+- Skip routine crime, celebrity and sports stories unless they are major.
+
+Reply with JSON only:
+{{"national": [{{"id": 0, "text": "..."}}],
+  "regions": [{{"region": "Манітоба", "region_en": "Manitoba", "items": [{{"id": 5, "text": "..."}}]}}]}}
+
+News items:
+{items}
+"""
+
+
+def cmd_digest():
+    if not ADMIN_IDS:
+        sys.exit("TELEGRAM_ADMIN_ID is not set")
+    s = load_state()
+    s.setdefault("digest_regions", {})
+    d = now().astimezone(LOCAL)
+    items = [it for it in fetch_news({}, max_age_hours=24, limit=250) if it["region"] != "Ukraine"]
+    print(f"{len(items)} items for the digest")
+    if len(items) < 5:
+        return save_state(s)
+    recent = sorted(s["digest_regions"], key=lambda r: s["digest_regions"][r], reverse=True)[:6]
+    listing = "\n".join(f"[{i}] ({it['region']}, {it['source']}) {it['title']} — {it['summary'][:200]}"
+                        for i, it in enumerate(items))
+    prompt = DIGEST_PROMPT.format(national=config.DIGEST_NATIONAL, regions=config.DIGEST_REGIONS,
+                                  recent=", ".join(recent) or "none", items=listing)
+    digest = _json(ask_claude(prompt), "{", "}")
+    if not isinstance(digest, dict) or not digest.get("national"):
+        sys.exit("Could not write the digest")
+    edited = _json(ask_claude(EDIT_PROMPT.format(
+        draft=json.dumps(digest, ensure_ascii=False), title="Daily news digest", summary="",
+        article="\n".join(f"{it['title']} — {it['summary']}" for it in items))), "{", "}")
+    if isinstance(edited, dict) and edited.get("national"):
+        digest = edited
+
+    e = html.escape
+
+    def line(entry):
+        try:
+            it = items[int(entry["id"])]
+        except (KeyError, ValueError, IndexError, TypeError):
+            return ""
+        return f"• {e(entry.get('text', ''), quote=False)} <a href=\"{e(it['url'], quote=True)}\">{e(it['source'].split(' ')[0], quote=False)}</a>"
+
+    parts = [f"🗞 <b>Головне за день · {d.day} {UK_MONTHS[d.month - 1]}</b>", "", "🇨🇦 <b>Канада</b>"]
+    parts += [l for l in map(line, digest["national"]) if l]
+    for reg in digest.get("regions", []):
+        lines = [l for l in map(line, reg.get("items", [])) if l]
+        if lines:
+            parts += ["", f"📍 <b>{e(reg.get('region', ''), quote=False)}</b>"] + lines
+            s["digest_regions"][reg.get("region_en") or reg.get("region", "")] = d.strftime("%Y-%m-%d")
+    parts += ["", f"<a href=\"{config.TELEGRAPH_AUTHOR_URL}\">{e(config.TELEGRAPH_AUTHOR, quote=False)}</a>"]
+    text = "\n".join(parts)[:4000]
+    try:
+        top = items[int(digest["national"][0]["id"])]["url"]
+    except (KeyError, ValueError, IndexError, TypeError):
+        top = ""
+    key = f"digest:{d:%Y-%m-%d}"
+    if send_draft(s, key, text, now().isoformat(), preview_url=top):
+        print("Digest draft sent")
+    save_state(s)
 
 
 # ---------- Canadian history ----------
@@ -750,49 +844,53 @@ def _date_opening(d, year=""):
 
 
 def cmd_thisday():
-    """Canadian sources first (Dictionary of Canadian Biography); Wikipedia "On this day" only as a fallback."""
+    """An event or a person on today's date, alternating day by day.
+    People: Dictionary of Canadian Biography. Events: Wikipedia "On this day" (Canadian entries) - the
+    Canadian sites with dated events (The Canadian Encyclopedia) block automated access."""
     s = _history_state()
     stamp = now().isoformat()
     d = now().astimezone(LOCAL)
     header = "📅 Цей день в історії Канади"
+    want = "event" if s.get("thisday_last") != "event" else "person"
 
-    bios = [b for b in dcb_bios_of_the_day() if b["url"] not in s["history_done"]]
-    print(f"{len(bios)} DCB biographies for {d:%B %d}")
-    if bios:
-        listing = "\n".join(f"[{i}] (biography: born or died on {d:%B} {d.day}) {b['name']}" for i, b in enumerate(bios))
-        for i in parse_picks(ask_claude(THISDAY_PICK_PROMPT.format(items=listing)))[:2]:
-            if i >= len(bios):
-                continue
-            b = bios[i]
-            _done(s, b["url"])
-            article, image = fetch_page(b["url"], 15000)
-            if len(article) < 800:
-                continue
-            topic = f"{b['name']} (born or died on {d:%B} {d.day}; the text says which, and the year)"
-            if _write_history(topic, "Dictionary of Canadian Biography", article,
-                              "Start with the date (day, month and year in Ukrainian words, e.g. «22 листопада 1902 року») "
-                              "and what happened on it: the person's birth or death.",
-                              header, "Dictionary of Canadian Biography", b["url"], s, stamp, image):
-                print(f"This-day draft sent: {b['name']} (DCB)")
-                return save_state(s)
-
-    # Fallback: Wikipedia "On this day", Canadian entries
-    entries = [e for e in wiki_on_this_day(d) if e["page"] not in s["history_done"]]
-    print(f"Fallback: {len(entries)} Wikipedia entries")
-    if entries:
-        listing = "\n".join(f"[{i}] {e['year']} ({e['kind']}): {e['text']}" for i, e in enumerate(entries[:40]))
-        for i in parse_picks(ask_claude(THISDAY_PICK_PROMPT.format(items=listing)))[:2]:
-            if i >= len(entries):
-                continue
-            e = entries[i]
+    cands = [{"kind": "person", "label": f"person (born or died on {d:%B} {d.day}): {b['name']}", **b}
+             for b in dcb_bios_of_the_day() if b["url"] not in s["history_done"]]
+    for e in wiki_on_this_day(d):
+        if e["page"] not in s["history_done"]:
+            kind = "event" if e["kind"] in ("selected", "events") else "person"
+            cands.append({"kind": kind, "label": f"{kind} ({e['year']}): {e['text']}", "wiki": e})
+    print(f"{len(cands)} candidates for {d:%B %d}; today prefers: {want}")
+    if not cands:
+        return save_state(s)
+    listing = "\n".join(f"[{i}] {c['label']}" for i, c in enumerate(cands[:60]))
+    prompt = THISDAY_PICK_PROMPT.format(items=listing) + (
+        f"\nToday choose {'an EVENT (something that happened)' if want == 'event' else 'a PERSON'} "
+        "if there is a good one; otherwise the best entry of any kind. Return up to 3 ids, best first.")
+    for i in parse_picks(ask_claude(prompt))[:3]:
+        if i >= len(cands):
+            continue
+        c = cands[i]
+        if "wiki" in c:
+            e = c["wiki"]
             _done(s, e["page"])
             article, url = wiki_text(e["page"])
             if len(article) < 500:
                 continue
-            image = fetch_page(url)[1]
-            if _write_history(f"{e['year']}: {e['text']}", "Вікіпедія", article, _date_opening(d, e["year"]),
-                              header, "Вікіпедія", url, s, stamp, image):
-                print(f"This-day draft sent: {e['text']} (Wikipedia)")
+            ok = _write_history(f"{e['year']}: {e['text']}", "Вікіпедія", article, _date_opening(d, e["year"]),
+                                header, "Вікіпедія", url, s, stamp, fetch_page(url)[1])
+        else:
+            _done(s, c["url"])
+            article, image = fetch_page(c["url"], 15000)
+            if len(article) < 800:
+                continue
+            ok = _write_history(f"{c['name']} (born or died on {d:%B} {d.day}; the text says which, and the year)",
+                                "Dictionary of Canadian Biography", article,
+                                "Start with the date (day, month and year in Ukrainian words, e.g. «22 листопада 1902 року») "
+                                "and what happened on it: the person's birth or death.",
+                                header, "Dictionary of Canadian Biography", c["url"], s, stamp, image)
+        if ok:
+            s["thisday_last"] = c["kind"]
+            print(f"This-day draft sent ({c['kind']}): {c['label']}")
             break
     save_state(s)
 
@@ -939,6 +1037,8 @@ if __name__ == "__main__":
         cmd_history(ukrainian=len(sys.argv) > 2 and sys.argv[2] == "ukrainian")
     elif cmd == "thisday":
         cmd_thisday()
+    elif cmd == "digest":
+        cmd_digest()
     elif cmd == "merge-state":  # used by save_state.sh: merge-state BASE OURS (theirs = state.json)
         with open(sys.argv[2], encoding="utf-8") as f:
             base = json.load(f)
@@ -946,4 +1046,4 @@ if __name__ == "__main__":
             ours = json.load(f)
         save_state(merge_state(base, ours, load_state()))
     else:
-        sys.exit("Usage: python bot.py draft|approve|history|thisday")
+        sys.exit("Usage: python bot.py draft|approve|history|thisday|digest")

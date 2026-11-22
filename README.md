@@ -18,6 +18,12 @@ buttons. Posts you approve go to @UkrainianCanada within about 20 minutes.
 6. **Test:** Actions tab → "Draft posts" → Run workflow. Drafts should arrive in Telegram
    within a minute. Tap ✅ on one, then run "Publish approved posts" by hand to post right away.
 
+## Daily digest
+
+Every evening at 20:00 Toronto time you get a "🗞 Головне за день" draft: the 3-5 most important
+Canadian stories of the last 24 hours plus 1-2 stories from 3-4 provinces or territories. Regions rotate,
+so every province and territory gets featured over the week. Each item links to its source.
+
 ## Changing things
 
 Edit `config.py`: news sources, drafts per run, model. Run times are in the `cron:` lines
@@ -42,8 +48,10 @@ Two extra drafts a day, approved the same way. Canadian sources come first; Wiki
 fallback. Posts show a photo above the text: the source's own picture, or, if it has no real photo
 (only a logo or banner), a freely licensed photo of the subject from Wikimedia Commons.
 
-- **📅 Цей день в історії Канади** (8:30 Toronto time): a person born or died on today's date, from
-  the Dictionary of Canadian Biography (fallback: Wikipedia "On this day", Canadian entries).
+- **📅 Цей день в історії Канади** (8:30 Toronto time): alternates between an event that happened on
+  today's date and a person born or died on it. People come from the Dictionary of Canadian Biography;
+  events from Wikipedia "On this day" (Canadian entries), because the Canadian sites with dated events
+  block automated access.
 - **🍁 Історія Канади** (11:30): a story chosen from `HISTORY_SOURCES` in `config.py`: CBC Archives,
   Library and Archives Canada, Ontario Heritage Trust, Quebec Anglophone Heritage Network, Manitoba
   Historical Society, Encyclopedia of Saskatchewan, RETROactive Alberta (fallback and coverage for BC,
