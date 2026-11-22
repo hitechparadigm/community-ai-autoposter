@@ -371,6 +371,7 @@ def cmd_approve():
             answer(cq, "Skipped")
             close_draft(d, f"❌ Skipped by {who}")
         del s["pending"][did]
+        save_state(s)  # save after every tap so a later error can never cause a double post
 
     cutoff = (now() - timedelta(hours=config.DRAFT_EXPIRY_HOURS)).isoformat()
     for did, d in list(s["pending"].items()):
