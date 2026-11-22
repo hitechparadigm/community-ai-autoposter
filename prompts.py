@@ -227,3 +227,45 @@ News post:
 
 # How dates are written at the start of "This day" posts
 DATE_WORDS = " (write the date in Ukrainian words, e.g. «22 листопада 1902 року»)."
+
+
+REVIEW_PROMPT = """You are the fact-checker and editor-in-chief of a Ukrainian news channel. Review this draft against
+its source before it goes to the editors. Be strict but fair: flag real problems only.
+
+Check:
+1. Topic: the draft is about "{topic}" itself, not mainly about something related (e.g. a company, a place or a
+   person the source only mentions).
+2. Facts: every name, date, number and claim is supported by the source text.
+3. Repetition: no fact or phrase repeated (also between teaser and body); no padding with unrelated background.
+4. No remarks about the writing or the sources ("розповідаємо", "не вдалося з'ясувати", "джерело не уточнює"),
+   no forced moral at the end.
+5. Complete: nothing cut off mid-sentence; the title and teaser match the body.
+6. Language: natural literary Ukrainian, no russianisms, calques, wrong word choice or broken words.
+
+Reply with JSON only:
+{{"verdict": "ok" or "fix", "problems": ["short description of each problem, in Ukrainian", ...]}}
+
+Draft:
+{draft}
+
+Source:
+{article}
+"""
+
+FIX_PROMPT = """You are the editor of a Ukrainian news channel. Fix the draft below so that every listed problem is
+solved. Use only facts from the source; if a problem can only be fixed by removing text, remove it. Keep everything
+that is fine as it is.
+
+""" + STYLE + """
+
+Problems:
+{problems}
+
+Reply with JSON only, with exactly the same keys as the draft.
+
+Draft:
+{draft}
+
+Source:
+{article}
+"""

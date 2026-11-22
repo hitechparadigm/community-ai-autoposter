@@ -37,6 +37,7 @@ LABELS = {
     "history_header": "🍁 Історія Канади",
     "auto_publish_note": "Опублікується автоматично о {time}, якщо не натиснути ❌",
     "unpublished": "Матеріал не опубліковано",
+    "review_warning": "Перевірка знайшла проблеми, перегляньте уважно",
 }
 
 # News sources: (display name, RSS/Atom feed URL, region)

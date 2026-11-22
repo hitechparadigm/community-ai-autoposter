@@ -23,7 +23,7 @@ Any other community can run its own channel by changing two settings files (see
 
 ### Engineering highlights
 
-- **Two-pass generation.** Claude (Anthropic's AI model, used through the Claude API) writes, then a separate
+- **Writer, copy editor, reviewer.** Claude (Anthropic's AI model, used through the Claude API) writes, then a separate
   "copy editor" pass checks language and verifies every
   name, number and date against the source. A Ukrainian style guide (no russianisms or calques, Canadian
   terminology, typography) is part of every prompt.
@@ -76,7 +76,7 @@ flowchart LR
         P["publish approved posts"]
         S[("state.json<br/>seen stories, pending drafts,<br/>jobs done")]
     end
-    C["Claude API<br/>pick → write → copy-edit<br/>+ completeness checks"]
+    C["Claude API<br/>pick → write → copy-edit<br/>→ review (fix or flag)"]
     TG["Telegraph<br/>long-read articles"]
     A["Approvers in Telegram<br/>✅ Publish / ❌ Skip"]
     CH["Telegram channel<br/>@UkrainianCanada"]
@@ -113,6 +113,7 @@ sequenceDiagram
     GA->>Cl: pick the best story
     GA->>Cl: write the post in Ukrainian
     GA->>Cl: copy-edit (language + facts)
+    GA->>Cl: review against the source, fix if needed
     Note over GA: reject cut-off or garbled text, retry
     GA->>Ap: draft with ✅ / ❌
     Ap-->>GA: tap ✅ (waits in Telegram)
@@ -182,6 +183,12 @@ with photo, subheadings and the source credited at the end. The channel gets a t
   `telegra.ph/`) and a source (URL or `wiki:Title`). The article is rewritten in place; the link stays the same.
 - Photos: the source's own picture if it is a real photo (logos and banners are rejected), otherwise a freely
   licensed photo of the subject from Wikimedia Commons.
+
+**Reviewer agent.** Before a news post or long-read reaches the approvers, a separate Claude call checks it
+against its source: on topic (not mainly about something the source only mentions), every fact supported,
+no repetition or padding, no remarks about sources, complete, good Ukrainian. If it finds problems, the bot fixes
+the draft with those notes and checks again; anything still wrong is listed under the draft as
+"⚠️ Перевірка знайшла проблеми…" (shown to approvers only, never published).
 
 **Language.** Every post follows the style guide in `prompts.py` (literary Ukrainian, no russianisms or
 calques, Canadian terms, original English names in brackets on first mention, Ukrainian typography) and goes

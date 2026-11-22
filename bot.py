@@ -27,7 +27,7 @@ from email.utils import parsedate_to_datetime
 from zoneinfo import ZoneInfo
 
 import config
-from prompts import (AUDIENCE, DIGEST_PROMPT, EDIT_PROMPT, HISTORY_WRITE_PROMPT, PICK_PROMPT,
+from prompts import (AUDIENCE, DIGEST_PROMPT, EDIT_PROMPT, FIX_PROMPT, REVIEW_PROMPT, HISTORY_WRITE_PROMPT, PICK_PROMPT,
                      REFERRAL_MATCH_PROMPT, STORY_PICK_PROMPT, STYLE, THISDAY_PICK_PROMPT, WRITE_PROMPT,
                      DATE_WORDS)
 
@@ -254,7 +254,7 @@ def fix_homoglyphs(text):
                   lambda m: "і" if m.group(1) == "i" else "І", text, flags=re.I)
 
 
-def edit_ok(original, edited):
+def edit_ok(original, edited, min_ratio=0.7):
     """Accept the copy editor's version only if it is complete: not much shorter than the original,
     ending like a finished sentence, and without broken words (Latin letters glued to Cyrillic ones)."""
     if not edited:
@@ -263,7 +263,7 @@ def edit_ok(original, edited):
         if not isinstance(v, str) or k == "image_query":
             continue
         new = edited.get(k, "")
-        if not isinstance(new, str) or len(new) < 0.7 * len(v):
+        if not isinstance(new, str) or len(new) < min_ratio * len(v):
             print(f"Copy edit rejected: '{k}' came back cut short")
             return False
         m = BROKEN_WORD.search(new)
@@ -274,6 +274,40 @@ def edit_ok(original, edited):
             print(f"Copy edit rejected: '{k}' doesn't end with a full sentence")
             return False
     return True
+
+
+def review_post(post, keys, article, topic):
+    """Reviewer agent: checks the draft against its source; fixes it once if needed and checks again.
+    Returns (post, remaining problems)."""
+    def review(p):
+        r = _json(ask_claude(REVIEW_PROMPT.format(
+            topic=topic, draft=json.dumps({k: p[k] for k in keys}, ensure_ascii=False), article=article)),
+            "{", "}") or {}
+        return [] if r.get("verdict") == "ok" else [str(x) for x in (r.get("problems") or ["unspecified"])]
+
+    problems = review(post)
+    if not problems:
+        print("Review: ok")
+        return post, []
+    print("Review found:", "; ".join(problems))
+    fixed = parse_post(ask_claude(FIX_PROMPT.format(
+        problems="\n".join(f"- {p}" for p in problems),
+        draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False), article=article)), keys)
+    if not fixed or not edit_ok({k: post[k] for k in keys}, fixed, min_ratio=0.3):
+        print("Review: the fix came back unusable; keeping the draft and flagging it")
+        return post, problems
+    fixed = {**post, **{k: fixed[k] for k in keys}}
+    left = review(fixed)
+    print("Review after fix:", "ok" if not left else "; ".join(left))
+    return fixed, left
+
+
+def review_note(problems):
+    """A short warning for the approvers (never published)."""
+    if not problems:
+        return ""
+    items = "\n".join(f"• {html.escape(p)}" for p in problems[:4])
+    return f"\n\n<i>⚠️ {html.escape(config.LABELS['review_warning'])}:\n{items}</i>"
 
 
 def write_long(prompt, keys, tries=2):
@@ -496,11 +530,12 @@ def cmd_draft():
             post = edited
         else:
             print("Copy edit failed; using the first draft")
+        post, problems = review_post(post, ("title", "body"), article or it["summary"], it["title"])
         text = format_post(post["title"], post["body"], it["source"], it["url"])
         ref = matching_referral(s, post)
         if ref:
             text += f'\n\n<a href="{html.escape(ref[1], quote=True)}">{html.escape(ref[0], quote=False)}</a>'
-        if not send_draft(s, it["url"], text, stamp):
+        if not send_draft(s, it["url"], text, stamp, note=review_note(problems)):
             continue
         if ref:
             s["pending"][hashlib.sha1(it["url"].encode()).hexdigest()[:10]]["referral"] = True
@@ -512,7 +547,7 @@ def auto_publish_on(kind):
     return bool(getattr(config, "AUTO_PUBLISH", {}).get(kind))
 
 
-def send_draft(s, url, text, stamp, image="", preview_url="", kind="news"):
+def send_draft(s, url, text, stamp, image="", preview_url="", kind="news", note=""):
     """Send a draft with Publish/Skip buttons to every approver and remember it.
     With an image, the picture is shown above the post (via an invisible link) instead of the source preview."""
     did = hashlib.sha1(url.encode()).hexdigest()[:10]
@@ -523,10 +558,9 @@ def send_draft(s, url, text, stamp, image="", preview_url="", kind="news"):
         lp = {"url": image, "prefer_large_media": True, "show_above_text": True}
     else:
         lp = preview(url)
-    note = ""
     if auto_publish_on(kind):
         at = (now() + timedelta(minutes=config.AUTO_PUBLISH_AFTER_MINUTES)).astimezone(LOCAL)
-        note = "\n\n<i>⏱ " + config.LABELS["auto_publish_note"].format(time=f"{at:%H:%M}") + "</i>"
+        note += "\n\n<i>⏱ " + config.LABELS["auto_publish_note"].format(time=f"{at:%H:%M}") + "</i>"
     msgs = []
     for admin in ADMIN_IDS:
         try:
@@ -860,6 +894,7 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
         draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False),
         title=topic, summary="", article=article)), keys)
     post = edited if edit_ok(post, edited) else post
+    post, problems = review_post(post, keys, article, topic)
     credit = source_name
     if not image:  # the source has no usable photo: look for a freely licensed one
         image = commons_image(query)
@@ -874,13 +909,13 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
         print(f"Telegraph error, sending a normal post instead: {e}")
         text = format_post(post["title"], post["teaser"] + "\n\n" + post["body"].replace("## ", ""),
                            source_name, url, header=header)
-        return send_draft(s, url, text[:4000], stamp, image=image, kind=kind)
+        return send_draft(s, url, text[:4000], stamp, image=image, kind=kind, note=review_note(problems))
     e = html.escape
     text = (f"{e(header, quote=False)}\n\n<b>{e(post['title'], quote=False)}</b>\n\n{e(post['teaser'], quote=False)}"
             f"\n\n📖 <b><a href=\"{e(page['url'], quote=True)}\">{e(config.LABELS['read_more'])} →</a></b>")
     # the source is credited at the end of the Telegraph article, not in the post
     print(f"Telegraph page: {page['url']}")
-    ok = send_draft(s, url, text, stamp, preview_url=page["url"], kind=kind)
+    ok = send_draft(s, url, text, stamp, preview_url=page["url"], kind=kind, note=review_note(problems))
     if ok:
         s["pending"][hashlib.sha1(url.encode()).hexdigest()[:10]]["telegraph_path"] = page["path"]
     return ok
@@ -1183,6 +1218,9 @@ def cmd_rewrite(path, source):
         draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False),
         title=topic, summary="", article=article)), keys)
     post = edited if edit_ok(post, edited) else post
+    post, problems = review_post(post, keys, article, topic)
+    if problems:
+        print("Still flagged by the reviewer:", "; ".join(problems))
     credit = source_name
     if not image:
         image, credit = commons_image(query) or commons_image(topic), "Wikimedia Commons"
