@@ -1,0 +1,30 @@
+name: Edit a published post
+
+on:
+  workflow_dispatch:
+    inputs:
+      post:
+        description: "Link to the channel post (t.me/YourChannel/123)"
+        required: true
+      text:
+        description: "New text: first line is the headline, then the body"
+        required: true
+      source:
+        description: "Source article link (optional; added as the source line)"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  edit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace the post text in the channel
+        run: python3 bot.py edit "${{ inputs.post }}"
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          EDIT_TEXT: ${{ inputs.text }}
+          EDIT_SOURCE: ${{ inputs.source }}

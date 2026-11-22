@@ -142,6 +142,7 @@ sequenceDiagram
 | Draft history story | `history.yml` | Make a history long-read now (tick "Community-history story" for a Ukrainian-Canadian one) |
 | Rewrite a published long-read | `rewrite.yml` | Rewrite a published Telegraph article in place from a source you give |
 | Preview Facebook cards | `cards.yml` | Draw the sample cards in `samples/cards.json` and send them to the approvers |
+| Edit a published post | `edit.yml` | Replace the text of a channel post (link, new text, optional source link) |
 | Check connections | `check.yml` | Test the Telegram and Facebook tokens without posting (shows the page name and when the Facebook token expires) |
 
 All of them except Tick are for running something by hand: Actions → pick it → Run workflow.

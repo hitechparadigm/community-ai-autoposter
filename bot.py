@@ -1549,6 +1549,33 @@ def cmd_cards(path="samples/cards.json"):
         print(f"{name}: photo {card.get('photo') or 'none'}")
 
 
+def cmd_edit(link):
+    """Replace the text of a published channel post (Telegram only). Text from EDIT_TEXT: the first line is the
+    headline, the rest the body. EDIT_SOURCE (optional): the source article link, added as the source line."""
+    m = re.search(r"(\d+)\s*$", link.strip().rstrip("/"))
+    text = os.environ.get("EDIT_TEXT", "").strip()
+    if not m or not text:
+        sys.exit("Usage: edit POST_LINK, with the new text in EDIT_TEXT")
+    title, _, body = text.partition("\n")
+    source = os.environ.get("EDIT_SOURCE", "").strip()
+    if source:
+        post = format_post(title.strip(), body.strip(), outlet_name(source), source)
+    else:
+        post = f"<b>{html.escape(title.strip(), quote=False)}</b>\n\n{html.escape(body.strip(), quote=False)}"
+    tg("editMessageText", chat_id=config.CHANNEL, message_id=int(m.group(1)), text=post, parse_mode="HTML",
+       link_preview_options=preview(source) if source else {"is_disabled": True})
+    print(f"Edited post {m.group(1)}")
+
+
+def outlet_name(url):
+    """The display name of the feed this link comes from (e.g. Global News), or its domain."""
+    host = urllib.parse.urlparse(url).netloc.replace("www.", "")
+    for name, feed, _ in config.FEEDS:
+        if urllib.parse.urlparse(feed).netloc.replace("www.", "") == host:
+            return re.sub(r"\s+(Politics|BC|Calgary|Edmonton|Toronto|Winnipeg|Montreal|Halifax)$", "", name)
+    return host
+
+
 def _print_usage():
     if _usage["calls"]:
         print(f"Claude usage: {_usage['calls']} calls, input {_usage['input']}, cache write {_usage['cache_write']}, "
@@ -1575,6 +1602,8 @@ if __name__ == "__main__":
         cmd_rewrite(sys.argv[2], sys.argv[3])
     elif cmd == "cards":  # sample Facebook cards: cards [FILE]
         cmd_cards(*sys.argv[2:3])
+    elif cmd == "edit":  # edit POST_LINK (text in EDIT_TEXT, source link in EDIT_SOURCE)
+        cmd_edit(sys.argv[2] if len(sys.argv) > 2 else "")
     elif cmd == "check":  # test the connections, posts nothing
         cmd_check()
     elif cmd == "merge-state":  # used by save_state.sh: merge-state BASE OURS (theirs = state.json)
