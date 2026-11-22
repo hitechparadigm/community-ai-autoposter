@@ -1,0 +1,27 @@
+name: Rewrite a published long-read
+
+# Rewrites an already published Telegraph article in place (the link stays the same),
+# using the current prompts and style guide.
+on:
+  workflow_dispatch:
+    inputs:
+      page:
+        description: "Telegraph page: the part after telegra.ph/ in its link"
+        required: true
+      source:
+        description: "Source: a web page URL, or wiki:Article title (English Wikipedia)"
+        required: true
+
+jobs:
+  rewrite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rewrite
+        run: python3 bot.py rewrite "$PAGE" "$SOURCE"
+        env:
+          PAGE: ${{ inputs.page }}
+          SOURCE: ${{ inputs.source }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAPH_TOKEN: ${{ secrets.TELEGRAPH_TOKEN }}

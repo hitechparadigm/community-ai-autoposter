@@ -155,6 +155,8 @@ with photo, subheadings and the source credited at the end. The channel gets a t
 - Sundays (`COMMUNITY_HISTORY_DAY`): Ukrainian-Canadian stories (`COMMUNITY_HISTORY_SOURCES`; fallback
   `COMMUNITY_HISTORY_TOPICS`). For one on another day: Actions → "Draft history story" → tick
   "Community-history story".
+- To fix a published long-read: Actions → "Rewrite a published long-read" → give the page (the part after
+  `telegra.ph/`) and a source (URL or `wiki:Title`). The article is rewritten in place; the link stays the same.
 - Photos: the source's own picture if it is a real photo (logos and banners are rejected), otherwise a freely
   licensed photo of the subject from Wikimedia Commons.
 

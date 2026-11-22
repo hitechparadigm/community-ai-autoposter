@@ -1091,6 +1091,41 @@ def cmd_approve():
     save_state(s)
 
 
+def cmd_rewrite(path, source):
+    """Rewrite an already published Telegraph long-read in place (same link) from a source:
+    a web page URL, or "wiki:Article title" for English Wikipedia. Uses the current prompts and style guide."""
+    s = load_state()
+    if source.startswith("wiki:"):
+        article, url = wiki_text(source[5:])
+        image = fetch_page(url)[1] if url else ""
+        source_name = config.LABELS["wikipedia"]
+    else:
+        article, image = fetch_page(source, 15000)
+        url, source_name = source, urllib.parse.urlparse(source).netloc
+    if len(article) < 500:
+        sys.exit(f"Not enough text at {source}")
+    keys = ("title", "teaser", "body")
+    topic = source[5:] if source.startswith("wiki:") else source
+    post = parse_post(ask_claude(HISTORY_WRITE_PROMPT.format(
+        topic=topic, source=source_name, article=article, opening="Open with a vivid detail or the key moment.")), keys)
+    if not post:
+        sys.exit("Could not write the article")
+    query = post.get("image_query", "")
+    edited = parse_post(ask_claude(EDIT_PROMPT.format(
+        draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False),
+        title=topic, summary="", article=article)), keys)
+    post = edited or post
+    credit = source_name
+    if not image:
+        image, credit = commons_image(query), "Wikimedia Commons"
+    page = telegraph("editPage", s, path=path, title=post["title"][:256], author_name=config.TELEGRAPH_AUTHOR,
+                     author_url=config.TELEGRAPH_AUTHOR_URL,
+                     content=json.dumps(telegraph_nodes(post["body"], image, credit, source_name, url),
+                                        ensure_ascii=False))
+    print(f"Rewritten: {page['url']}\nNew title: {post['title']}\nNew teaser (the channel post itself is unchanged): "
+          f"{post['teaser']}")
+
+
 def cmd_tick():
     """Runs every 5 minutes: starts the drafts that are due by config.SCHEDULE (local time, catching up on
     late runs), then publishes approved posts."""
@@ -1133,6 +1168,8 @@ if __name__ == "__main__":
         cmd_digest()
     elif cmd == "tick":
         cmd_tick()
+    elif cmd == "rewrite":  # rewrite TELEGRAPH_PATH SOURCE  (SOURCE = URL or "wiki:Title")
+        cmd_rewrite(sys.argv[2], sys.argv[3])
     elif cmd == "merge-state":  # used by save_state.sh: merge-state BASE OURS (theirs = state.json)
         with open(sys.argv[2], encoding="utf-8") as f:
             base = json.load(f)
