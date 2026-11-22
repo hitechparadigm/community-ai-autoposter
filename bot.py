@@ -300,13 +300,30 @@ def parse_post(text):
     return None
 
 
-def fetch_article(url, limit=6000):
-    """Best-effort plain text of a news article (paragraph text only)."""
+BAD_IMG = re.compile(r"logo|icon|favicon|header|banner|avatar|sprite|android-chrome|placeholder|\.svg|\.gif", re.I)
+
+
+def _find_image(page, url):
+    """The page's main picture: og:image, or else the first real photo in the content."""
+    for pat in (r'<meta[^>]+property="og:image"[^>]+content="([^"]+)"',
+                r'<meta[^>]+content="([^"]+)"[^>]+property="og:image"'):
+        m = re.search(pat, page)
+        if m and not BAD_IMG.search(m.group(1)):
+            return urllib.parse.urljoin(url, html.unescape(m.group(1)))
+    for src in re.findall(r'<img[^>]+src="([^"]+\.(?:jpe?g|png)[^"]*)"', page, re.I):
+        if not BAD_IMG.search(src):
+            return urllib.parse.urljoin(url, html.unescape(src))
+    return ""
+
+
+def fetch_page(url, limit=6000):
+    """Best-effort (plain text, main image URL) of an article page."""
     try:
-        page = http(url, timeout=20).decode("utf-8", errors="replace")
+        page = http(url, timeout=30).decode("utf-8", errors="replace")
     except Exception as e:
         print(f"Could not fetch article: {e}")
-        return ""
+        return "", ""
+    image = _find_image(page, url)
     page = re.sub(r"(?is)<(script|style|noscript|nav|header|footer)[^>]*>.*?</\1>", " ", page)
     for tag in ("article", "main"):  # prefer the main content area when the page marks it
         m = re.search(rf"(?is)<{tag}\b[^>]*>(.*)</{tag}>", page)
@@ -315,7 +332,11 @@ def fetch_article(url, limit=6000):
             break
     paras = [_clean(p, 2000) for p in re.findall(r"(?is)<p[^>]*>(.*?)</p>", page)]
     text = "\n".join(p for p in paras if len(p) > 60)
-    return text[:limit]
+    return text[:limit], image
+
+
+def fetch_article(url, limit=6000):
+    return fetch_page(url, limit)[0]
 
 
 # ---------- posts ----------
@@ -399,19 +420,25 @@ def cmd_draft():
     save_state(s)
 
 
-def send_draft(s, url, text, stamp):
-    """Send a draft with Publish/Skip buttons to every approver and remember it."""
+def send_draft(s, url, text, stamp, image=""):
+    """Send a draft with Publish/Skip buttons to every approver and remember it.
+    With an image, the picture is shown above the post (via an invisible link) instead of the source preview."""
     did = hashlib.sha1(url.encode()).hexdigest()[:10]
+    if image:
+        text = f'<a href="{html.escape(image, quote=True)}">&#8203;</a>' + text
+        lp = {"url": image, "prefer_large_media": True, "show_above_text": True}
+    else:
+        lp = preview(url)
     msgs = []
     for admin in ADMIN_IDS:
         try:
             msg = tg("sendMessage", chat_id=admin, text=text, parse_mode="HTML",
-                     link_preview_options=preview(url), reply_markup=buttons(did))
+                     link_preview_options=lp, reply_markup=buttons(did))
             msgs.append([admin, msg["message_id"]])
         except Exception as e:  # e.g. this approver never pressed Start in the bot
             print(f"Could not send draft to {admin}: {e}")
     if msgs:
-        s["pending"][did] = {"url": url, "text": text, "created": stamp, "msgs": msgs}
+        s["pending"][did] = {"url": url, "text": text, "created": stamp, "msgs": msgs, "lp": lp}
     return bool(msgs)
 
 
@@ -527,14 +554,17 @@ def harvest(src):
     return list(found.items())
 
 
-def dcb_bio_of_the_day():
-    """Dictionary of Canadian Biography: today's featured person (born or died on this day)."""
+def dcb_bios_of_the_day():
+    """Dictionary of Canadian Biography: people born or died on this day (its "biography of the day" page)."""
     page = _get_page("http://www.biographi.ca/en/bio_of_the_day.html")
-    m = re.search(r'href="((?:https?://www\.biographi\.ca)?/en/bio/[a-z0-9_]+\.html)"[^>]*>(.*?)</a>', page, re.S)
-    if not m:
-        return None
-    url = urllib.parse.urljoin("http://www.biographi.ca/", m.group(1))
-    return {"url": url, "name": _clean(m.group(2), 120)}
+    out = {}
+    for href, name in re.findall(r'href="((?:https?://www\.biographi\.ca)?/en/bio/[A-Za-z0-9_]+\.html)"[^>]*>(.*?)</a>',
+                                 page, re.S):
+        url = urllib.parse.urljoin("http://www.biographi.ca/", href)
+        name = _clean(name, 120)
+        if len(name) > 3 and url not in out:
+            out[url] = name
+    return [{"url": u, "name": n} for u, n in out.items()]
 
 
 def wiki_on_this_day(d):
@@ -554,7 +584,7 @@ def wiki_on_this_day(d):
     return out
 
 
-def _write_history(topic, source, article, opening, header, source_name, url, s, stamp):
+def _write_history(topic, source, article, opening, header, source_name, url, s, stamp, image=""):
     post = parse_post(ask_claude(HISTORY_WRITE_PROMPT.format(
         topic=topic, source=source_name, article=article, opening=opening)))
     if not post:
@@ -564,7 +594,7 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
         draft=json.dumps(post, ensure_ascii=False), title=topic, summary="", article=article)))
     post = edited or post
     text = format_post(post["title"], post["body"], source_name, url, header=header)
-    return send_draft(s, url, text, stamp)
+    return send_draft(s, url, text, stamp, image=image)
 
 
 def _history_state():
@@ -580,93 +610,123 @@ def _done(s, key):
     s["history_done"] = s["history_done"][-1000:]
 
 
+def _date_opening(d, year=""):
+    return (f"Start with the date: this happened on this day, {d.day}.{d.month:02d}"
+            + (f".{year}" if year else "") + " (write the date in Ukrainian words, e.g. «22 листопада 1902 року»).")
+
+
 def cmd_thisday():
+    """Canadian sources first (Dictionary of Canadian Biography); Wikipedia "On this day" only as a fallback."""
     s = _history_state()
     stamp = now().isoformat()
     d = now().astimezone(LOCAL)
+    header = "📅 Цей день в історії Канади"
+
+    bios = [b for b in dcb_bios_of_the_day() if b["url"] not in s["history_done"]]
+    print(f"{len(bios)} DCB biographies for {d:%B %d}")
+    if bios:
+        listing = "\n".join(f"[{i}] (biography: born or died on {d:%B} {d.day}) {b['name']}" for i, b in enumerate(bios))
+        for i in parse_picks(ask_claude(THISDAY_PICK_PROMPT.format(items=listing)))[:2]:
+            if i >= len(bios):
+                continue
+            b = bios[i]
+            _done(s, b["url"])
+            article, image = fetch_page(b["url"], 9000)
+            if len(article) < 800:
+                continue
+            topic = f"{b['name']} (born or died on {d:%B} {d.day}; the text says which, and the year)"
+            if _write_history(topic, "Dictionary of Canadian Biography", article,
+                              "Start with the date (day, month and year in Ukrainian words, e.g. «22 листопада 1902 року») "
+                              "and what happened on it: the person's birth or death.",
+                              header, "Dictionary of Canadian Biography", b["url"], s, stamp, image):
+                print(f"This-day draft sent: {b['name']} (DCB)")
+                return save_state(s)
+
+    # Fallback: Wikipedia "On this day", Canadian entries
     entries = [e for e in wiki_on_this_day(d) if e["page"] not in s["history_done"]]
-    bio = dcb_bio_of_the_day()
-    if bio and bio["url"] not in s["history_done"]:
-        entries.insert(0, {"kind": "biography (born or died on this day)", "year": "",
-                           "text": f"{bio['name']} — Dictionary of Canadian Biography", "dcb": bio})
-    print(f"{len(entries)} candidates for {d:%B %d}")
-    if not entries:
-        return save_state(s)
-    listing = "\n".join(f"[{i}] {e['year']} ({e['kind']}): {e['text']}" for i, e in enumerate(entries[:40]))
-    picks = parse_picks(ask_claude(THISDAY_PICK_PROMPT.format(items=listing)))
-    for i in picks:
-        if i >= len(entries):
-            continue
-        e = entries[i]
-        if "dcb" in e:
-            article, url, source_name, key = fetch_article(e["dcb"]["url"], 8000), e["dcb"]["url"], \
-                "Dictionary of Canadian Biography", e["dcb"]["url"]
-            topic = f"{e['text']} (born or died on {d:%B} {d.day})"
-        else:
+    print(f"Fallback: {len(entries)} Wikipedia entries")
+    if entries:
+        listing = "\n".join(f"[{i}] {e['year']} ({e['kind']}): {e['text']}" for i, e in enumerate(entries[:40]))
+        for i in parse_picks(ask_claude(THISDAY_PICK_PROMPT.format(items=listing)))[:2]:
+            if i >= len(entries):
+                continue
+            e = entries[i]
+            _done(s, e["page"])
             article, url = wiki_text(e["page"])
-            source_name, key, topic = "Вікіпедія", e["page"], f"{e['year']}: {e['text']}"
-        if len(article) < 500:
-            _done(s, key)
-            continue
-        opening = (f"Start with the date: this happened on this day, {d.day}.{d.month:02d}"
-                   + (f".{e['year']}" if e.get("year") else "") + " (write the date in Ukrainian words, "
-                   "e.g. «22 листопада 1902 року»).")
-        if _write_history(topic, source_name, article, opening, "📅 Цей день в історії Канади",
-                          source_name, url, s, stamp):
-            print(f"This-day draft sent: {topic}")
-        _done(s, key)
-        break
+            if len(article) < 500:
+                continue
+            image = fetch_page(url)[1]
+            if _write_history(f"{e['year']}: {e['text']}", "Вікіпедія", article, _date_opening(d, e["year"]),
+                              header, "Вікіпедія", url, s, stamp, image):
+                print(f"This-day draft sent: {e['text']} (Wikipedia)")
+            break
     save_state(s)
 
 
-def cmd_history():
-    s = _history_state()
-    stamp = now().isoformat()
-    today = now().astimezone(LOCAL)
-
-    if today.weekday() == config.UKRAINIAN_CANADIAN_DAY:
-        left = [t for t in config.UKRAINIAN_CANADIAN_TOPICS if t not in s["history_done"]] \
-            or list(config.UKRAINIAN_CANADIAN_TOPICS)
-        topic = left[0]
-        article, url = wiki_text(topic)
-        if article and _write_history(topic, "Вікіпедія", article,
-                                      "Open with a vivid detail or the key moment.",
-                                      "🍁 Історія Канади", "Вікіпедія", url, s, stamp):
-            print(f"History draft sent: {topic}")
-        _done(s, topic)
-        return save_state(s)
-
-    # Gather candidates from a few random sources, plus regional Wikipedia topics
-    candidates = []
-    for src in random.sample(config.HISTORY_SOURCES, min(4, len(config.HISTORY_SOURCES))):
-        links = [(u, t) for u, t in harvest(src) if u not in s["history_done"]]
-        for u, t in random.sample(links, min(6, len(links))):
-            candidates.append({"url": u, "title": t, "source": src["name"], "region": src["region"]})
-    wiki_left = [w for w in config.WIKI_REGIONAL_TOPICS if w[1] not in s["history_done"]]
-    for region, title in random.sample(wiki_left, min(4, len(wiki_left))):
-        candidates.append({"wiki": title, "title": title, "source": "Вікіпедія", "region": region})
-    print(f"{len(candidates)} candidates")
-    if not candidates:
-        return save_state(s)
-
+def _story_from(candidates, s, stamp, header):
+    """Let Claude rank the candidates, then write the first one that has enough text."""
     listing = "\n".join(f"[{i}] ({c['region']}, {c['source']}) {c['title']}" for i, c in enumerate(candidates))
     for i in parse_picks(ask_claude(STORY_PICK_PROMPT.format(items=listing)))[:3]:
         if i >= len(candidates):
             continue
         c = candidates[i]
-        if "wiki" in c:
-            article, url = wiki_text(c["wiki"])
-            key = c["wiki"]
-        else:
-            article, url, key = fetch_article(c["url"], 8000), c["url"], c["url"]
-        _done(s, key)
+        _done(s, c["url"])
+        article, image = fetch_page(c["url"], 8000)
         if len(article) < 800:
             print(f"Too little text for {c['title']}; trying the next pick")
             continue
         if _write_history(c["title"], c["source"], article, "Open with a vivid detail or the key moment.",
-                          "🍁 Історія Канади", c["source"], url, s, stamp):
+                          header, c["source"], c["url"], s, stamp, image):
             print(f"History draft sent: {c['title']} ({c['source']})")
-        break
+            return True
+    return False
+
+
+def _collect(sources, s, per_source=6):
+    out = []
+    for src in sources:
+        links = [(u, t) for u, t in harvest(src) if u not in s["history_done"]]
+        for u, t in random.sample(links, min(per_source, len(links))):
+            out.append({"url": u, "title": t, "source": src["name"], "region": src["region"]})
+    return out
+
+
+def _wiki_story(titles, s, stamp, header):
+    """Fallback: the first unused Wikipedia topic from a list of (region, title)."""
+    for region, title in titles:
+        if title in s["history_done"]:
+            continue
+        _done(s, title)
+        article, url = wiki_text(title)
+        if len(article) < 800:
+            continue
+        image = fetch_page(url)[1]
+        if _write_history(title, "Вікіпедія", article, "Open with a vivid detail or the key moment.",
+                          header, "Вікіпедія", url, s, stamp, image):
+            print(f"History draft sent: {title} (Wikipedia fallback)")
+            return True
+    return False
+
+
+def cmd_history(ukrainian=False):
+    """Canadian sources first; Wikipedia only if none of them gives a usable story."""
+    s = _history_state()
+    stamp = now().isoformat()
+    header = "🍁 Історія Канади"
+    if ukrainian or now().astimezone(LOCAL).weekday() == config.UKRAINIAN_CANADIAN_DAY:
+        candidates = _collect(config.UKRAINIAN_CANADIAN_SOURCES, s, per_source=8)
+        print(f"{len(candidates)} Ukrainian-Canadian candidates")
+        ok = candidates and _story_from(candidates, s, stamp, header)
+        if not ok:
+            topics = [("Ukrainian Canadians", t) for t in config.UKRAINIAN_CANADIAN_TOPICS]
+            _wiki_story(topics, s, stamp, header)
+        return save_state(s)
+
+    sources = random.sample(config.HISTORY_SOURCES, min(4, len(config.HISTORY_SOURCES)))
+    candidates = _collect(sources, s)
+    print(f"{len(candidates)} candidates")
+    if not (candidates and _story_from(candidates, s, stamp, header)):
+        _wiki_story(random.sample(config.WIKI_REGIONAL_TOPICS, len(config.WIKI_REGIONAL_TOPICS)), s, stamp, header)
     save_state(s)
 
 
@@ -699,7 +759,7 @@ def cmd_approve():
         if action == "pub":
             try:
                 tg("sendMessage", chat_id=config.CHANNEL, text=d["text"], parse_mode="HTML",
-                   link_preview_options=preview(d["url"]))
+                   link_preview_options=d.get("lp") or preview(d["url"]))
             except Exception as e:
                 print(f"PUBLISH ERROR: {e}")
                 answer(cq, "Publishing failed, check the bot is a channel admin", alert=True)
@@ -728,7 +788,7 @@ if __name__ == "__main__":
     elif cmd == "approve":
         cmd_approve()
     elif cmd == "history":
-        cmd_history()
+        cmd_history(ukrainian=len(sys.argv) > 2 and sys.argv[2] == "ukrainian")
     elif cmd == "thisday":
         cmd_thisday()
     elif cmd == "merge-state":  # used by save_state.sh: merge-state BASE OURS (theirs = state.json)

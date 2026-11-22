@@ -34,16 +34,15 @@ of the two workflow files (times are UTC).
 
 ## Canadian history
 
-Two extra drafts a day, approved the same way:
+Two extra drafts a day, approved the same way. Canadian sources come first; Wikipedia is only a
+fallback. Posts show the source's main picture above the text.
 
-- **📅 Цей день в історії Канади** (8:30 Toronto time): something that happened on today's date,
-  from Wikipedia "On this day" (Canadian entries) or the Dictionary of Canadian Biography's
-  person of the day (born or died on this date).
-- **🍁 Історія Канади** (11:30): a story chosen from the sources in `config.py`
-  (`HISTORY_SOURCES`: CBC Archives, Library and Archives Canada, Ontario Heritage Trust, Quebec
-  Anglophone Heritage Network, Manitoba Historical Society, Encyclopedia of Saskatchewan,
-  RETROactive Alberta) plus Wikipedia topics for the other provinces and territories
-  (`WIKI_REGIONAL_TOPICS`). On Sundays it tells a Ukrainian-Canadian story
-  (`UKRAINIAN_CANADIAN_TOPICS`).
-
-Run either any time from the Actions tab.
+- **📅 Цей день в історії Канади** (8:30 Toronto time): a person born or died on today's date, from
+  the Dictionary of Canadian Biography (fallback: Wikipedia "On this day", Canadian entries).
+- **🍁 Історія Канади** (11:30): a story chosen from `HISTORY_SOURCES` in `config.py`: CBC Archives,
+  Library and Archives Canada, Ontario Heritage Trust, Quebec Anglophone Heritage Network, Manitoba
+  Historical Society, Encyclopedia of Saskatchewan, RETROactive Alberta (fallback and coverage for BC,
+  the Atlantic provinces and the North: `WIKI_REGIONAL_TOPICS`).
+- **Sundays:** a Ukrainian-Canadian story from `UKRAINIAN_CANADIAN_SOURCES` (Library and Archives
+  Canada, RETROactive Alberta, the Internment Recognition Fund; fallback: `UKRAINIAN_CANADIAN_TOPICS`).
+  To get one on another day: Actions → "Draft history story" → tick "Ukrainian-Canadian story".

@@ -26,13 +26,29 @@ DRAFT_EXPIRY_HOURS = 24
 MODEL = "claude-sonnet-5-5"
 
 # ---------- Canadian history ----------
-# "📅 Цей день в історії Канади" (daily): an event on today's date (Wikipedia "On this day")
-#   or the Dictionary of Canadian Biography's person of the day.
-# "🍁 Історія Канади" (daily): a story picked from the sources below.
-# On this weekday (0 = Monday ... 6 = Sunday) it tells a Ukrainian-Canadian story instead.
+# Canadian sources come first; Wikipedia is used only when they give nothing usable.
+# "📅 Цей день в історії Канади" (daily): a person born or died on today's date, from the
+#   Dictionary of Canadian Biography (fallback: Wikipedia "On this day", Canadian entries).
+# "🍁 Історія Канади" (daily): a story picked from HISTORY_SOURCES (fallback: WIKI_REGIONAL_TOPICS).
+# On this weekday (0 = Monday ... 6 = Sunday) it tells a Ukrainian-Canadian story instead,
+#   from UKRAINIAN_CANADIAN_SOURCES (fallback: UKRAINIAN_CANADIAN_TOPICS on Wikipedia).
 UKRAINIAN_CANADIAN_DAY = 6
 
-# English Wikipedia article titles for Ukrainian-Canadian Sundays, used in order.
+# Ukrainian-Canadian stories from Canadian archives and heritage sites (their own search pages).
+UKRAINIAN_CANADIAN_SOURCES = [
+    {"name": "Library and Archives Canada", "region": "Ukrainian Canadians",
+     "index": ["https://thediscoverblog.com/?s=ukrainian", "https://thediscoverblog.com/page/2/?s=ukrainian",
+               "https://thediscoverblog.com/?s=internment"],
+     "pattern": r"thediscoverblog\.com/\d{4}/\d{2}/\d{2}/[a-z0-9-]+/$"},
+    {"name": "RETROactive: Alberta's Historic Places", "region": "Ukrainian Canadians",
+     "index": ["https://albertashistoricplaces.com/?s=ukrainian", "https://albertashistoricplaces.com/page/2/?s=ukrainian"],
+     "pattern": r"albertashistoricplaces\.com/\d{4}/\d{2}/\d{2}/[a-z0-9-]+/$"},
+    {"name": "Canadian First World War Internment Recognition Fund", "region": "Ukrainian Canadians",
+     "index": ["https://www.internmentcanada.ca/"],
+     "pattern": r"internmentcanada\.ca/[a-z0-9-]+/?$"},
+]
+
+# Wikipedia fallback for Ukrainian-Canadian Sundays (English article titles, used in order).
 UKRAINIAN_CANADIAN_TOPICS = [
     "Ivan Pylypiw",
     "Wasyl Eleniak",
@@ -73,8 +89,9 @@ HISTORY_SOURCES = [
      "pages": 25, "pattern": r"albertashistoricplaces\.com/\d{4}/\d{2}/\d{2}/[a-z0-9-]+/$"},
 ]
 
-# Regions without a source that GitHub can read (sites that block bots or need JavaScript):
-# well-known topics from English Wikipedia. Add your own: ("Region", "Article title").
+# Wikipedia fallback when the sources above give nothing usable, and the main coverage for regions
+# whose history sites can't be read automatically (they block bots or need JavaScript):
+# BC, the Atlantic provinces and the North. Add your own: ("Region", "Article title").
 WIKI_REGIONAL_TOPICS = [
     ("British Columbia", "Komagata Maru incident"),
     ("British Columbia", "Cariboo Gold Rush"),
