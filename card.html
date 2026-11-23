@@ -13,6 +13,9 @@
   /* side bands like the Canadian flag (red | card | red); CARD["band"] = 0 turns them off */
   body { background: var(--band-color); padding: 0 var(--band); }
   body { font-family: "Montserrat", "Inter", "DejaVu Sans", sans-serif; color: #fff; background: var(--band-color); }
+  .leaf-l, .leaf-r { position: absolute; top: 50%; width: calc(var(--band) * .74); fill: #fff;
+                     transform: translate(-50%, -50%); }
+  .leaf-l { left: calc(var(--band) * .45); } .leaf-r { left: calc(100% - var(--band) * .45); }
   .card { position: relative; width: var(--w); height: 100%; overflow: hidden;
           box-shadow: 0 0 0 calc(var(--band) * .12) #fff;
           background: radial-gradient(120% 90% at 85% 0%, var(--blue) 0%, var(--dark) 70%); }
@@ -84,6 +87,7 @@
 </style>
 </head>
 <body>
+{{leaves}}
 <div class="card {{kind}} {{layout}}">
   <div class="ornament"></div>
   <div class="pic">{{background}}<div class="shade"></div>{{credit}}</div>

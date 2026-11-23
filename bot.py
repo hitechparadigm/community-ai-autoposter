@@ -659,6 +659,13 @@ def card_photo(url):
 NOT_A_PHOTO = re.compile(r"\.png$|\.svg|map|census|flag|coat_of_arms|seal|diagram|chart|logo|locator", re.I)
 
 
+MAPLE_LEAF = ("m-90 2030 45-863a95 95 0 0 0-111-98l-859 151 116-320a65 65 0 0 0-20-73l-941-762 212-99a65 65 0 0 0 "
+              "34-79l-186-572 542 115a65 65 0 0 0 73-38l105-247 423 454a65 65 0 0 0 111-57l-204-1052 327 189a65 65 "
+              "0 0 0 91-27l332-652 332 652a65 65 0 0 0 91 27l327-189-204 1052a65 65 0 0 0 111 57l423-454 105 247a65 "
+              "65 0 0 0 73 38l542-115-186 572a65 65 0 0 0 34 79l212 99-941 762a65 65 0 0 0-20 73l116 320-859-151a95 "
+              "95 0 0 0-111 98l45 863z")  # the leaf from the Flag of Canada (public domain)
+
+
 def render_card(card):
     """Draw a Facebook picture card from card.html with headless Chrome. Returns PNG bytes, or b"" if it can't."""
     import base64, shutil, subprocess, tempfile
@@ -696,6 +703,9 @@ def render_card(card):
               "date": f"{d.day} {config.MONTHS[d.month - 1]} {d.year}", "handle": e(c.get("handle", "")),
               "handle2": e(c.get("handle2", "")), "width": w, "height": h, "band": c.get("band", 0),
               "band_color": c.get("band_color", "#A51D18"), **c.get("colors", {})}
+    leaf = f'<path d="{MAPLE_LEAF}"/>'
+    values["leaves"] = (f'<svg class="leaf-l" viewBox="-2015 -2000 4030 4030">{leaf}</svg>'
+                        f'<svg class="leaf-r" viewBox="-2015 -2000 4030 4030">{leaf}</svg>') if c.get("band") else ""
     page = open(tpl, encoding="utf-8").read()
     for k, v in values.items():
         page = page.replace("{{" + k + "}}", str(v))
