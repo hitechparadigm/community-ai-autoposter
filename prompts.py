@@ -186,7 +186,7 @@ For the daily "Canadian history" column, rank the 3 most promising articles belo
 Goal: educate newcomers about Canada's history across all provinces and territories, with stories \
 that are interesting to read: remarkable people, turning points, how places and communities began, \
 immigration, daily life in the past. Skip routine notices, events listings, obituaries of minor figures \
-and anything without a real story.
+and anything without a real story.{focus}
 
 Reply with JSON only: a list of up to 3 ids, best first, e.g. [7, 2, 11]
 
@@ -288,3 +288,11 @@ Draft:
 Source:
 {article}
 """
+
+
+# Added to STORY_PICK_PROMPT on COMMUNITY_HISTORY_DAY
+COMMUNITY_FOCUS = """
+
+Today the column is about the history of {community}. Pick only articles whose MAIN subject is {community} \
+(their settlement, people, churches, organizations, internment, culture). An article that only mentions them \
+in passing does not count. If none qualifies, reply []."""

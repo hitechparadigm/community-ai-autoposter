@@ -214,6 +214,7 @@ COMMUNITY_HISTORY_DAY = 6
 
 # Community-history stories (on COMMUNITY_HISTORY_DAY) from archives and heritage sites (their own search pages).
 COMMUNITY_HISTORY_LABEL = "Ukrainian Canadians"
+COMMUNITY_HISTORY_KEYWORD = r"ukrain"   # a community story must mention this at least 3 times
 COMMUNITY_HISTORY_SOURCES = [
     {"name": "Library and Archives Canada", "region": "Ukrainian Canadians",
      "index": ["https://thediscoverblog.com/?s=ukrainian", "https://thediscoverblog.com/page/2/?s=ukrainian",

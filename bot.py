@@ -27,7 +27,7 @@ from email.utils import parsedate_to_datetime
 from zoneinfo import ZoneInfo
 
 import config
-from prompts import (AUDIENCE, DIGEST_PROMPT, EDIT_PROMPT, FIX_PROMPT, REVIEW_PROMPT, HISTORY_WRITE_PROMPT, PICK_PROMPT,
+from prompts import (COMMUNITY_FOCUS, AUDIENCE, DIGEST_PROMPT, EDIT_PROMPT, FIX_PROMPT, REVIEW_PROMPT, HISTORY_WRITE_PROMPT, PICK_PROMPT,
                      REFERRAL_MATCH_PROMPT, STORY_PICK_PROMPT, STYLE, THISDAY_PICK_PROMPT, WRITE_PROMPT,
                      DATE_WORDS)
 
@@ -1215,10 +1215,12 @@ def cmd_thisday():
     save_state(s)
 
 
-def _story_from(candidates, s, stamp, header):
-    """Let Claude rank the candidates, then write the first one that has enough text."""
+def _story_from(candidates, s, stamp, header, community=False):
+    """Let Claude rank the candidates, then write the first one that has enough text.
+    On community days only stories mainly about the community count."""
     listing = "\n".join(f"[{i}] ({c['region']}, {c['source']}) {c['title']}" for i, c in enumerate(candidates))
-    for i in parse_picks(ask_claude(STORY_PICK_PROMPT.format(items=listing), schema=SCHEMA_IDS))[:3]:
+    focus = COMMUNITY_FOCUS.format(community=config.COMMUNITY_HISTORY_LABEL) if community else ""
+    for i in parse_picks(ask_claude(STORY_PICK_PROMPT.format(items=listing, focus=focus), schema=SCHEMA_IDS))[:3]:
         if i >= len(candidates):
             continue
         c = candidates[i]
@@ -1226,6 +1228,10 @@ def _story_from(candidates, s, stamp, header):
         article, image = fetch_page(c["url"], 15000)
         if len(article) < 800:
             print(f"Too little text for {c['title']}; trying the next pick")
+            continue
+        key = getattr(config, "COMMUNITY_HISTORY_KEYWORD", "")
+        if community and key and len(re.findall(key, article, re.I)) < 3:
+            print(f"Not mainly about {config.COMMUNITY_HISTORY_LABEL}: {c['title']}; trying the next pick")
             continue
         if _write_history(c["title"], c["source"], article, "Open with a vivid detail or the key moment.",
                           header, c["source"], c["url"], s, stamp, image):
@@ -1268,7 +1274,7 @@ def cmd_history(community=False):
     if community or now().astimezone(LOCAL).weekday() == config.COMMUNITY_HISTORY_DAY:
         candidates = _collect(config.COMMUNITY_HISTORY_SOURCES, s, per_source=8)
         print(f"{len(candidates)} community-history candidates")
-        ok = candidates and _story_from(candidates, s, stamp, header)
+        ok = candidates and _story_from(candidates, s, stamp, header, community=True)
         if not ok:
             topics = [(config.COMMUNITY_HISTORY_LABEL, t) for t in config.COMMUNITY_HISTORY_TOPICS]
             _wiki_story(topics, s, stamp, header)
