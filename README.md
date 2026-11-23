@@ -238,8 +238,8 @@ amounts in `REFERRALS` when an offer changes.
 
 When the secrets `FACEBOOK_PAGE_ID` and `FACEBOOK_PAGE_TOKEN` are set, every published post also goes to the
 Facebook Page, built for Facebook readers:
-- **Picture card** (`card.html`, drawn with headless Chrome): the headline over a freely licensed Wikimedia
-  Commons photo (the writer suggests several searches: monument, place, object), or a centred text layout with
+- **Picture card** (`card.html`, drawn with headless Chrome): the photo on top and the headline on a panel
+  below it. Photos come from Wikimedia Commons or, for history posts, the archive the story comes from (the writer suggests several searches: monument, place, object), or a centred text layout with
   an ornament band when none fits. Approvers see the card with each draft. Try design changes with the
   **Preview Facebook cards** workflow (`samples/cards.json`).
 - **Full text, no links.** In Canada Meta blocks links to news outlets (Online News Act), even in comments,
@@ -255,9 +255,10 @@ If Facebook fails, the Telegram post still goes out and the draft says "Facebook
    province, "Українська громада", "Історія Канади"…) and, for the digest, the top 4 headlines.
 2. **Photo.** The writer (Claude) suggests up to 4 searches for a meaningful picture, best first: a monument,
    building, place or object (never a person in news). The bot looks each one up on Wikipedia/Wikimedia
-   Commons and takes the first real photo: big enough, not a banner, not a map, flag, chart or logo. News
-   falls back to a photo of the province's legislature (`REGIONS` in `config.py`). Only freely licensed
-   Wikimedia photos are used (news outlets' photos are copyrighted), credited on the card's edge.
+   Commons (history posts first use the article's own archival photo) and takes the first real photo: big enough, not a banner, not a map, flag, chart or logo. News
+   falls back to a photo of the province's legislature (`REGIONS` in `config.py`). Only Wikimedia photos and
+   archival photos from the history sources are used (`CARD["photo_domains"]`; news outlets' photos are
+   copyrighted), credited on the card's edge.
 3. **Drawing.** `card.html` is an ordinary web page with placeholders (`{{title}}`, `{{tag}}`…). The bot
    fills them in, embeds the photo, and takes a 1080×1350 screenshot with headless Chrome (already on GitHub's
    machines). A small script in the page shrinks the headline until it fits. Without a photo, the page
