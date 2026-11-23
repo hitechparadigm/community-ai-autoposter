@@ -6,11 +6,15 @@
 <meta charset="utf-8">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=block">
 <style>
-  :root { --blue: {{blue}}; --yellow: {{yellow}}; --dark: {{dark}}; --w: {{width}}px; --h: {{height}}px; }
+  :root { --blue: {{blue}}; --yellow: {{yellow}}; --dark: {{dark}}; --w: {{width}}px; --h: {{height}}px;
+          --band: {{band}}px; --band-color: {{band_color}}; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: var(--w); height: var(--h); overflow: hidden; }
-  body { font-family: "Montserrat", "Inter", "DejaVu Sans", sans-serif; color: #fff; background: var(--dark); }
-  .card { position: relative; width: 100%; height: 100%; overflow: hidden;
+  html, body { width: calc(var(--w) + 2 * var(--band)); height: var(--h); overflow: hidden; }
+  /* side bands like the Canadian flag (red | card | red); CARD["band"] = 0 turns them off */
+  body { background: var(--band-color); padding: 0 var(--band); }
+  body { font-family: "Montserrat", "Inter", "DejaVu Sans", sans-serif; color: #fff; background: var(--band-color); }
+  .card { position: relative; width: var(--w); height: 100%; overflow: hidden;
+          box-shadow: 0 0 0 calc(var(--band) * .12) #fff;
           background: radial-gradient(120% 90% at 85% 0%, var(--blue) 0%, var(--dark) 70%); }
   .photo { position: absolute; inset: 0; background-size: cover; background-position: center 30%; }
   .shade { position: absolute; inset: 0;

@@ -694,7 +694,8 @@ def render_card(card):
     values = {"kind": kind, "layout": "withphoto" if background else "nophoto", "background": background, "credit": credit, "items": items, "bigdate": bigdate,
               "tag": tag, "title": e(card.get("title", "")), "brand": e(c["brand"]),
               "date": f"{d.day} {config.MONTHS[d.month - 1]} {d.year}", "handle": e(c.get("handle", "")),
-              "handle2": e(c.get("handle2", "")), "width": w, "height": h, **c.get("colors", {})}
+              "handle2": e(c.get("handle2", "")), "width": w, "height": h, "band": c.get("band", 0),
+              "band_color": c.get("band_color", "#A51D18"), **c.get("colors", {})}
     page = open(tpl, encoding="utf-8").read()
     for k, v in values.items():
         page = page.replace("{{" + k + "}}", str(v))
@@ -703,7 +704,7 @@ def render_card(card):
         open(src, "w", encoding="utf-8").write(page)
         try:
             subprocess.run([chrome, "--headless=new", "--no-sandbox", "--disable-gpu", "--hide-scrollbars",
-                            "--force-device-scale-factor=1", f"--window-size={w},{h}",
+                            "--force-device-scale-factor=1", f"--window-size={w + 2 * c.get('band', 0)},{h}",
                             "--virtual-time-budget=15000", f"--screenshot={out}", src],
                            capture_output=True, timeout=90)
             return open(out, "rb").read()
