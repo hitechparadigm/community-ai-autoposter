@@ -179,7 +179,7 @@ CARD = {
     "handle2": "ukrainiancanada.ca",
     "colors": {"blue": "#0057B7", "yellow": "#FFD700", "dark": "#081228"},
     "community_tag": "Українська громада",
-    "band": 135,                          # red side bands like the Canadian flag: the image becomes square
+    "band": 0,                            # red side bands like the Canadian flag (e.g. 135 = square image)
     "band_color": "#A51D18",              # (fills Facebook's frame on desktop); 0 = no bands
     "digest_items": 4,                    # headlines listed on the digest card
     # Photos allowed on cards: Wikimedia Commons (free licences) and the archive and heritage sites used for
