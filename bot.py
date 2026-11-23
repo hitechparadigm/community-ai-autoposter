@@ -1545,7 +1545,9 @@ def cmd_check():
 def cmd_cards(path="samples/cards.json"):
     """Draw sample Facebook cards (to try changes to card.html): sends them to the approvers and saves them in cards/."""
     os.makedirs("cards", exist_ok=True)
-    for i, card in enumerate(json.load(open(path, encoding="utf-8")), 1):
+    one = os.environ.get("CARD_JSON", "").strip()  # a single card given as JSON (e.g. for a post made earlier)
+    cards = [json.loads(one)] if one else json.load(open(path, encoding="utf-8"))
+    for i, card in enumerate(cards, 1):
         for q in card.get("queries", []):
             if not card.get("photo"):
                 card["photo"] = card_photo(commons_image(q))
@@ -1554,7 +1556,7 @@ def cmd_cards(path="samples/cards.json"):
             continue
         name = f"cards/{i}-{card.get('kind', 'news')}.png"
         open(name, "wb").write(png)
-        send_card(png, f"🖼 Зразок картки: {card.get('kind', 'news')}")
+        send_card(png, "🖼 Facebook" if one else f"🖼 Зразок картки: {card.get('kind', 'news')}")
         print(f"{name}: photo {card.get('photo') or 'none'}")
 
 

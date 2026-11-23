@@ -6,6 +6,9 @@ on:
       draft:
         description: "Optional: part of a waiting draft's source link, to redraw just that draft's card instead"
         required: false
+      card:
+        description: 'Optional: one card as JSON, e.g. {"kind":"history","tag":"Історія Канади","title":"...","photo":"https://..."}'
+        required: false
 
 permissions:
   contents: write
@@ -28,6 +31,7 @@ jobs:
           FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
           FACEBOOK_PAGE_TOKEN: ${{ secrets.FACEBOOK_PAGE_TOKEN }}
           DRAFT: ${{ inputs.draft }}
+          CARD_JSON: ${{ inputs.card }}
       - name: Save state
         if: env.DRAFT != ''
         run: bash save_state.sh
