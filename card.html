@@ -65,13 +65,26 @@
   .nophoto h1 { font-size: 98px; line-height: 1.08; }
   .nophoto.digest h1 { font-size: 76px; }
   .nophoto .tag { font-size: 32px; }
+
+  /* with a photo: the picture fills the top, the text sits on a solid panel below (the photo stays visible) */
+  .withphoto { display: flex; flex-direction: column; }
+  .withphoto .pic { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+  .withphoto .shade { background: linear-gradient(180deg, rgba(8,18,40,.6) 0%, rgba(8,18,40,0) 20%,
+                                                  rgba(8,18,40,0) 82%, var(--dark) 100%); }
+  .withphoto .bottom { position: relative; left: auto; right: auto; bottom: auto; background: var(--dark);
+                       padding: 8px 64px 56px; }
+  .withphoto .tag { margin-bottom: 22px; }
+  .withphoto h1 { font-size: 58px; text-shadow: none; }
+  .withphoto .footer { margin-top: 34px; padding-top: 24px; }
+  .withphoto .bigdate { font-size: 88px; display: flex; align-items: baseline; gap: 22px; margin-bottom: 18px; }
+  .withphoto .bigdate small { display: inline; font-size: 48px; margin: 0; }
+  .nophoto .pic { display: none; }
 </style>
 </head>
 <body>
 <div class="card {{kind}} {{layout}}">
   <div class="ornament"></div>
-  {{background}}
-  <div class="shade"></div>
+  <div class="pic">{{background}}<div class="shade"></div>{{credit}}</div>
   <div class="top">
     <div class="brand"><div class="flag"><i></i><i></i></div>{{brand}}</div>
     <div class="date">{{date}}</div>
@@ -85,7 +98,6 @@
     </div>
     <div class="footer"><span>{{handle}}</span><span>{{handle2}}</span></div>
   </div>
-  {{credit}}
 </div>
 <script>
   // shrink the headline (and the digest list) until everything fits on the card
@@ -94,8 +106,9 @@
     let size = parseFloat(getComputedStyle(h1).fontSize), li = document.querySelectorAll('li');
     let liSize = li.length ? parseFloat(getComputedStyle(li[0]).fontSize) : 0;
     const main = document.querySelector('.main'), nophoto = document.querySelector('.nophoto');
+    const pic = document.querySelector('.withphoto .pic');
     const tooBig = () => nophoto ? main.scrollHeight > main.clientHeight + 1
-                                 : bottom.getBoundingClientRect().top < 150;
+                                 : pic.getBoundingClientRect().height < 720;
     while (tooBig() && size > 34) {
       size -= 2; h1.style.fontSize = size + 'px';
       if (liSize > 26) { liSize -= 1; li.forEach(x => x.style.fontSize = liSize + 'px'); }

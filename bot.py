@@ -691,7 +691,7 @@ def render_card(card):
     if kind == "thisday":
         bigdate = f'<div class="bigdate">{d.day}<small>{e(config.MONTHS[d.month - 1])}</small></div>'
     tag = f'<div class="tag">{e(card["tag"])}</div>' if card.get("tag") else ""
-    values = {"kind": kind, "layout": "photo" if background else "nophoto", "background": background, "credit": credit, "items": items, "bigdate": bigdate,
+    values = {"kind": kind, "layout": "withphoto" if background else "nophoto", "background": background, "credit": credit, "items": items, "bigdate": bigdate,
               "tag": tag, "title": e(card.get("title", "")), "brand": e(c["brand"]),
               "date": f"{d.day} {config.MONTHS[d.month - 1]} {d.year}", "handle": e(c.get("handle", "")),
               "handle2": e(c.get("handle2", "")), "width": w, "height": h, **c.get("colors", {})}
