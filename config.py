@@ -180,6 +180,10 @@ CARD = {
     "colors": {"blue": "#0057B7", "yellow": "#FFD700", "dark": "#081228"},
     "community_tag": "Українська громада",
     "digest_items": 4,                    # headlines listed on the digest card
+    # Photos allowed on cards: Wikimedia Commons (free licences) and the archive and heritage sites used for
+    # history posts (archival photos, credited to the site). Never news outlets: their photos are copyrighted.
+    "photo_domains": ("wikimedia.org", "albertashistoricplaces.com", "thediscoverblog.com", "qahn.org",
+                      "biographi.ca", "mhs.mb.ca", "esask.uregina.ca", "internmentcanada.ca"),
 }
 # Card labels for news regions, and a fallback photo (an English Wikipedia title) when a story has none
 REGIONS = {

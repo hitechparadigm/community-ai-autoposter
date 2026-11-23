@@ -2,22 +2,39 @@ name: Preview Facebook cards
 
 on:
   workflow_dispatch:           # draws the sample cards in samples/cards.json and sends them to the approvers
+    inputs:
+      draft:
+        description: "Optional: part of a waiting draft's source link, to redraw just that draft's card instead"
+        required: false
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   cards:
     runs-on: ubuntu-latest
+    concurrency:
+      group: news
+      cancel-in-progress: false
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Draw sample cards
-        run: python3 bot.py cards
+      - name: Draw cards
+        run: |
+          if [ -n "$DRAFT" ]; then python3 bot.py recard "$DRAFT"; else python3 bot.py cards; fi
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_ADMIN_ID: ${{ secrets.TELEGRAM_ADMIN_ID }}
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+          FACEBOOK_PAGE_TOKEN: ${{ secrets.FACEBOOK_PAGE_TOKEN }}
+          DRAFT: ${{ inputs.draft }}
+      - name: Save state
+        if: env.DRAFT != ''
+        run: bash save_state.sh
+        env:
+          DRAFT: ${{ inputs.draft }}
       - uses: actions/upload-artifact@v4
+        if: inputs.draft == ''
         with:
           name: cards
           path: cards/

@@ -678,7 +678,9 @@ def render_card(card):
             mime = "image/png" if data[:4] == b"\x89PNG" else "image/jpeg"
             background = (f'<div class="photo" style="background-image:url(data:{mime};base64,'
                           f'{base64.b64encode(data).decode()})"></div>')
-            credit = f'<div class="credit">{e(config.LABELS["photo"])}: Wikimedia Commons</div>'
+            who = card.get("credit") or ("Wikimedia Commons" if "wikimedia.org" in photo
+                                         else urllib.parse.urlparse(photo).netloc.replace("www.", ""))
+            credit = f'<div class="credit">{e(config.LABELS["photo"])}: {e(who)}</div>'
         except Exception as ex:
             print(f"Card photo failed, using the plain background: {ex}")
     kind = card.get("kind", "news")
@@ -1078,10 +1080,10 @@ def telegraph_nodes(body, image, image_credit, source_name, url):
     return nodes
 
 
-def history_card(kind, header, title, image, query, topic):
+def history_card(kind, header, title, image, query, topic, credit=""):
     """Card for a history post: the post's photo if it's freely licensed, otherwise one from Wikimedia Commons."""
     tag = re.sub(r"^\W+", "", header).strip()  # the header without its emoji
-    return {"kind": kind, "title": title, "tag": tag, "photo": card_photo(image),
+    return {"kind": kind, "title": title, "tag": tag, "photo": card_photo(image), "credit": credit,
             "queries": [*split_queries(query), topic]}
 
 
@@ -1131,7 +1133,7 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
         text = format_post(post["title"], post["teaser"] + "\n\n" + post["body"].replace("## ", ""),
                            source_name, url, header=header)
         return send_draft(s, url, text[:4000], stamp, image=image, kind=kind, note=review_note(problems),
-                          card=history_card(kind, header, post["title"], image, query, topic),
+                          card=history_card(kind, header, post["title"], image, query, topic, credit),
                           fb=fb_long(header, post, source_name))
     e = html.escape
     text = (f"{e(header, quote=False)}\n\n<b>{e(post['title'], quote=False)}</b>\n\n{e(post['teaser'], quote=False)}"
@@ -1139,7 +1141,7 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
     # the source is credited at the end of the Telegraph article, not in the post
     print(f"Telegraph page: {page['url']}")
     ok = send_draft(s, url, text, stamp, preview_url=page["url"], kind=kind, note=review_note(problems),
-                    card=history_card(kind, header, post["title"], image, query, topic),
+                    card=history_card(kind, header, post["title"], image, query, topic, credit),
                     fb=fb_long(header, post, source_name))
     if ok:
         s["pending"][hashlib.sha1(url.encode()).hexdigest()[:10]]["telegraph_path"] = page["path"]
@@ -1607,6 +1609,26 @@ def cmd_post():
     save_state(s)
 
 
+def cmd_recard(match):
+    """Redraw the Facebook card of a waiting draft whose source link contains MATCH (e.g. after a design fix)."""
+    s = load_state()
+    for did, d in s["pending"].items():
+        if match.lower() not in d["url"].lower():
+            continue
+        m = re.search(r"<b>(.*?)</b>", d["text"], re.S)
+        title = html.unescape(re.sub(r"<[^>]+>", "", m.group(1))) if m else ""
+        kind = d.get("kind") or "news"
+        header = config.LABELS["thisday_header"] if kind == "thisday" else config.LABELS["history_header"]
+        image = fetch_page(d["url"])[1] if d["url"].startswith("http") else ""
+        card = (history_card(kind, header, title, image, "", "") if kind in ("history", "thisday")
+                else {"kind": kind, "title": title})
+        file_id = make_card(card)
+        if file_id:
+            d["card"] = file_id
+            print(f"New card for: {title} (photo: {card.get('photo') or 'none'})")
+    save_state(s)
+
+
 def _print_usage():
     if _usage["calls"]:
         print(f"Claude usage: {_usage['calls']} calls, input {_usage['input']}, cache write {_usage['cache_write']}, "
@@ -1637,6 +1659,8 @@ if __name__ == "__main__":
         cmd_edit(sys.argv[2] if len(sys.argv) > 2 else "")
     elif cmd == "post":  # a draft from your own text (POST_TEXT, POST_SOURCE, POST_PHOTO)
         cmd_post()
+    elif cmd == "recard":  # recard MATCH: redraw a waiting draft's Facebook card
+        cmd_recard(sys.argv[2] if len(sys.argv) > 2 else "")
     elif cmd == "check":  # test the connections, posts nothing
         cmd_check()
     elif cmd == "merge-state":  # used by save_state.sh: merge-state BASE OURS (theirs = state.json)
