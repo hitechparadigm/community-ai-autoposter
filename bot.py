@@ -1561,6 +1561,10 @@ def cmd_check():
             when = "never" if not exp else datetime.fromtimestamp(exp, timezone.utc).strftime("%Y-%m-%d")
             print(f"Facebook: OK, page {page.get('name')}, token type {info.get('type')}, expires {when}")
             print(f"Facebook permissions: {', '.join(info.get('scopes', []))}")
+            feed = json.loads(http(f"https://graph.facebook.com/{FB_PAGE_ID}/posts?fields=created_time,message"
+                                   f"&limit=3&access_token={tok}")).get("data", [])
+            for p in feed:  # the latest posts, to confirm what went out
+                print(f"Facebook latest: {p.get('created_time')} {(p.get('message') or '')[:60]!r}")
             if "pages_manage_posts" not in info.get("scopes", []):
                 ok = False
                 print(f"Facebook: the token can't post (missing pages_manage_posts; has {info.get('scopes')})")
