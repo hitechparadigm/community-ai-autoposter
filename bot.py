@@ -235,12 +235,43 @@ SCHEMA_DIGEST = {"type": "object", "properties": {
     "community": _ITEMS, "today": _ITEMS}, "required": ["national"]}
 
 
+# ---------- glossary of established names ----------
+
+def _load_glossary():
+    try:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "glossary.json")
+        return json.load(open(path, encoding="utf-8")).get("entries", [])
+    except (OSError, ValueError):
+        return []
+
+
+GLOSSARY = _load_glossary()
+
+
+def glossary_for(text):
+    """The glossary entries whose English names appear in this text (ALL-CAPS names only in capitals)."""
+    found = []
+    for entry in GLOSSARY:
+        for name in entry["en"]:
+            flags = 0 if name.isupper() else re.I
+            if re.search(r"(?<![\w-])" + re.escape(name) + r"s?(?![\w-])", text, flags):
+                found.append(f"- {entry['en'][0]} = {entry['uk']}")
+                break
+    return found
+
+
 def ask_claude(prompt, source=None, schema=None):
     """One Claude call. With `source`, the source text goes first as a cached block: the writer, copy editor,
     reviewer and fixer all send the same source within a minute, so later calls read it from the cache at a
     fraction of the price (prompts then refer to it with SOURCE_REF instead of repeating it)."""
     if not ANTHROPIC_KEY:
         sys.exit("ANTHROPIC_API_KEY is not set")
+    # Established names for the institutions this text mentions (only the matching glossary entries)
+    writes = schema not in (SCHEMA_IDS, SCHEMA_REFERRAL)  # picking stories needs no names
+    names = glossary_for((source or "") + "\n" + prompt.replace(STYLE, "").replace(AUDIENCE, "")) if writes else []
+    if names:
+        prompt += ("\n\nGLOSSARY: use exactly these Ukrainian names on first mention (a reviewer treats any other "
+                   "version as an error to fix):\n" + "\n".join(names))
     if source:
         content = [{"type": "text", "text": f"SOURCE TEXT:\n{source}", "cache_control": {"type": "ephemeral"}},
                    {"type": "text", "text": prompt}]

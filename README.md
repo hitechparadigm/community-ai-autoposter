@@ -249,6 +249,13 @@ Facebook Page, built for Facebook readers:
 - Referral links stay off Facebook (`FB_REFERRALS`).
 If Facebook fails, the Telegram post still goes out and the draft says "Facebook failed".
 
+### Glossary of names
+
+`glossary.json` lists established Ukrainian names (e.g. CSIS = Канадська служба безпеки й розвідки). Before each
+writing, editing or review step, the bot finds which entries' English names appear in the source and passes only
+those to Claude as required names, so a post costs a few extra tokens at most; the reviewer flags any other
+version. When a name comes out wrong, add a line to the file.
+
 ### How the picture cards are made
 
 1. **Content.** When a draft is written, the bot fills in a card: the final, edited headline, a tag (the
@@ -314,6 +321,8 @@ If posts don't appear publicly, switch the Meta app to Live (it asks for a priva
 |---|---|
 | Channel, time zone, fixed words in posts, news and history sources, referral links, auto-publish, model, limits | `config.py` |
 | Tone, Ukrainian style guide, what to pick, length and structure of each post | `prompts.py` |
+| Established Ukrainian names of institutions and organizations (CSIS, RCMP, IRCC, КУК…) | `glossary.json` |
+| Facebook card design | `card.html` (+ `CARD` in `config.py`) |
 | Run times (local time) | `config.py` → `SCHEDULE` |
 | API keys, bot token, approver IDs, Telegraph and Facebook keys | GitHub → Settings → Secrets and variables → Actions |
 | The program itself | `bot.py` (no settings inside) |
