@@ -21,7 +21,10 @@ and bureaucratic wording.
 - Canadian terms: IRCC = Міністерство імміграції, біженців і громадянства Канади (IRCC); permanent residence = \
 постійне резидентство (PR); work permit = дозвіл на роботу; study permit = дозвіл на навчання; \
 provincial premier = прем'єр провінції (e.g. прем'єр Онтаріо); Prime Minister = прем'єр-міністр Канади; \
-Parliament / House of Commons = парламент / Палата громад; amounts: "50 млн доларів".
+Parliament / House of Commons = парламент / Палата громад; amounts: "50 млн доларів"; \
+CSIS = Канадська служба безпеки й розвідки (CSIS); RCMP = Королівська канадська кінна поліція (RCMP); \
+CBSA = Агенція прикордонної служби Канади (CBSA); CRA = Агенція доходів Канади (CRA). For other Canadian \
+bodies use the name Ukrainian media (Укрінформ) use; never translate a name word for word.
 - People: on first mention give the Ukrainian transliteration, the original English spelling in brackets, \
 and their role (e.g. міністерка промисловості Канади Мелані Жолі (Mélanie Joly); Фостер Г'юїтт (Foster Hewitt)). \
 Later mentions: Ukrainian only. Do the same for lesser-known places (e.g. Галіфакс, Саскатун); well-known \
