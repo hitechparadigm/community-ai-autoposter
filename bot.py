@@ -1540,6 +1540,11 @@ def cmd_check():
     try:
         me, chat = tg("getMe"), tg("getChat", chat_id=config.CHANNEL)
         print(f"Telegram: OK, bot @{me['username']}, channel {chat.get('title')}")
+        hook = tg("getWebhookInfo")
+        if hook.get("url"):  # a webhook stops the bot from reading taps
+            ok = False
+            print(f"Telegram: a webhook is set ({hook['url'].split('/')[2]}); taps can't be read. Revoke the token.")
+        print(f"Telegram: waiting taps {hook.get('pending_update_count', 0)}")
     except Exception as e:
         ok = False
         print(f"Telegram: FAILED ({e})")
