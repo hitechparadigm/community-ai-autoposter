@@ -7,6 +7,13 @@ on:
         description: "Community-history story (otherwise only on COMMUNITY_HISTORY_DAY, Sundays)"
         type: boolean
         default: false
+      source:
+        description: "Optional: write from this source instead (a web page, or wiki:Article_title)"
+        required: false
+      thisday:
+        description: "With a source: make it a 'this day in history' post"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -22,12 +29,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Write a Canadian history story
-        run: python3 bot.py history ${{ inputs.community && 'community' || '' }}
+        run: |
+          if [ -n "$SOURCE" ]; then python3 bot.py history-from "$SOURCE" $THISDAY
+          else python3 bot.py history ${{ inputs.community && 'community' || '' }}; fi
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_ADMIN_ID: ${{ secrets.TELEGRAM_ADMIN_ID }}
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+          FACEBOOK_PAGE_TOKEN: ${{ secrets.FACEBOOK_PAGE_TOKEN }}
           TELEGRAPH_TOKEN: ${{ secrets.TELEGRAPH_TOKEN }}
+          SOURCE: ${{ inputs.source }}
+          THISDAY: ${{ inputs.thisday && 'thisday' || '' }}
       - name: Save state
         if: always()
         run: bash save_state.sh

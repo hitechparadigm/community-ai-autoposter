@@ -1702,6 +1702,29 @@ def cmd_recard(match):
     save_state(s)
 
 
+def cmd_history_from(source, thisday=False):
+    """A history (or this-day) draft from a source you choose: a web page, or "wiki:Article_title"."""
+    s = _history_state()
+    if source.startswith("wiki:"):
+        article, url = wiki_text(source[5:])
+        image = fetch_page(url)[1] if url else ""
+        source_name = config.LABELS["wikipedia"]
+    else:
+        article, image = fetch_page(source, 15000)
+        url, source_name = source, urllib.parse.urlparse(source).netloc.replace("www.", "")
+    if len(article) < 500:
+        sys.exit(f"Not enough text at {source}")
+    topic = source[5:].replace("_", " ") if source.startswith("wiki:") else source
+    d = now().astimezone(LOCAL)
+    header = config.LABELS["thisday_header" if thisday else "history_header"]
+    opening = ("Start with the date" + DATE_WORDS[:-1] + " and what happened on it." if thisday
+               else "Open with a vivid detail or the key moment.")
+    if _write_history(f"{topic} ({d:%B} {d.day})" if thisday else topic, source_name, article, opening, header,
+                      source_name, url, s, now().isoformat(), image):
+        print(f"Draft sent: {topic}")
+    save_state(s)
+
+
 def _print_usage():
     if _usage["calls"]:
         print(f"Claude usage: {_usage['calls']} calls, input {_usage['input']}, cache write {_usage['cache_write']}, "
@@ -1734,6 +1757,8 @@ if __name__ == "__main__":
         cmd_post()
     elif cmd == "recard":  # recard MATCH: redraw a waiting draft's Facebook card
         cmd_recard(sys.argv[2] if len(sys.argv) > 2 else "")
+    elif cmd == "history-from":  # history-from SOURCE [thisday]
+        cmd_history_from(sys.argv[2], len(sys.argv) > 3 and sys.argv[3] == "thisday")
     elif cmd == "check":  # test the connections, posts nothing
         cmd_check()
     elif cmd == "merge-state":  # used by save_state.sh: merge-state BASE OURS (theirs = state.json)
