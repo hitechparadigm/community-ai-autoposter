@@ -1419,6 +1419,8 @@ def cmd_approve():
                 time.sleep(5)
     if updates is None:
         return
+    if updates:
+        print(f"{len(updates)} update(s): " + ", ".join(k for u in updates for k in u if k != "update_id"))
     for u in updates:
         s["tg_offset"] = u["update_id"] + 1
         cq = u.get("callback_query")
