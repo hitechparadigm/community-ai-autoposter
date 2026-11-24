@@ -1406,8 +1406,19 @@ def publish_draft(d, s):
 
 def cmd_approve():
     s = load_state()
-    updates = tg("getUpdates", offset=s["tg_offset"], timeout=0,
-                 allowed_updates=["callback_query"])
+    updates = None
+    for attempt in range(3):  # reading taps is safe to retry; a dropped connection is usually momentary
+        try:
+            updates = tg("getUpdates", offset=s["tg_offset"], timeout=0, allowed_updates=["callback_query"])
+            break
+        except (urllib.error.URLError, ConnectionError, TimeoutError) as e:
+            print(f"Telegram unreachable ({e}); retrying" if attempt < 2 else
+                  f"Telegram unreachable ({e}); taps will be read on the next run")
+            if attempt < 2:
+                import time
+                time.sleep(5)
+    if updates is None:
+        return
     for u in updates:
         s["tg_offset"] = u["update_id"] + 1
         cq = u.get("callback_query")
