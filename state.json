@@ -47,27 +47,6 @@
    "text": "📅 Цей день в історії Канади\n\n<b>Манміт Буллар: міністр, якого називали майбутньою зіркою політики Альберти</b>\n\nМанміт Сінгх Буллар став наймолодшим депутатом Законодавчої асамблеї Альберти, а згодом — першим сикхом у тюрбані на міністерській посаді. Загинув у 35 років, коли зупинився допомогти водієві на трасі. Його ім'я носять школа, парк і виборчий округ.\n\n📖 <b><a href=\"https://telegra.ph/Manmіt-Bullar-mіnіstr-yakogo-nazivali-majbutnoyu-zіrkoyu-polіtiki-Alberti-11-23\">Читати повністю →</a></b>",
    "url": "https://en.wikipedia.org/wiki/Manmeet_Bhullar"
   },
-  "f2d08dd3fd": {
-   "card": "AgACAgEAAxkDAAOuawTv9Py3Ia0tnDKSpQYkQEmjjnUAAmQNaxsYNyhELBD99lzPnX4BAAMCAAN3AAM9BA",
-   "created": "2026-11-24T02:01:12.005781+00:00",
-   "kind": "news",
-   "lp": {
-    "prefer_large_media": true,
-    "url": "https://newpathway.ca/new-federal-budget-offers-immigration-opportunities-for-ukrainians-says-mp-yvan-baker/?utm_source=rss&utm_medium=rss&utm_campaign=new-federal-budget-offers-immigration-opportunities-for-ukrainians-says-mp-yvan-baker"
-   },
-   "msgs": [
-    [
-     "7bb2c834ae",
-     172
-    ],
-    [
-     "74c991a120",
-     173
-    ]
-   ],
-   "text": "<b>🛂 Бюджет Канади: шанси на PR для тисяч українців</b>\n\nНовий федеральний бюджет Канади містить два кроки, які можуть допомогти українцям, що вже живуть у країні, отримати постійне резидентство (PR). Про це в інтерв'ю газеті New Pathway розповів депутат парламенту від Ліберальної партії Іван Бейкер (Yvan Baker), який представляє округ Етобіко-Центр.\n\nПерший крок: уряд обіцяє до кінця 2027 року розглянути всі заяви, що залишилися в черзі програми Ukraine Family Reunification Pathway. Вона діяла з жовтня 2023 року, а нові заяви перестала приймати в жовтні 2024-го. За словами Бейкера, рішення досі чекають близько 19 тисяч людей.\n\nДругий крок: одноразова ініціатива передбачає до 100 тисяч додаткових місць для постійного резидентства. Їх призначено для тимчасових працівників, які вже в Канаді, і членів їхніх родин. Значну частину місць розподілятимуть через Provincial Nominee Program, за якою провінції самі добирають іммігрантів. Окремих квот для українців немає, але провінції самі вирішують, кого номінувати. Бейкер закликає громаду звертатися до провінційної влади й просити, щоб серед отримувачів були й власники візи CUAET.\n\nБейкер нагадав, що подання заяви на PR саме по собі не скасовує потреби продовжувати тимчасовий статус чи дозвіл на роботу. Українці, які приїхали до Канади не пізніше 31 грудня 2024 року, можуть до 31 березня 2027 року подати заяву на продовження відкритого дозволу на роботу на строк до трьох років. Залишається й варіант подати заяву на PR з гуманітарних підстав, але такі заяви можуть розглядати довго.\n\n🔗 Джерело: <a href=\"https://newpathway.ca/new-federal-budget-offers-immigration-opportunities-for-ukrainians-says-mp-yvan-baker/?utm_source=rss&amp;utm_medium=rss&amp;utm_campaign=new-federal-budget-offers-immigration-opportunities-for-ukrainians-says-mp-yvan-baker\">New Pathway</a>",
-   "url": "https://newpathway.ca/new-federal-budget-offers-immigration-opportunities-for-ukrainians-says-mp-yvan-baker/?utm_source=rss&utm_medium=rss&utm_campaign=new-federal-budget-offers-immigration-opportunities-for-ukrainians-says-mp-yvan-baker"
-  },
   "ff6d5ba769": {
    "card": "AgACAgEAAxkDAAOiawRxYz20ofCv60MwYoDhGmMMZdQAAvEMaxsYNyhE9gWeN6v_aOcBAAMCAAN3AAM9BA",
    "created": "2026-11-23T17:01:09.734135+00:00",
@@ -846,6 +825,6 @@
   "https://www.ukrinform.net/rubric-society/4187432-pm-koretskyi-announces-digital-platform-for-reporting-disruptions-to-essential-services.html": "2026-11-22T17:00:45.587933+00:00",
   "https://www.ukrinform.net/rubric-society/4187825-ukraine-expected-to-have-sufficient-flu-vaccine-supplies-this-year-health-ministry.html": "2026-11-23T20:00:50.014715+00:00"
  },
- "tg_offset": 17524619,
+ "tg_offset": 17524620,
  "thisday_last": "person"
 }
