@@ -1421,6 +1421,13 @@ def cmd_approve():
         return
     if updates:
         print(f"{len(updates)} update(s): " + ", ".join(k for u in updates for k in u if k != "update_id"))
+        # Tell Telegram right away that these taps are handled. Otherwise a run that started from an older copy
+        # of state.json (another tick, or a manual run) would get the same taps again and post twice.
+        try:
+            tg("getUpdates", offset=updates[-1]["update_id"] + 1, timeout=0, limit=1,
+               allowed_updates=["callback_query"])
+        except Exception as e:
+            print(f"(could not confirm the taps: {e})")
     for u in updates:
         s["tg_offset"] = u["update_id"] + 1
         cq = u.get("callback_query")
