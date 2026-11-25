@@ -144,7 +144,7 @@ sequenceDiagram
 | Preview Facebook cards | `cards.yml` | Draw the sample cards in `samples/cards.json` and send them to the approvers |
 | Draft from your own text | `post.yml` | Your own text (and optional source link) as a draft with its Facebook card; publish it with ✅ |
 | Edit a published post | `edit.yml` | Replace the text of a channel post (link, new text, optional source link) |
-| Check connections | `check.yml` | Test the Telegram and Facebook tokens and every news feed without posting; optionally try new feeds (`Name|URL`) |
+| Check connections | `check.yml` | Test the Telegram and Facebook tokens and every news feed without posting; optionally try new feeds |
 
 All of them except Tick are for running something by hand: Actions → pick it → Run workflow.
 
