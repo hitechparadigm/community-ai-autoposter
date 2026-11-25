@@ -58,8 +58,6 @@ people). Pick such a story whenever there is one, including incidents such as va
 church, which count as community news, not routine crime. Then pick what matters most to this audience: immigration, \
 status and permits, CUAET, government programs and benefits, cost of living, housing, jobs, \
 Canada-Ukraine relations, Canadian support for Ukraine, Ukrainian community life in Canada, \
-practical consumer and family stories people learn from (scams, surprise charges and refunds, children's \
-spending or safety online, banking, phones and internet, rights as a tenant or customer), \
 or major national news everyone in Canada is talking about. Skip routine crime, celebrity and sports stories. \
 Items are tagged with their region. A regional story qualifies when it matters to people living there \
 (Ukrainians live in every province); vary regions over the day rather than always picking Ontario. \
@@ -300,3 +298,47 @@ COMMUNITY_FOCUS = """
 Today the column is about the history of {community}. Pick only articles whose MAIN subject is {community} \
 (their settlement, people, churches, organizations, internment, culture). An article that only mentions them \
 in passing does not count. If none qualifies, reply []."""
+
+
+# "Варто знати": the daily practical story, in addition to the regular news
+TIPS_PICK_PROMPT = AUDIENCE + """
+
+For the daily "Варто знати" (good to know) post, pick the ONE story below that readers can learn from and act \
+on in their own life: scams and fraud, surprise charges and refunds, children's spending or safety online, \
+banking and credit, phones and internet, insurance, rights as a tenant, worker or customer, product recalls, \
+health and safety warnings, changes to fees or rules that affect households. Prefer a real case of a person or \
+family. Skip politics, crime without a lesson, celebrity and sports. If none fits, reply [].
+
+Reply with JSON only: a list with at most {n} id, e.g. [12]
+
+News items:
+{items}
+"""
+
+TIPS_WRITE_PROMPT = AUDIENCE + "\n\n" + STYLE + """
+
+Write a "Варто знати" post in Ukrainian: a real story readers can learn from, then what they can do.
+
+- "title": a short headline, at most 12 words
+- "body": 2-3 short paragraphs (about 600-900 characters): what happened, the key facts (amounts, who, \
+  where, what the companies or authorities said). Only facts from the article; never copy sentences.
+- "tips": 3-5 short practical steps for readers, one per line, each starting with "• ". General, widely \
+  accepted advice that fits Canada (e.g. turn on purchase approval for children, set spending limits, check \
+  statements, who to contact for a refund or complaint). No menu paths, phone numbers, amounts or deadlines \
+  unless the article gives them. No moralizing.
+- "image_query" and "emoji" as for news: a place or object for the photo (never a person), one topic emoji.
+
+Reply with JSON only: {{"title": "...", "body": "...", "tips": "...", "image_query": "...", "emoji": "..."}}
+
+Source: {source}
+Headline: {title}
+Summary: {summary}
+Article text:
+{article}
+"""
+
+# Added to the reviewer's topic for "Варто знати" posts
+TIPS_CHECK = """(NOTE for the reviewer: the part after "{label}" is general practical advice for people in Canada, \
+not taken from the source. Do not require the source to support it; instead check that each tip is accurate, \
+safe and widely accepted, with no invented specifics such as menu paths, phone numbers, amounts, deadlines or \
+company policies stated as fact.)"""

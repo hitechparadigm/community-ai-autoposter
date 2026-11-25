@@ -27,7 +27,7 @@ from email.utils import parsedate_to_datetime
 from zoneinfo import ZoneInfo
 
 import config
-from prompts import (COMMUNITY_FOCUS, AUDIENCE, DIGEST_PROMPT, EDIT_PROMPT, FIX_PROMPT, REVIEW_PROMPT, HISTORY_WRITE_PROMPT, PICK_PROMPT,
+from prompts import (COMMUNITY_FOCUS, TIPS_PICK_PROMPT, TIPS_WRITE_PROMPT, TIPS_CHECK, AUDIENCE, DIGEST_PROMPT, EDIT_PROMPT, FIX_PROMPT, REVIEW_PROMPT, HISTORY_WRITE_PROMPT, PICK_PROMPT,
                      REFERRAL_MATCH_PROMPT, STORY_PICK_PROMPT, STYLE, THISDAY_PICK_PROMPT, WRITE_PROMPT,
                      DATE_WORDS)
 
@@ -579,7 +579,9 @@ def close_draft(d, status):
 
 # ---------- commands ----------
 
-def cmd_draft():
+def cmd_draft(mode="news"):
+    """News drafts. mode="tips": the daily practical story (consumer and family matters) with what to do."""
+    tips = mode == "tips"
     if not ADMIN_IDS:
         sys.exit("TELEGRAM_ADMIN_ID is not set")
     s = load_state()
@@ -595,7 +597,8 @@ def cmd_draft():
     listing = "\n".join(
         f"[{i}] {'[UKRAINIAN COMMUNITY] ' if it.get('community') else ''}({it['region']}, {it['source']}) "
         f"{it['title']} — {it['summary'][:120]}" for i, it in enumerate(items))
-    picks = parse_picks(ask_claude(PICK_PROMPT.format(n=config.DRAFTS_PER_RUN, items=listing), schema=SCHEMA_IDS))
+    pick_prompt = TIPS_PICK_PROMPT if tips else PICK_PROMPT
+    picks = parse_picks(ask_claude(pick_prompt.format(n=config.DRAFTS_PER_RUN, items=listing), schema=SCHEMA_IDS))
     print(f"Claude picked {picks}")
 
     stamp = now().isoformat()
@@ -608,14 +611,16 @@ def cmd_draft():
         it = items[i]
         article = fetch_article(it["url"])
         src_text = article or "(not available)"
-        post = parse_post(ask_claude(WRITE_PROMPT.format(
+        write_prompt = TIPS_WRITE_PROMPT if tips else WRITE_PROMPT
+        post = parse_post(ask_claude(write_prompt.format(
             source=it["source"], title=it["title"], summary=it["summary"], article=SOURCE_REF), source=src_text,
-            schema=schema_post(("title", "body"), ("image_query", "emoji"))))
+            schema=schema_post(("title", "body"), ("image_query", "emoji", "tips"))))
         if not post:
             print(f"Could not write post for: {it['title']}")
             continue
         photo_query = (post.pop("image_query", "") or "").strip()  # for the Facebook card
         emoji = (post.pop("emoji", "") or "").strip()[:4]  # shown before the headline
+        advice = (post.pop("tips", "") or "").strip() if tips else ""  # general advice, checked on its own
         edited = parse_post(ask_claude(EDIT_PROMPT.format(
             draft=json.dumps(post, ensure_ascii=False), title=it["title"],
             summary=it["summary"], article=SOURCE_REF), source=src_text, schema=schema_post(("title", "body"))))
@@ -623,17 +628,23 @@ def cmd_draft():
             post = edited
         else:
             print("Copy edit failed; using the first draft")
-        post, problems = review_post(post, ("title", "body"), article or it["summary"], it["title"])
-        text = format_post(f"{emoji} {post['title']}".strip(), post["body"], it["source"], it["url"])
+        topic = it["title"]
+        if advice:  # the tips are general advice: the reviewer checks them for accuracy, not against the article
+            post["body"] += f"\n\n{config.LABELS['tips_what_to_do']}\n{advice}"
+            topic += " " + TIPS_CHECK.format(label=config.LABELS["tips_what_to_do"])
+        post, problems = review_post(post, ("title", "body"), article or it["summary"], topic)
+        header = config.LABELS["tips_header"] if tips else ""
+        text = format_post(f"{emoji} {post['title']}".strip(), post["body"], it["source"], it["url"], header=header)
         ref = matching_referral(s, post)
         if ref:
             text += f'\n\n<a href="{html.escape(ref[1], quote=True)}">{html.escape(ref[0], quote=False)}</a>'
         region, fallback = getattr(config, "REGIONS", {}).get(it["region"], (it["region"], ""))
         community = it.get("community")
         card = {"kind": "community" if community else "news", "title": post["title"],
-                "tag": config.CARD.get("community_tag", region) if community else region,
+                "tag": (re.sub(r"^\W+", "", config.LABELS["tips_header"]).strip() if tips
+                        else config.CARD.get("community_tag", region) if community else region),
                 "queries": [*split_queries(photo_query), fallback]}
-        if not send_draft(s, it["url"], text, stamp, note=review_note(problems), card=card):
+        if not send_draft(s, it["url"], text, stamp, note=review_note(problems), card=card, kind=mode):
             continue
         if ref:
             s["pending"][hashlib.sha1(it["url"].encode()).hexdigest()[:10]]["referral"] = True
@@ -1549,7 +1560,8 @@ def cmd_rewrite(path, source):
 def cmd_tick():
     """Runs every 5 minutes: starts the drafts that are due by config.SCHEDULE (local time, catching up on
     late runs), then publishes approved posts."""
-    jobs = {"digest": cmd_digest, "thisday": cmd_thisday, "news": cmd_draft, "history": cmd_history}
+    jobs = {"digest": cmd_digest, "thisday": cmd_thisday, "news": cmd_draft, "history": cmd_history,
+            "tips": lambda: cmd_draft("tips")}
     local = now().astimezone(LOCAL)
     for job, slots in config.SCHEDULE.items():
         for slot in slots:
@@ -1748,7 +1760,7 @@ if __name__ == "__main__":
     atexit.register(_print_usage)
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
     if cmd == "draft":
-        cmd_draft()
+        cmd_draft(sys.argv[2] if len(sys.argv) > 2 else "news")  # draft [tips]
     elif cmd == "approve":
         cmd_approve()
     elif cmd == "history":

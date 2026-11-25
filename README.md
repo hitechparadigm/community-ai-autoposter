@@ -14,6 +14,9 @@ Any other community can run its own channel by changing two settings files (see
 - **News, 5 times a day.** Reads ~50 Canadian feeds (CBC, Global News and CTV News for every province and territory,
   Postmedia papers, Ukrainian-Canadian outlets), puts Ukrainian-community stories first, and writes a short,
   self-contained post in Ukrainian from the full article.
+- **💡 Варто знати, daily.** One practical story readers can learn from (scams, surprise charges, children's
+  spending online, banking, tenant and consumer rights) with 3-5 steps on what to do; the reviewer checks the
+  steps for accuracy and invented specifics.
 - **Morning digest.** Yesterday's key national stories, rotating provincial highlights, community news and
   "what happens today", each item linked to its source, with a mix of outlets.
 - **Canadian history.** A daily "This day in Canadian history" post and a history long-read, published as

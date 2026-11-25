@@ -2,6 +2,11 @@ name: Draft posts
 
 on:
   workflow_dispatch:           # lets you run it by hand from the Actions tab
+    inputs:
+      tips:
+        description: "Make a 💡 Варто знати post (a practical story with what to do) instead of news"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -17,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Fetch news and send drafts
-        run: python3 bot.py draft
+        run: python3 bot.py draft ${{ inputs.tips && 'tips' || '' }}
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

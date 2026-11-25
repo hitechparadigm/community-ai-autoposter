@@ -17,6 +17,7 @@ SCHEDULE = {
     "thisday": ["08:30"],
     "news": ["09:00", "12:00", "15:00", "18:00", "21:00"],
     "history": ["11:30"],
+    "tips": ["19:30"],          # 💡 Варто знати: a practical story with what readers can do
 }
 CATCH_UP_HOURS = 2
 
@@ -35,6 +36,8 @@ LABELS = {
     "digest_sources": "За матеріалами",
     "thisday_header": "📅 Цей день в історії Канади",
     "history_header": "🍁 Історія Канади",
+    "tips_header": "💡 Варто знати",
+    "tips_what_to_do": "Що можна зробити:",
     "auto_publish_note": "Опублікується автоматично о {time}, якщо не натиснути ❌",
     "unpublished": "Матеріал не опубліковано",
     "review_warning": "Перевірка знайшла проблеми, перегляньте уважно",
@@ -140,6 +143,7 @@ AUTO_PUBLISH = {
     "digest": False,    # morning digest
     "thisday": False,   # 📅 Цей день в історії Канади
     "history": False,   # 🍁 Історія Канади long-reads
+    "tips": False,      # 💡 Варто знати
 }
 AUTO_PUBLISH_AFTER_MINUTES = 60
 
