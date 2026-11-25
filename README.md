@@ -12,7 +12,8 @@ Any other community can run its own channel by changing two settings files (see
 ### What it does
 
 - **News, 5 times a day.** Reads ~50 Canadian feeds (CBC, Global News and CTV News for every province and territory,
-  Postmedia papers, Ukrainian-Canadian outlets), puts Ukrainian-community stories first, and writes a short,
+  Postmedia papers, Ukrainian-Canadian outlets, community organizations and churches, plus news searches that
+  find Ukrainian-Canadian stories in any outlet), puts Ukrainian-community stories first, and writes a short,
   self-contained post in Ukrainian from the full article.
 - **💡 Варто знати, daily.** One practical story readers can learn from (scams, surprise charges, children's
   spending online, banking, tenant and consumer rights) with 3-5 steps on what to do; the reviewer checks the
@@ -78,7 +79,7 @@ Telegraph API · Facebook Graph API · RSS/Atom
 flowchart LR
     T["⏱ cron-job.org<br/>every 5 min<br/>(+ GitHub schedule as backup)"]
     subgraph Sources
-        N["News feeds<br/>CBC · Global News · CTV · Postmedia<br/>New Pathway · UCC Manitoba"]
+        N["News feeds<br/>CBC · Global News · CTV · Postmedia<br/>New Pathway · UCC · CUF · churches · news search"]
         H["History sources<br/>CBC Archives · LAC · DCB<br/>provincial sites · Wikipedia"]
     end
     subgraph GH["GitHub Actions"]
