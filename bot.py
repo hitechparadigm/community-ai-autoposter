@@ -165,8 +165,15 @@ def parse_feed(xml_bytes, source):
         link = _txt(it, "link", f"{ATOM}link").split("#")[0]
         if not title or not link.startswith("http"):
             continue
+        outlet = source
+        if "bing.com/news/apiclick" in link:  # news search feed: unwrap the real article and credit its outlet
+            link = urllib.parse.parse_qs(urllib.parse.urlparse(link).query).get("url", [""])[0]
+            if not link.startswith("http"):
+                continue
+            src = next((e.text for e in it if e.tag.lower().endswith("}source") and e.text), "")
+            outlet = (src or outlet_name(link)).strip()
         out.append({
-            "source": source,
+            "source": outlet,
             "title": title,
             "url": link,
             "summary": _clean(_txt(it, "description", f"{ATOM}summary", f"{ATOM}content")),

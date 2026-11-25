@@ -105,6 +105,17 @@ FEEDS = [
     # Ukrainian community in Canada
     ("New Pathway", "https://newpathway.ca/feed/", "Ukrainian community in Canada"),
     ("UCC Manitoba", "https://www.uccmanitoba.ca/feed/", "Ukrainian community in Canada"),
+    ("UCC Alberta", "https://uccab.ca/feed/", "Ukrainian community in Canada"),
+    ("Canada-Ukraine Foundation", "https://www.cufoundation.ca/feed/", "Ukrainian community in Canada"),
+    ("Shevchenko Foundation", "https://www.shevchenkofoundation.com/feed/", "Ukrainian community in Canada"),
+    ("Ukrainian Catholic Archeparchy of Winnipeg", "https://archeparchy.ca/feed/", "Ukrainian community in Canada"),
+    ("Ukrainian Orthodox Church of Canada", "https://www.uocc.ca/feed/", "Ukrainian community in Canada"),
+    # News searches: Ukrainian-Canadian stories in any Canadian outlet (local papers, radio, TV). Each item is
+    # credited to the outlet that published it.
+    ("News search", "https://www.bing.com/news/search?format=rss&q=%22Ukrainian+Canadian%22", "Ukrainian community in Canada"),
+    ("News search", "https://www.bing.com/news/search?format=rss&q=%22Ukrainian+community%22+Canada", "Ukrainian community in Canada"),
+    ("News search", "https://www.bing.com/news/search?format=rss&q=%22Ukrainian+church%22+Canada", "Ukrainian community in Canada"),
+    ("News search", "https://www.bing.com/news/search?format=rss&q=Ukrainian+newcomers+Canada", "Ukrainian community in Canada"),
     # Ukraine
     ("Ukrinform", "https://www.ukrinform.net/rss/block-lastnews", "Ukraine"),
 ]
