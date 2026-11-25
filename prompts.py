@@ -337,8 +337,18 @@ Article text:
 {article}
 """
 
-# Added to the reviewer's topic for "Варто знати" posts
-TIPS_CHECK = """(NOTE for the reviewer: the part after "{label}" is general practical advice for people in Canada, \
-not taken from the source. Do not require the source to support it; instead check that each tip is accurate, \
-safe and widely accepted, with no invented specifics such as menu paths, phone numbers, amounts, deadlines or \
-company policies stated as fact.)"""
+# Checks the practical tips of a "Варто знати" post (general advice, not facts from the article)
+TIPS_CHECK = """You are the editor of a Ukrainian channel for Ukrainians in Canada. Below are practical tips that \
+follow a news story. Check every tip: it must be accurate for Canada, safe, widely accepted advice, and contain \
+no invented specifics (menu paths, phone numbers, amounts, deadlines, company policies stated as fact). Remove \
+or rewrite any tip that fails. Fix the Ukrainian (literary, no russianisms or calques). Keep 3-5 tips, one per \
+line, each starting with "• ". Return the corrected tips.
+
+""" + STYLE + """
+
+Story:
+{story}
+
+Tips:
+{tips}
+"""

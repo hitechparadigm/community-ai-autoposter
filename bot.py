@@ -224,6 +224,7 @@ SCHEMA_IDS = {"type": "object", "properties": {"ids": {"type": "array", "items":
 SCHEMA_REVIEW = {"type": "object", "properties": {
     "verdict": {"type": "string", "enum": ["ok", "fix"]},
     "problems": {"type": "array", "items": {"type": "string"}}}, "required": ["verdict"]}
+SCHEMA_TIPS = {"type": "object", "properties": {"tips": {"type": "string"}}, "required": ["tips"]}
 SCHEMA_REFERRAL = {"type": "object", "properties": {"id": {"type": ["integer", "null"]}}, "required": ["id"]}
 _ITEMS = {"type": "array", "items": {"type": "object", "properties": {
     "id": {"type": "integer"}, "text": {"type": "string"}}, "required": ["id", "text"]}}
@@ -628,11 +629,13 @@ def cmd_draft(mode="news"):
             post = edited
         else:
             print("Copy edit failed; using the first draft")
-        topic = it["title"]
-        if advice:  # the tips are general advice: the reviewer checks them for accuracy, not against the article
+        post, problems = review_post(post, ("title", "body"), article or it["summary"], it["title"])
+        if advice:  # general advice, not from the article: checked separately for accuracy and invented details
+            checked = _json(ask_claude(TIPS_CHECK.format(story=post["body"], tips=advice),
+                                       schema=SCHEMA_TIPS), "{", "}") or {}
+            if str(checked.get("tips", "")).count("•") >= 2:
+                advice = checked["tips"].strip()
             post["body"] += f"\n\n{config.LABELS['tips_what_to_do']}\n{advice}"
-            topic += " " + TIPS_CHECK.format(label=config.LABELS["tips_what_to_do"])
-        post, problems = review_post(post, ("title", "body"), article or it["summary"], topic)
         header = config.LABELS["tips_header"] if tips else ""
         text = format_post(f"{emoji} {post['title']}".strip(), post["body"], it["source"], it["url"], header=header)
         ref = matching_referral(s, post)
