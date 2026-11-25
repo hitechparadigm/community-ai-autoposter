@@ -114,7 +114,10 @@ FEEDS = [
     # credited to the outlet that published it.
     ("News search", "https://www.bing.com/news/search?format=rss&q=%22Ukrainian+Canadian%22", "Ukrainian community in Canada"),
     ("News search", "https://www.bing.com/news/search?format=rss&q=%22Ukrainian+community%22+Canada", "Ukrainian community in Canada"),
-    ("News search", "https://www.bing.com/news/search?format=rss&q=%22Ukrainian+church%22+Canada", "Ukrainian community in Canada"),
+    ("News search", "https://www.bing.com/news/search?format=rss&q=Ukrainian+church+Canada", "Ukrainian community in Canada"),
+    ("News search", "https://www.bing.com/news/search?format=rss&q=Ukrainian+Manitoba+OR+Saskatchewan", "Ukrainian community in Canada"),
+    ("News search", "https://www.bing.com/news/search?format=rss&q=Ukrainian+Alberta+OR+%22British+Columbia%22", "Ukrainian community in Canada"),
+    ("News search", "https://www.bing.com/news/search?format=rss&q=Ukrainian+Ontario+OR+Quebec", "Ukrainian community in Canada"),
     ("News search", "https://www.bing.com/news/search?format=rss&q=Ukrainian+newcomers+Canada", "Ukrainian community in Canada"),
     # Ukraine
     ("Ukrinform", "https://www.ukrinform.net/rss/block-lastnews", "Ukraine"),

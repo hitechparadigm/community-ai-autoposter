@@ -1656,7 +1656,7 @@ def cmd_check():
             n = len(parse_feed(http(url, timeout=45), name))
         except Exception as e:
             n, name = 0, f"{name} ({str(e)[:80]})"
-        if not n:
+        if not n and not name.startswith("News search"):  # a search can simply have no results today
             broken.append(name)
         elif _region == "test":
             print(f"Feed test OK: {name} — {n} stories")
