@@ -1609,6 +1609,18 @@ def cmd_check():
         except Exception as e:
             ok = False
             print(f"Facebook: FAILED ({str(e).replace(FB_TOKEN, '***')})")
+    feeds = list(config.FEEDS) + [tuple(f.split("|", 1)) + ("test",) for f in os.environ.get("TEST_FEEDS", "").split()]
+    broken = []
+    for name, url, _region in feeds:  # every news feed should give stories
+        try:
+            n = len(parse_feed(http(url, timeout=45), name))
+        except Exception as e:
+            n, name = 0, f"{name} ({str(e)[:80]})"
+        if not n:
+            broken.append(name)
+        elif _region == "test":
+            print(f"Feed test OK: {name} — {n} stories")
+    print(f"Feeds: {len(feeds) - len(broken)} of {len(feeds)} working" + (f"; not working: {'; '.join(broken)}" if broken else ""))
     if not ok:
         sys.exit(1)
 

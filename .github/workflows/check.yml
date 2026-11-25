@@ -1,7 +1,11 @@
 name: Check connections
 
 on:
-  workflow_dispatch:           # run by hand after adding or changing secrets; posts nothing
+  workflow_dispatch:
+    inputs:
+      test_feeds:
+        description: "Optional: feeds to try, as Name|URL separated by spaces"
+        required: false           # run by hand after adding or changing secrets; posts nothing
 
 permissions:
   contents: read
@@ -18,3 +22,4 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
           FACEBOOK_PAGE_TOKEN: ${{ secrets.FACEBOOK_PAGE_TOKEN }}
+          TEST_FEEDS: ${{ inputs.test_feeds }}
