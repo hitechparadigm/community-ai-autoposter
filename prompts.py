@@ -321,7 +321,8 @@ Write a "Варто знати" post in Ukrainian: a real story readers can lear
 
 - "title": a short headline, at most 12 words
 - "body": 2-3 short paragraphs (about 600-900 characters): what happened, the key facts (amounts, who, \
-  where, what the companies or authorities said). Only facts from the article; never copy sentences.
+  where, what the companies or authorities said). Only facts from the article; never copy sentences. Don't add
+  a paragraph about what it means for newcomers or Ukrainians: the tips do that.
 - "tips": 3-5 short practical steps for readers, one per line, each starting with "• ". General, widely \
   accepted advice that fits Canada (e.g. turn on purchase approval for children, set spending limits, check \
   statements, who to contact for a refund or complaint). No menu paths, phone numbers, amounts or deadlines \
