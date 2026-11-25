@@ -25,27 +25,6 @@
   "https://esask.uregina.ca/entry/mennonite_settlements.html"
  ],
  "pending": {
-  "8c4f702046": {
-   "card": "AgACAgEAAxkDAAPOawYXTSN-hSTOMsEE7l1meLL5ocMAAl8Oaxto7zFEOmEtEsRgez0BAAMCAAN3AAM9BA",
-   "created": "2026-11-24T23:01:17.768433+00:00",
-   "kind": "news",
-   "lp": {
-    "prefer_large_media": true,
-    "url": "https://www.cbc.ca/news/canada/british-columbia/trio-sentenced-fort-st-john-manslaughter-9.7433959?cmp=rss"
-   },
-   "msgs": [
-    [
-     "7bb2c834ae",
-     204
-    ],
-    [
-     "74c991a120",
-     205
-    ]
-   ],
-   "text": "<b>⚖️ Троє чоловіків отримали вироки за смерть українського іммігранта у Форт-Сент-Джоні</b>\n\nУ канадській провінції Британська Колумбія завершилися слухання у справі про смерть українського іммігранта в місті Форт-Сент-Джон (Fort St. John). Востаннє вирок почули 38-річний Кетлін Дарсі Кота (Katlin Darcy Cota): у понеділок його засудили до 49 місяців ув'язнення. З урахуванням часу, який він уже провів під вартою, йому залишилося відбути два роки і десять днів.\n\nРаніше цього року вироки отримали його співобвинувачені. Дайлон Джон Кейзес (Dyllon John Cazes), 33 роки, має відбути майже два роки і місяць, Ітан Джозеф Чарльз Дор (Ethan Joseph Charles Dore), 26 років, — близько року і восьми місяців. Ці терміни визначено після зарахування часу під вартою. Усіх трьох визнали винними в ненавмисному вбивстві. Про загиблого в суді сказали лише те, що він іммігрував з України.\n\nУсе сталося ввечері 24 червня 2025 року на парковці навпроти притулку Армії порятунку. Спершу після конфронтації Кота і чоловік побилися на кулаках. Потім усі троє обвинувачених били потерпілого, доки він не впав. Один з них ударив його ногою по голові. Чоловік помер на місці невдовзі після прибуття Канадської королівської кінної поліції (RCMP) та швидкої.\n\nПричиною смерті став серцевий напад. Проте суддя Майкл Теммен (Michael Tammen) зазначив, що напад обвинувачених був принаймні однією з причин смерті, тому кваліфікація злочину як ненавмисного вбивства лишилася в силі.\n\nКота визнав провину й висловив жаль. Суддя взяв до уваги його шизофренію, залежність від психоактивних речовин і те, що в день злочину він вживав крек. Також суддя врахував, що Кота виріс у родині, де зловживали алкоголем, і був відірваний від своєї спадщини метисів. Теммен погодився з пропозицією щодо покарання, яку спільно подали прокуратура й захист.\n\n🔗 Джерело: <a href=\"https://www.cbc.ca/news/canada/british-columbia/trio-sentenced-fort-st-john-manslaughter-9.7433959?cmp=rss\">CBC British Columbia</a>",
-   "url": "https://www.cbc.ca/news/canada/british-columbia/trio-sentenced-fort-st-john-manslaughter-9.7433959?cmp=rss"
-  },
   "ade7612b30": {
    "card": "AgACAgEAAxkDAAPCawW8YUbI1FdFEcUjdwoKxbYg8OAAAiIOaxto7zFEtad8QhOsKF4BAAMCAAN3AAM9BA",
    "created": "2026-11-24T16:33:13.397661+00:00",
@@ -1114,6 +1093,6 @@
   "https://www.ukrinform.net/rubric-society/4188187-kyiv-appeals-court-upholds-detention-of-woman-accused-of-posing-as-paramedic-during-clashes-at-national-guard-facility.html": "2026-11-24T17:00:52.610429+00:00",
   "https://www.ukrinform.net/rubric-society/4188210-poll-53-of-germans-oppose-continued-military-aid-to-ukraine.html": "2026-11-24T20:00:42.718454+00:00"
  },
- "tg_offset": 17524631,
+ "tg_offset": 17524632,
  "thisday_last": "person"
 }
