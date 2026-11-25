@@ -175,8 +175,10 @@ def parse_feed(xml_bytes, source):
     return out
 
 
-def fetch_news(seen, max_age_hours=None, limit=220):
-    """Recent items from all feeds that aren't in `seen`, newest first, each tagged with its region."""
+def fetch_news(seen, max_age_hours=None, limit=220, per_feed=None):
+    """Recent items from all feeds that aren't in `seen`, newest first, each tagged with its region.
+    per_feed: how many of each feed's newest items to take (default ITEMS_PER_FEED)."""
+    per_feed = per_feed or config.ITEMS_PER_FEED
     cutoff = now() - timedelta(hours=max_age_hours or config.MAX_AGE_HOURS)
     items, urls = [], set()
     for name, url, region in config.FEEDS:
@@ -191,7 +193,7 @@ def fetch_news(seen, max_age_hours=None, limit=220):
         for it in got:
             community = region not in config.NOT_COMMUNITY_REGIONS and any(
                 w in it["title"] + " " + it["summary"] for w in config.COMMUNITY_WORDS)
-            if taken >= config.ITEMS_PER_FEED and not community:
+            if taken >= per_feed and not community:
                 continue
             if it["url"] in seen or it["url"] in urls:
                 continue
@@ -875,13 +877,28 @@ def outlet(source):
 
 
 
+def _digest_ids(digest, items):
+    """The item ids the digest draft uses (the copy editor only needs those stories, not all of them)."""
+    ids = set()
+    for part in ("national", "community", "today"):
+        ids |= {e.get("id") for e in digest.get(part, []) if isinstance(e, dict)}
+    for reg in digest.get("regions", []):
+        ids |= {e.get("id") for e in reg.get("items", []) if isinstance(e, dict)}
+    return sorted(i for i in ids if isinstance(i, int) and 0 <= i < len(items))
+
+
 def cmd_digest():
     if not ADMIN_IDS:
         sys.exit("TELEGRAM_ADMIN_ID is not set")
     s = load_state()
     s.setdefault("digest_regions", {})
     d = now().astimezone(LOCAL)
-    items = [it for it in fetch_news({}, max_age_hours=36, limit=240) if it["region"] not in config.DIGEST_EXCLUDE_REGIONS]
+    # Everything the feeds published since yesterday 00:00 local time (straight from the outlets' feeds, not
+    # from the channel), all items per feed, so a busy evening can't push yesterday's main stories out
+    since = d.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    hours = (now() - since).total_seconds() / 3600
+    items = [it for it in fetch_news({}, max_age_hours=hours, limit=config.DIGEST_MAX_ITEMS, per_feed=100)
+             if it["region"] not in config.DIGEST_EXCLUDE_REGIONS]
     print(f"{len(items)} items for the digest")
     if len(items) < 5:
         return save_state(s)
@@ -897,7 +914,8 @@ def cmd_digest():
         sys.exit("Could not write the digest")
     edited = _json(ask_claude(EDIT_PROMPT.format(
         draft=json.dumps(digest, ensure_ascii=False), title="Daily news digest", summary="",
-        article="\n".join(f"{it['title']} — {it['summary']}" for it in items)), schema=SCHEMA_DIGEST), "{", "}")
+        article="\n".join(f"[{i}] {items[i]['title']} — {items[i]['summary']}" for i in _digest_ids(digest, items))),
+        schema=SCHEMA_DIGEST), "{", "}")
     if isinstance(edited, dict) and edited.get("national"):
         digest = edited
 

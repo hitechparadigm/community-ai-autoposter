@@ -148,6 +148,7 @@ AUTO_PUBLISH = {
 AUTO_PUBLISH_AFTER_MINUTES = 60
 
 # Daily digest (python bot.py digest): top national news plus 3-4 provinces/territories, rotating
+DIGEST_MAX_ITEMS = 700        # stories the digest considers (all feeds, since yesterday 00:00)
 DIGEST_NATIONAL = "3-5"
 DIGEST_REGIONS = "3-4"
 
