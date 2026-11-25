@@ -58,11 +58,13 @@ people). Pick such a story whenever there is one, including incidents such as va
 church, which count as community news, not routine crime. Then pick what matters most to this audience: immigration, \
 status and permits, CUAET, government programs and benefits, cost of living, housing, jobs, \
 Canada-Ukraine relations, Canadian support for Ukraine, Ukrainian community life in Canada, \
+practical consumer and family stories people learn from (scams, surprise charges and refunds, children's \
+spending or safety online, banking, phones and internet, rights as a tenant or customer), \
 or major national news everyone in Canada is talking about. Skip routine crime, celebrity and sports stories. \
 Items are tagged with their region. A regional story qualifies when it matters to people living there \
 (Ukrainians live in every province); vary regions over the day rather than always picking Ontario. \
 Several outlets often cover the same story: never pick two items about the same story, and when \
-several cover it, prefer the outlet other than CBC (CBC dominates the list). \
+several cover it, prefer a less used outlet (CBC dominates the list; also use Global News and CTV News). \
 Pick fewer, or none, if nothing is relevant.
 
 Reply with JSON only: a list of the chosen item ids, most important first, e.g. [4, 17]

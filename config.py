@@ -46,15 +46,20 @@ LABELS = {
 # Its sister Postmedia papers below (Vancouver Sun, Calgary Herald, ...) work.
 FEEDS = [
     # National
+    ("CTV News", "https://www.ctvnews.ca/arc/outboundfeeds/rss/category/canada/?outputType=xml", "Canada"),
+    ("CTV News Politics", "https://www.ctvnews.ca/arc/outboundfeeds/rss/category/politics/?outputType=xml", "Canada"),
     ("CBC News", "https://www.cbc.ca/webfeed/rss/rss-canada", "Canada"),
     ("CBC Politics", "https://www.cbc.ca/webfeed/rss/rss-politics", "Canada"),
     ("Global News", "https://globalnews.ca/canada/feed/", "Canada"),
     ("Global News Politics", "https://globalnews.ca/politics/feed/", "Canada"),
     # British Columbia
+    ("CTV News Vancouver", "https://www.ctvnews.ca/arc/outboundfeeds/rss/category/vancouver/?outputType=xml", "British Columbia"),
     ("CBC British Columbia", "https://www.cbc.ca/webfeed/rss/rss-canada-britishcolumbia", "British Columbia"),
     ("Global News BC", "https://globalnews.ca/bc/feed/", "British Columbia"),
     ("Vancouver Sun", "https://vancouversun.com/feed/", "British Columbia"),
     # Alberta
+    ("CTV News Calgary", "https://www.ctvnews.ca/arc/outboundfeeds/rss/category/calgary/?outputType=xml", "Alberta"),
+    ("CTV News Edmonton", "https://www.ctvnews.ca/arc/outboundfeeds/rss/category/edmonton/?outputType=xml", "Alberta"),
     ("CBC Calgary", "https://www.cbc.ca/webfeed/rss/rss-canada-calgary", "Alberta"),
     ("CBC Edmonton", "https://www.cbc.ca/webfeed/rss/rss-canada-edmonton", "Alberta"),
     ("Global News Calgary", "https://globalnews.ca/calgary/feed/", "Alberta"),
@@ -62,13 +67,18 @@ FEEDS = [
     ("Calgary Herald", "https://calgaryherald.com/feed/", "Alberta"),
     ("Edmonton Journal", "https://edmontonjournal.com/feed/", "Alberta"),
     # Saskatchewan
+    ("CTV News Regina", "https://www.ctvnews.ca/arc/outboundfeeds/rss/category/regina/?outputType=xml", "Saskatchewan"),
+    ("CTV News Saskatoon", "https://www.ctvnews.ca/arc/outboundfeeds/rss/category/saskatoon/?outputType=xml", "Saskatchewan"),
     ("CBC Saskatchewan", "https://www.cbc.ca/webfeed/rss/rss-canada-saskatchewan", "Saskatchewan"),
     ("Global News Regina", "https://globalnews.ca/regina/feed/", "Saskatchewan"),
     ("Global News Saskatoon", "https://globalnews.ca/saskatoon/feed/", "Saskatchewan"),
     # Manitoba
+    ("CTV News Winnipeg", "https://www.ctvnews.ca/arc/outboundfeeds/rss/category/winnipeg/?outputType=xml", "Manitoba"),
     ("CBC Manitoba", "https://www.cbc.ca/webfeed/rss/rss-canada-manitoba", "Manitoba"),
     ("Global News Winnipeg", "https://globalnews.ca/winnipeg/feed/", "Manitoba"),
     # Ontario
+    ("CTV News Toronto", "https://www.ctvnews.ca/arc/outboundfeeds/rss/category/toronto/?outputType=xml", "Ontario"),
+    ("CTV News Ottawa", "https://www.ctvnews.ca/arc/outboundfeeds/rss/category/ottawa/?outputType=xml", "Ontario"),
     ("CBC Toronto", "https://www.cbc.ca/webfeed/rss/rss-canada-toronto", "Ontario"),
     ("CBC Ottawa", "https://www.cbc.ca/webfeed/rss/rss-canada-ottawa", "Ontario"),
     ("Global News Toronto", "https://globalnews.ca/toronto/feed/", "Ontario"),
@@ -76,9 +86,11 @@ FEEDS = [
     ("Ottawa Citizen", "https://ottawacitizen.com/feed/", "Ontario"),
     ("Toronto Sun", "https://torontosun.com/feed/", "Ontario"),
     # Quebec
+    ("CTV News Montreal", "https://www.ctvnews.ca/arc/outboundfeeds/rss/category/montreal/?outputType=xml", "Quebec"),
     ("CBC Montreal", "https://www.cbc.ca/webfeed/rss/rss-canada-montreal", "Quebec"),
     ("Global News Montreal", "https://globalnews.ca/montreal/feed/", "Quebec"),
     # Atlantic
+    ("CTV News Atlantic", "https://www.ctvnews.ca/arc/outboundfeeds/rss/category/atlantic/?outputType=xml", "Nova Scotia"),
     ("CBC New Brunswick", "https://www.cbc.ca/webfeed/rss/rss-canada-newbrunswick", "New Brunswick"),
     ("Global News New Brunswick", "https://globalnews.ca/new-brunswick/feed/", "New Brunswick"),
     ("CBC Nova Scotia", "https://www.cbc.ca/webfeed/rss/rss-canada-novascotia", "Nova Scotia"),
@@ -101,7 +113,7 @@ NOT_COMMUNITY_REGIONS = ("Ukraine",)
 DIGEST_EXCLUDE_REGIONS = ("Ukraine",)
 
 # Outlet names used in "sources" lines: feed names starting with these are shortened to them
-OUTLET_PREFIXES = ("CBC", "Global News")
+OUTLET_PREFIXES = ("CBC", "Global News", "CTV News")
 # Tracking bits removed from links in Facebook posts
 STRIP_FROM_LINKS = ("?cmp=rss",)
 

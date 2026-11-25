@@ -11,7 +11,7 @@ Any other community can run its own channel by changing two settings files (see
 
 ### What it does
 
-- **News, 5 times a day.** Reads 30+ Canadian feeds (CBC and Global News for every province and territory,
+- **News, 5 times a day.** Reads ~50 Canadian feeds (CBC, Global News and CTV News for every province and territory,
   Postmedia papers, Ukrainian-Canadian outlets), puts Ukrainian-community stories first, and writes a short,
   self-contained post in Ukrainian from the full article.
 - **Morning digest.** Yesterday's key national stories, rotating provincial highlights, community news and
@@ -75,7 +75,7 @@ Telegraph API · Facebook Graph API · RSS/Atom
 flowchart LR
     T["⏱ cron-job.org<br/>every 5 min<br/>(+ GitHub schedule as backup)"]
     subgraph Sources
-        N["News feeds<br/>CBC · Global News · Postmedia<br/>New Pathway · UCC Manitoba"]
+        N["News feeds<br/>CBC · Global News · CTV · Postmedia<br/>New Pathway · UCC Manitoba"]
         H["History sources<br/>CBC Archives · LAC · DCB<br/>provincial sites · Wikipedia"]
     end
     subgraph GH["GitHub Actions"]
@@ -144,7 +144,7 @@ sequenceDiagram
 | Preview Facebook cards | `cards.yml` | Draw the sample cards in `samples/cards.json` and send them to the approvers |
 | Draft from your own text | `post.yml` | Your own text (and optional source link) as a draft with its Facebook card; publish it with ✅ |
 | Edit a published post | `edit.yml` | Replace the text of a channel post (link, new text, optional source link) |
-| Check connections | `check.yml` | Test the Telegram and Facebook tokens without posting (shows the page name and when the Facebook token expires) |
+| Check connections | `check.yml` | Test the Telegram and Facebook tokens and every news feed without posting; optionally try new feeds (`Name|URL`) |
 
 All of them except Tick are for running something by hand: Actions → pick it → Run workflow.
 
@@ -177,7 +177,7 @@ top priority: churches, organizations, events, newcomers, incidents such as vand
 stories from 3-4 provinces or territories (rotating so every region is featured over the week);
 "🇺🇦 Українська громада" when there is community news; "📌 Сьогодні": up to 3 things the news says happen
 today (left out when there are none). A key phrase in each item links to the source, outlets are mixed
-(CBC, Global News, Postmedia papers), and it ends with "За матеріалами: ..." and a referral link.
+(CBC, Global News, CTV News, Postmedia papers), and it ends with "За матеріалами: ..." and a referral link.
 
 **History long-reads.** Written as Telegraph articles (telegra.ph, open inside Telegram with Instant View),
 with photo, subheadings and the source credited at the end. The channel gets a teaser with one bold

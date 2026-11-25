@@ -175,7 +175,7 @@ def parse_feed(xml_bytes, source):
     return out
 
 
-def fetch_news(seen, max_age_hours=None, limit=150):
+def fetch_news(seen, max_age_hours=None, limit=220):
     """Recent items from all feeds that aren't in `seen`, newest first, each tagged with its region."""
     cutoff = now() - timedelta(hours=max_age_hours or config.MAX_AGE_HOURS)
     items, urls = [], set()
@@ -867,7 +867,7 @@ def cmd_digest():
     s = load_state()
     s.setdefault("digest_regions", {})
     d = now().astimezone(LOCAL)
-    items = [it for it in fetch_news({}, max_age_hours=36, limit=180) if it["region"] not in config.DIGEST_EXCLUDE_REGIONS]
+    items = [it for it in fetch_news({}, max_age_hours=36, limit=240) if it["region"] not in config.DIGEST_EXCLUDE_REGIONS]
     print(f"{len(items)} items for the digest")
     if len(items) < 5:
         return save_state(s)
