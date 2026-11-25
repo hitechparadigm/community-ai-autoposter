@@ -320,10 +320,10 @@ TIPS_WRITE_PROMPT = AUDIENCE + "\n\n" + STYLE + """
 Write a "Варто знати" post in Ukrainian: a real story readers can learn from, then what they can do.
 
 - "title": a short headline, at most 12 words
-- "body": 2-3 short paragraphs (about 600-900 characters): what happened, the key facts (amounts, who, \
-  where, what the companies or authorities said). Only facts from the article; never copy sentences. Don't add
+- "body": keep it short: 2 short paragraphs (about 400-600 characters): what happened and the key facts \
+  (amounts, who, where, what the companies or authorities said). Only facts from the article; never copy sentences. Don't add
   a paragraph about what it means for newcomers or Ukrainians: the tips do that.
-- "tips": 3-5 short practical steps for readers, one per line, each starting with "• ". General, widely \
+- "tips": 3-4 short practical steps for readers (one line each), each starting with "• ". General, widely \
   accepted advice that fits Canada (e.g. turn on purchase approval for children, set spending limits, check \
   statements, who to contact for a refund or complaint). No menu paths, phone numbers, amounts or deadlines \
   unless the article gives them. No moralizing.
@@ -342,8 +342,8 @@ Article text:
 TIPS_CHECK = """You are the editor of a Ukrainian channel for Ukrainians in Canada. Below are practical tips that \
 follow a news story. Check every tip: it must be accurate for Canada, safe, widely accepted advice, and contain \
 no invented specifics (menu paths, phone numbers, amounts, deadlines, company policies stated as fact). Remove \
-or rewrite any tip that fails. Fix the Ukrainian (literary, no russianisms or calques). Keep 3-5 tips, one per \
-line, each starting with "• ". Return the corrected tips.
+or rewrite any tip that fails. Fix the Ukrainian (literary, no russianisms or calques). Keep 3-4 tips, one per \
+line, each starting with "• ", one short line each. Return the corrected tips.
 
 """ + STYLE + """
 
