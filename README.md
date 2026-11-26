@@ -86,16 +86,16 @@ flowchart LR
         H["History sources<br/>CBC Archives · LAC · DCB<br/>provincial sites · Wikipedia"]
     end
     subgraph GH["GitHub Actions"]
-        K["tick.yml → bot.py tick<br/>runs what's due by SCHEDULE<br/>(local time, catches up late runs)"]
-        D["draft · digest · thisday · history"]
-        P["publish approved posts"]
+        K["tick.yml → autoposter (cli)<br/>runs what's due by SCHEDULE<br/>(local time, catches up late runs)"]
+        D["news · Варто знати · digest<br/>this day · history · monthly review"]
+        P["approvals: taps, feedback,<br/>ideas → publish"]
         S[("state.json in a private<br/>-state repo: seen stories,<br/>drafts, learning log")]
     end
-    C["Claude API<br/>pick → write → copy-edit<br/>→ review (fix or flag)"]
+    C["Claude API<br/>pick → write → copy-edit<br/>→ review (fix or flag)<br/>+ glossary, editorial notes"]
     TG["Telegraph<br/>long-read articles"]
     A["Approvers in Telegram<br/>✅ Publish / ❌ Skip"]
     CH["Telegram channel<br/>@UkrainianCanada"]
-    FB["Facebook Page<br/>(optional)"]
+    FB["Facebook Page (optional)<br/>card + full text,<br/>links in first comment"]
 
     T -- "workflow_dispatch" --> K
     K --> D
@@ -106,7 +106,9 @@ flowchart LR
     D --> TG
     D -- draft --> A
     D <--> S
-    A -- tap --> P
+    A -- "tap · reply · idea" --> P
+    CH -. "reactions, comments" .-> S
+    FB -. "reactions, comments" .-> D
     P <--> S
     P --> CH
     P --> FB
@@ -131,7 +133,7 @@ sequenceDiagram
     GA->>Cl: review against the source, fix if needed
     Note over GA: reject cut-off or garbled text, retry
     GA->>Ap: draft with ✅ / ❌
-    Ap-->>GA: tap ✅ (waits in Telegram)
+    Ap-->>GA: tap ✅, or reply with feedback (→ rewritten draft)
     Tm->>GA: next tick (≤ 5 min)
     GA->>Ch: publish
     GA->>Ap: mark draft "✅ Published by …"
