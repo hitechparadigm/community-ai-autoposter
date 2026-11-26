@@ -15,7 +15,8 @@ STYLE = """Language standard: literary Ukrainian at the level of a professional 
 and bureaucratic wording.
 - No russianisms or surzhyk. Examples of errors: "приймати участь" (correct: брати участь), "на протязі" \
 (протягом), "являється" (є), "слідуючий" (наступний), "в якості" (як), "співпадати" (збігатися), \
-"міроприємство" (захід), "згідно закону" (згідно із законом), "вірно" in the sense of correct (правильно).
+"міроприємство" (захід), "згідно закону" (згідно із законом), "вірно" in the sense of correct (правильно), \
+"скромний дохід" (невисокий дохід), "погана охота до їжі" (поганий апетит).
 - Check every word's meaning: "прибульці" means aliens from space; newcomers are "новоприбулі", \
 "новоприбулі українці", "ті, хто нещодавно приїхав".
 - Canadian terms: IRCC = Міністерство імміграції, біженців і громадянства Канади (IRCC); permanent residence = \
@@ -45,7 +46,8 @@ names like Торонто or Оттава need no brackets. Use feminine job tit
 - No repetition: every sentence and paragraph adds something new. Don't restate the same fact in other words,
   don't repeat the title or teaser in the body, don't repeat the person's full name in every sentence (use
   "він", "дослідник", the surname), vary how sentences and paragraphs begin, and don't end with a summary of
-  what was already said.
+  what was already said. After an institution's first mention, use a short form (CRA, міністерство, агенція),
+  not the full name with brackets again.
 - Never write about the writing process or the sources: no "розповідаємо", "у цій статті", "нам не вдалося
   з'ясувати", "джерело не уточнює", "достеменно невідомо, бо в тексті немає". If the source doesn't give a
   detail, simply leave it out. If historians genuinely disagree or a record is lost, say it as a historical
@@ -262,7 +264,7 @@ Check:
 3. Repetition: no fact or phrase repeated (also between teaser and body); no padding with unrelated background.
 4. No remarks about the writing or the sources ("розповідаємо", "не вдалося з'ясувати", "джерело не уточнює"),
    no forced moral at the end.
-5. Complete: nothing cut off mid-sentence; the title and teaser match the body.
+5. Complete: nothing cut off mid-sentence; the title and teaser match the body; the title has at most 12 words.
 6. Language: natural literary Ukrainian, no russianisms, calques, wrong word choice or broken words.
 
 Reply with JSON only:
@@ -323,12 +325,14 @@ Write a "Варто знати" post in Ukrainian: a real story readers can lear
 
 - "title": a short headline, at most 12 words
 - "body": keep it short: 2 short paragraphs (about 400-600 characters): what happened and the key facts \
-  (amounts, who, where, what the companies or authorities said). Only facts from the article; never copy sentences. Don't add
-  a paragraph about what it means for newcomers or Ukrainians: the tips do that.
-- "tips": 3-4 short practical steps for readers (one line each), each starting with "• ". General, widely \
-  accepted advice that fits Canada (e.g. turn on purchase approval for children, set spending limits, check \
-  statements, who to contact for a refund or complaint). No menu paths, phone numbers, amounts or deadlines \
-  unless the article gives them. No moralizing.
+  (amounts, who, where, what the companies or authorities said). Only facts from the article; never copy sentences. \
+  Put no advice or instructions in the body (what to do, whom to call, where to return something): all of that \
+  goes in the tips. Don't add a paragraph about what it means for newcomers or Ukrainians: the tips do that.
+- "tips": 3-4 short practical steps for readers (one line each), each starting with "• ". This is the only \
+  place for what readers should do: the article's own instructions (deadlines, whom to call, what to return) \
+  plus general, widely accepted advice that fits Canada (e.g. turn on purchase approval for children, set \
+  spending limits, check statements). Each tip says something the body doesn't. No menu paths, website \
+  sections or lists, phone numbers, amounts or deadlines unless the article gives them. No moralizing.
 - "image_query" and "emoji" as for news: a place or object for the photo (never a person), one topic emoji.
 
 Reply with JSON only: {{"title": "...", "body": "...", "tips": "...", "image_query": "...", "emoji": "..."}}
@@ -343,8 +347,9 @@ Article text:
 # Checks the practical tips of a "Варто знати" post (general advice, not facts from the article)
 TIPS_CHECK = """You are the editor of a Ukrainian channel for Ukrainians in Canada. Below are practical tips that \
 follow a news story. Check every tip: it must be accurate for Canada, safe, widely accepted advice, and contain \
-no invented specifics (menu paths, phone numbers, amounts, deadlines, company policies stated as fact). Remove \
-or rewrite any tip that fails. Fix the Ukrainian (literary, no russianisms or calques). Keep 3-4 tips, one per \
+no invented specifics (menu paths, websites or lists on them, phone numbers, amounts, deadlines, company policies \
+stated as fact) unless the story gives them. A tip must not repeat a sentence or fact the story already states \
+as is: turn it into a step the reader takes, or drop it. Remove or rewrite any tip that fails. Fix the Ukrainian (literary, no russianisms or calques). Keep 3-4 tips, one per \
 line, each starting with "• ", one short line each. Return the corrected tips.
 
 """ + STYLE + """
@@ -422,6 +427,10 @@ automated evaluation. Read the source text (given above) and the post, then scor
 - language: natural literary Ukrainian, as written by a professional editor; no russianisms, calques,
   surzhyk, wrong word choice or English sentence structure (5 = publication-ready; 1 = reads like a machine translation)
 - usefulness: tells this audience what happened and why it matters to them, clearly and without padding or repetition
+
+A "Що можна зробити" (what to do) list may add general, widely accepted advice that isn't in the source: judge it
+for being correct and safe in Canada, and count any invented specific (a website section or list, a menu path,
+a phone number, an amount or a deadline not in the source) as an accuracy problem.
 
 Be strict: give 5 only when you would publish the post unchanged. In "notes", name each problem briefly (in English).
 
