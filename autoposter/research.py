@@ -61,12 +61,15 @@ def _read(topic, found, n):
     listing = "\n".join(f"[{i}] {it['source']} | {it['url'][:90]} | {it['title']} | {it['summary'][:160]}"
                         for i, it in enumerate(found))
     picks = parse_picks(ask_claude(RESEARCH_PICK_PROMPT.format(topic=topic, n=n, results=listing), schema=SCHEMA_IDS))
+    print("Picked: " + ", ".join(found[i]["url"] for i in picks if 0 <= i < len(found)))
     out = []
     for it in [found[i] for i in picks if 0 <= i < len(found)][:n + 2]:  # a couple spare, in case pages fail
         text = fetch_article(_readable(it["url"]), 7000)
         if len(text) >= 600:
             out.append((it["source"], it["url"], text))
             print(f"Source: {it['source']} {it['url']} ({len(text)} characters)")
+        else:
+            print(f"Skipped (only {len(text)} characters of text): {it['url']}")
         if len(out) >= n:
             break
     return out
