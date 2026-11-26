@@ -79,7 +79,7 @@
   .withphoto .bottom { position: relative; left: auto; right: auto; bottom: auto; background: var(--dark);
                        padding: 8px 64px 56px; }
   .withphoto .tag { margin-bottom: 22px; }
-  .withphoto h1 { font-size: 58px; text-shadow: none; }
+  .withphoto h1 { font-size: 72px; text-shadow: none; }  /* the starting size: long headlines shrink to fit */
   .withphoto .footer { margin-top: 34px; padding-top: 24px; }
   .withphoto .bigdate { font-size: 88px; display: flex; align-items: baseline; gap: 22px; margin-bottom: 18px; }
   .withphoto .bigdate small { display: inline; font-size: 48px; margin: 0; }
@@ -115,7 +115,9 @@
     const pic = document.querySelector('.withphoto .pic');
     const tooBig = () => nophoto ? main.scrollHeight > main.clientHeight + 1
                                  : pic.getBoundingClientRect().height < 720;
-    while (tooBig() && size > 34) {
+    // with a photo, a long headline also shrinks (down to 58px) until it takes at most four lines
+    const tooLong = () => !nophoto && size > 58 && h1.offsetHeight > size * 1.12 * 4 + 2;
+    while ((tooBig() || tooLong()) && size > 34) {
       size -= 2; h1.style.fontSize = size + 'px';
       if (liSize > 26) { liSize -= 1; li.forEach(x => x.style.fontSize = liSize + 'px'); }
     }
