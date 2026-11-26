@@ -236,7 +236,7 @@ separate check keeps accurate and free of invented details.
 **On Facebook.** The full text (no links: Meta blocks Canadian news links), sources named in plain text, a
 picture card, and the Telegram and Telegraph links in an automatic first comment.
 
-**Morning digest** ("🗞 Головне за вчора"): the 3-5 most important national stories from yesterday; 1-2
+**Morning digest** ("🗞 Головне в Канаді за вчора"): the 3-5 most important national stories from yesterday; 1-2
 stories from 3-4 provinces or territories (rotating so every region is featured over the week);
 "🇺🇦 Українська громада" when there is community news; "📌 Сьогодні": up to 3 things the news says happen
 today (left out when there are none). A key phrase in each item links to the source, outlets are mixed
