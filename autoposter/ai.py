@@ -48,7 +48,8 @@ SCHEMA_REFERRAL = {"type": "object", "properties": {"id": {"type": ["integer", "
 
 
 _ITEMS = {"type": "array", "items": {"type": "object", "properties": {
-    "id": {"type": "integer"}, "text": {"type": "string"}}, "required": ["id", "text"]}}
+    "id": {"type": "integer"}, "text": {"type": "string"}, "short": {"type": "string"}},
+    "required": ["id", "text"]}}
 
 
 SCHEMA_DIGEST = {"type": "object", "properties": {

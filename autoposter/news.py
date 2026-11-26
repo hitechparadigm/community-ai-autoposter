@@ -125,6 +125,17 @@ def _digest_ids(digest, items):
     return sorted(i for i in ids if isinstance(i, int) and 0 <= i < len(items))
 
 
+def card_line(entry, limit=110):
+    """A digest item for the picture card as a complete sentence: Claude's short version, else the item's first
+    sentence if it fits, else the text cut at a word (with "…") as a last resort."""
+    for h in (entry.get("short", ""), re.split(r"(?<=[.!?])\s+", entry.get("text", ""))[0]):
+        h = re.sub(r"[\[\]]", "", h or "").strip()
+        if h and len(h) <= limit:
+            return h
+    h = re.sub(r"[\[\]]", "", entry.get("text", "")).strip()
+    return h if len(h) <= limit else h[:limit - 3].rsplit(" ", 1)[0] + "…"
+
+
 def cmd_digest():
     """The morning digest: everything the feeds published since yesterday, grouped by Claude into national
     news, a few rotating regions, the community and today's events; each item links to its outlet."""
@@ -242,9 +253,8 @@ def cmd_digest():
         top = ""
     key = f"digest:{d:%Y-%m-%d}"
     n = config.CARD.get("digest_items", 4)
-    heads = [re.sub(r"[\[\]]", "", x.get("text", "")).strip() for x in digest["national"][:n]]
     card = {"kind": "digest", "title": config.LABELS["digest_title"], "tag": f"{y.day} {config.MONTHS[y.month - 1]}",
-            "items": [h if len(h) <= 110 else h[:107].rsplit(" ", 1)[0] + "…" for h in heads if h]}
+            "items": [h for h in map(card_line, digest["national"][:n]) if h]}
     if send_draft(s, key, text, now().isoformat(), preview_url=top, kind="digest", card=card):
         print("Digest draft sent")
     save_state(s)

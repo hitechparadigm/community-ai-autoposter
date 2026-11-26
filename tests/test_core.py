@@ -165,5 +165,17 @@ class CommandLine(unittest.TestCase):
         self.assertIn("Usage", str(e.exception))
 
 
+
+
+class DigestCard(unittest.TestCase):
+    def test_card_lines_are_complete_sentences(self):
+        from autoposter.news import card_line
+        self.assertEqual(card_line({"short": "Уряд ухвалив бюджет.", "text": "[Уряд] ухвалив бюджет на 2027 рік."}),
+                         "Уряд ухвалив бюджет.")
+        long_first = "Оттава домовилася з Катаром про консульські послуги. " + "Деталі " * 30
+        self.assertEqual(card_line({"text": long_first}), "Оттава домовилася з Катаром про консульські послуги.")
+        self.assertTrue(card_line({"text": "слово " * 40}).endswith("…"))
+
+
 if __name__ == "__main__":
     unittest.main()

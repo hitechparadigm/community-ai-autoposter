@@ -157,13 +157,15 @@ Never guess. If there is nothing, return an empty list.
 - For each item, "text": 1-2 sentences (at most 220 characters) saying what happened and why it matters. \
 Use only facts in the headline and summary. Put square brackets around ONE key phrase of 2-5 words in each \
 text (e.g. "Партія [обрала нового лідера] ..."); that phrase becomes the link to the source article.
+- For each "national" item also "short": the same story as ONE complete sentence of at most 80 characters, \
+without brackets (it goes on a picture card, so it must read as a finished sentence, never cut off).
 - Several outlets often cover the same story: use the story once. Use a mix of outlets across the digest \
 (CBC, Global News, Postmedia papers such as Vancouver Sun, Calgary Herald, Ottawa Citizen): when several \
 outlets cover a story, choose the one used least so far in this digest.
 - Skip routine crime, celebrity and sports stories unless they are major.
 
 Reply with JSON only:
-{{"national": [{{"id": 0, "text": "... [key phrase] ..."}}],
+{{"national": [{{"id": 0, "text": "... [key phrase] ...", "short": "..."}}],
   "regions": [{{"region": "Манітоба", "region_en": "Manitoba", "items": [{{"id": 5, "text": "..."}}]}}],
   "community": [{{"id": 9, "text": "..."}}],
   "today": [{{"id": 7, "text": "..."}}]}}
