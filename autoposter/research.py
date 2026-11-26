@@ -4,15 +4,16 @@ and the list of sources), checked by the same copy editor and reviewer as every 
 import hashlib
 import html
 import json
+import re
 import urllib.parse
 
 from community import config
 from community.prompts import (EDIT_PROMPT, RESEARCH_COVERAGE_PROMPT, RESEARCH_PICK_PROMPT, RESEARCH_QUERIES_PROMPT,
-                               RESEARCH_WRITE_PROMPT)
+                               RESEARCH_SEARCH_PROMPT, RESEARCH_WRITE_PROMPT)
 
 from .core import now
-from .sources import commons_image, fetch_article, split_queries, web_search
-from .ai import (SCHEMA_IDS, SOURCE_REF, _json, ask_claude, edit_ok, parse_picks, parse_post, review_note,
+from .sources import commons_image, fetch_article, outlet_name, split_queries, web_search
+from .ai import (SCHEMA_IDS, claude_search, SOURCE_REF, _json, ask_claude, edit_ok, parse_picks, parse_post, review_note,
                  review_post, schema_post, write_long)
 from .channels import fb_long, telegraph, telegraph_nodes
 from .drafts import send_draft
@@ -81,13 +82,50 @@ def _joined(sources):
     return "\n\n".join(f"[{i}] {name} — {url}\n{text}" for i, (name, url, text) in enumerate(sources, 1))
 
 
+def _claude_found(topic, n, seen, missing=""):
+    """Pages Claude found with its own web search, best first, as search results (title, url, source)."""
+    text, results = claude_search(RESEARCH_SEARCH_PROMPT.format(
+        topic=topic, n=n, missing=f"\nThe pages found so far don't cover this: {missing}\n" if missing else ""))
+    titles = {r["url"]: r["title"] for r in results}
+    skip = config.RESEARCH.get("skip_domains", ())
+    found = []
+    for u in re.findall(r"https?://[^\s)\]>]+", text):
+        u = u.rstrip(".,;")
+        if u in seen or any(d in urllib.parse.urlparse(u).netloc for d in skip):
+            continue
+        seen.add(u)
+        found.append({"url": u, "title": titles.get(u, ""), "summary": "", "source": outlet_name(u)})
+    print("Claude picked: " + ", ".join(it["url"] for it in found))
+    return found
+
+
+def _read_pages(found, n):
+    """Read pages in order until n have enough text: [(site, url, text), ...]."""
+    out = []
+    for it in found:
+        text = fetch_article(_readable(it["url"]), 7000)
+        if len(text) >= 600:
+            out.append((it["source"], it["url"], text))
+            print(f"Source: {it['source']} {it['url']} ({len(text)} characters)")
+        else:
+            print(f"Skipped (only {len(text)} characters of text): {it['url']}")
+        if len(out) >= n:
+            break
+    return out
+
+
 def find_sources(topic):
-    """Search the web for the topic and read the best pages; if they don't cover the topic, search again for
-    what is missing (one more round). Returns ([(site, url, text), ...], what is still missing or "")."""
-    r = _json(ask_claude(RESEARCH_QUERIES_PROMPT.format(topic=topic), schema=SCHEMA_QUERIES), "{", "}") or {}
-    queries = [str(q).strip() for q in r.get("queries", []) if str(q).strip()][:6] or [topic]
+    """Find and read pages on the topic: Claude's own web search first (the search feeds in RESEARCH as a
+    fallback); if the pages don't cover the topic, search again for what is missing (one more round).
+    Returns ([(site, url, text), ...], what is still missing or "")."""
     seen, n = set(), config.RESEARCH.get("max_sources", 6)
-    sources = _read(topic, _search(queries, seen), n)
+    found = _claude_found(topic, n + 2, seen)
+    if found:
+        sources = _read_pages(found, n)
+    else:  # web search tool unavailable: search feeds + Claude picks
+        r = _json(ask_claude(RESEARCH_QUERIES_PROMPT.format(topic=topic), schema=SCHEMA_QUERIES), "{", "}") or {}
+        queries = [str(q).strip() for q in r.get("queries", []) if str(q).strip()][:6] or [topic]
+        sources = _read(topic, _search(queries, seen), n)
     missing = ""
     for _ in range(2):  # check coverage; at most one extra search round
         if not sources:
@@ -98,10 +136,16 @@ def find_sources(topic):
             return sources, ""
         missing = str(c.get("missing", "")).strip()
         print(f"Sources don't cover the topic yet: {missing}")
-        more = [str(q).strip() for q in c.get("queries", []) if str(q).strip()][:4]
-        if not more or len(sources) >= n + 3:
+        if len(sources) >= n + 3:
             break
-        sources += _read(topic, _search(more, seen), 3)
+        more = _claude_found(topic, 4, seen, missing)
+        if more:
+            sources += _read_pages(more, 3)
+        else:
+            queries = [str(q).strip() for q in c.get("queries", []) if str(q).strip()][:4]
+            if not queries:
+                break
+            sources += _read(topic, _search(queries, seen), 3)
     return sources, missing
 
 

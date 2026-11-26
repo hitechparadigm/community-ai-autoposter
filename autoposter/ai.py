@@ -177,6 +177,41 @@ HOMOGLYPHS = str.maketrans("aceiopxyACEHIKMOPTXB", "асеіорхуАСЕНІК
 BROKEN_WORD = re.compile(r"[а-яіїєґ][a-z]{3,}|[a-z]{3,}[а-яіїєґ]", re.I)
 
 
+def claude_search(prompt, max_uses=8):
+    """Let Claude search the web itself (Anthropic's web search tool) and answer the prompt.
+    Returns (Claude's final text, [{"url", "title"}, ...] of every search result it saw); ("", []) on failure
+    (for example when web search isn't enabled for the API key's organization)."""
+    if not ANTHROPIC_KEY:
+        sys.exit("ANTHROPIC_API_KEY is not set")
+    messages = [{"role": "user", "content": prompt}]
+    tools = [{"type": "web_search_20250305", "name": "web_search", "max_uses": max_uses}]
+    results, text = [], ""
+    for _ in range(4):  # a long search may pause ("pause_turn"): send the answer back to let it continue
+        try:
+            resp = json.loads(http("https://api.anthropic.com/v1/messages",
+                                   {"model": config.MODEL, "max_tokens": 4000, "messages": messages, "tools": tools},
+                                   {"x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01"}, timeout=300))
+        except Exception as e:
+            print(f"Claude web search failed: {str(e)[:200]}")
+            return "", []
+        u = resp.get("usage", {})
+        _usage["calls"] += 1
+        for k, f in (("input", "input_tokens"), ("cache_read", "cache_read_input_tokens"),
+                     ("cache_write", "cache_creation_input_tokens"), ("output", "output_tokens")):
+            _usage[k] += u.get(f) or 0
+        for b in resp.get("content", []):
+            if b.get("type") == "web_search_tool_result" and isinstance(b.get("content"), list):
+                results += [{"url": r.get("url", ""), "title": r.get("title", "")} for r in b["content"]
+                            if r.get("type") == "web_search_result"]
+            elif b.get("type") == "text":
+                text += b.get("text", "")
+        if resp.get("stop_reason") != "pause_turn":
+            break
+        messages = [messages[0], {"role": "assistant", "content": resp["content"]}]
+    print(f"Claude web search: {len(results)} results seen")
+    return text, results
+
+
 def fix_homoglyphs(text):
     """Replace look-alike Latin letters inside Ukrainian words with the Cyrillic ones."""
     text = re.sub(r"\b\w*[а-яіїєґ]\w*\b",

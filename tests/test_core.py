@@ -220,6 +220,7 @@ class Research(unittest.TestCase):
             return True
 
         with mock.patch.object(research, "ask_claude", lambda *a, **k: next(answers)), \
+                mock.patch.object(research, "claude_search", lambda *a, **k: ("", [])), \
                 mock.patch.object(research, "web_search", lambda q, news=False: [] if news else results), \
                 mock.patch.object(research, "fetch_article", lambda u, limit=0: read.append(u) or "текст " * 200), \
                 mock.patch.object(research, "write_long", lambda *a, **k: dict(post)), \
@@ -241,12 +242,28 @@ class Research(unittest.TestCase):
         pages = iter([[{"url": "https://a.ca/1", "title": "A", "summary": "", "source": "a.ca"}],
                       [{"url": "https://b.ca/2", "title": "B", "summary": "", "source": "b.ca"}]])
         with mock.patch.object(research, "ask_claude", lambda *a, **k: next(answers)), \
+                mock.patch.object(research, "claude_search", lambda *a, **k: ("", [])), \
                 mock.patch.object(research, "web_search", lambda q, news=False: [] if news else next(pages)), \
                 mock.patch.object(research, "fetch_article", lambda u, limit=0: "текст " * 200), \
                 mock.patch.object(research, "write_long", lambda *a, **k: self.fail("must not write")):
             with self.assertRaises(research.NotCovered) as e:
                 research.research_topic({"pending": {}}, "тема")
         self.assertEqual(str(e.exception), "Немає даних про перевірку")
+
+
+class ResearchWithClaudeSearch(unittest.TestCase):
+    def test_pages_claude_lists_are_read_in_order(self):
+        from autoposter import research
+        text = ("https://www.canada.ca/en/security-screening.html — how screening works\n"
+                "https://www.facebook.com/group/1 — a group\nhttps://www.reddit.com/r/ImmigrationCanada/2 — stories")
+        read = []
+        with mock.patch.object(research, "claude_search", lambda *a, **k: (text, [])), \
+                mock.patch.object(research, "fetch_article", lambda u, limit=0: read.append(u) or "текст " * 200), \
+                mock.patch.object(research, "ask_claude", lambda *a, **k: '{"enough": true}'):
+            sources, missing = research.find_sources("тема")
+        self.assertEqual(read, ["https://www.canada.ca/en/security-screening.html",
+                                "https://old.reddit.com/r/ImmigrationCanada/2"])
+        self.assertEqual((len(sources), missing), (2, ""))
 
 
 class CommandLine(unittest.TestCase):

@@ -514,3 +514,15 @@ laws-lois.justice.gc.ca, lawyers' explanations, or forum threads if the editor a
 Reply with JSON only: {{"enough": true or false, "missing": "what is missing, one short sentence in Ukrainian",
 "queries": ["...", "..."]}}
 """
+
+RESEARCH_SEARCH_PROMPT = """An editor of a Ukrainian channel for Ukrainians in Canada asked for an article on this topic
+(their words, often in Ukrainian):
+{topic}
+{missing}
+Search the web to find the best pages to write it from: official Canadian government pages (canada.ca,
+laws-lois.justice.gc.ca, the Immigration and Refugee Board), Federal Court decisions, explanations by immigration
+lawyers or settlement agencies, reputable media, and, if the editor asks for people's experiences, forum threads
+(reddit). Search in English mostly, with short queries. Prefer pages that answer the editor's exact questions.
+
+When done, list the {n} best pages, most useful first, one per line as: URL — what it covers (a few words).
+"""
