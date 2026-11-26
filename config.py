@@ -18,7 +18,10 @@ SCHEDULE = {
     "news": ["09:00", "12:00", "15:00", "18:00", "21:00"],
     "history": ["11:30"],
     "tips": ["19:30"],          # 💡 Варто знати: a practical story with what readers can do
+    "review": ["10:00"],        # 📈 monthly review (runs only on REVIEW_DAY)
 }
+REVIEW_DAY = 1                  # day of the month for the review of feedback and reader reactions
+MAX_EDITORIAL_NOTES = 30        # accepted rules kept for future posts (oldest dropped)
 CATCH_UP_HOURS = 2
 
 # Fixed words in posts, in the channel's language
@@ -44,10 +47,29 @@ LABELS = {
     "feedback_working": "✍️ Переписую за вашим відгуком, нова версія прийде за кілька хвилин.",
     "feedback_done": "Переписано, нова версія нижче",
     "feedback_failed": "Не вдалося переписати. Спробуйте сформулювати інакше або змініть вручну.",
+    "ideas_help": ("Надішліть посилання — я підготую новину. «історія …» (тема або посилання) — довгий текст з "
+                   "історії Канади. «варто знати …» + посилання — практична історія з порадами. Щоб змінити "
+                   "чернетку, відповідайте (Reply) на неї."),
+    "idea_working": "✍️ Готую чернетку, вона прийде за кілька хвилин.",
+    "idea_needs_link": "Для новини потрібне посилання на статтю. Для теми з історії почніть з «історія …».",
+    "idea_failed": "Не вдалося підготувати чернетку з цього джерела. Спробуйте інше посилання.",
+    "count_line": "📊 Сьогодні опубліковано {kind}: {n} з {limit}",
+    "review_title": "Підсумки місяця",
+    "review_rules": "Пропоновані правила для майбутніх дописів:",
+    "review_accept": "Додати правила",
+    "review_reject": "Не додавати",
+    "review_saved": "Правила додано",
+    "review_dropped": "Правила не додано",
     "auto_publish_note": "Опублікується автоматично о {time}, якщо не натиснути ❌",
     "unpublished": "Матеріал не опубліковано",
     "review_warning": "Перевірка знайшла проблеми, перегляньте уважно",
 }
+
+# Daily limits shown on drafts ("📊 Сьогодні опубліковано новин: 4 з 5"); you may still publish more.
+# A kind not listed here uses the number of its times in SCHEDULE.
+DAILY_LIMITS = {"news": 5}
+KIND_NAMES = {"news": "новин", "tips": "«Варто знати»", "digest": "дайджестів", "thisday": "«Цей день»",
+              "history": "історій"}
 
 # News sources: (display name, RSS/Atom feed URL, region)
 # If a feed stops working, the run log shows "FEED ERROR" and the rest still run.

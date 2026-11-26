@@ -148,6 +148,7 @@ sequenceDiagram
 | Preview Facebook cards | `cards.yml` | Draw the sample cards in `samples/cards.json` and send them to the approvers |
 | Draft from your own text | `post.yml` | Your own text (and optional source link) as a draft with its Facebook card; publish it with ✅ |
 | Edit a published post | `edit.yml` | Replace the text of a channel post (link, new text, optional source link) |
+| Monthly review | `review.yml` | Report on the last month and proposed rules (runs by itself on the 1st) |
 | Check connections | `check.yml` | Test the Telegram and Facebook tokens and every news feed without posting; optionally try new feeds |
 
 All of them except Tick are for running something by hand: Actions → pick it → Run workflow.
@@ -235,6 +236,11 @@ amounts in `REFERRALS` when an offer changes.
   new buttons; the old one shows "✏️ Переписано…". News, practical stories and the digest are revised in place
   (same links, facts checked against the source); long-reads are written again from their source, with a new
   Telegraph page. The Facebook card follows the new headline.
+- **Send your own link or idea** to the bot (a normal message, not a reply): a link becomes a news draft;
+  "історія …" with a topic or link becomes a long-read; "варто знати …" with a link becomes a practical story.
+  Any words besides the link are followed as instructions ("зроби акцент на українцях"). /help shows this.
+- **Daily counts:** each draft shows "📊 Сьогодні опубліковано новин: 4 з 5" (`DAILY_LIMITS` in `config.py`;
+  other kinds use their number of times in `SCHEDULE`). Going over is allowed and marked ⚠️.
 - A draft may carry notes for approvers only (never published): "⚠️ Перевірка знайшла проблеми…" from the
   reviewer, or "⏱ Опублікується автоматично о …" when auto-publish is on.
 - If taps seem to do nothing (buttons stay, nothing is published), another program may be using the bot's
@@ -258,6 +264,16 @@ Facebook Page, built for Facebook readers:
   version (`FB_COMMENT`, `FB_COMMENT_READ_MORE`). Needs the `pages_manage_engagement` permission.
 - Referral links stay off Facebook (`FB_REFERRALS`).
 If Facebook fails, the Telegram post still goes out and the draft says "Facebook failed".
+
+### Learning from feedback and readers
+
+The bot keeps a log of what was published, skipped, rewritten (with the feedback) and suggested, plus
+readers' reactions: Telegram reaction counts on channel posts, comments in the channel's discussion group (if
+the bot is a member there with privacy mode off), and Facebook reactions, comments and shares. On
+`REVIEW_DAY` (the 1st of each month, 10:00) Claude reads the last 30 days and sends the approvers a short report
+in Ukrainian plus 2-6 proposed rules, ignoring emotional, abusive and off-topic comments. Rules are used only if
+an approver taps ✅; they then guide the writers and story pickers (`editorial_notes` in `state.json`, at most
+`MAX_EDITORIAL_NOTES`). Run it any time: Actions → "Monthly review".
 
 ### Glossary of names
 

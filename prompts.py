@@ -376,3 +376,26 @@ Draft post:
 
 Source text: {article}
 """
+
+
+# Monthly review: learn from editors' decisions and readers
+REVIEW_MONTH_PROMPT = """You are the editor-in-chief of a Ukrainian channel (Telegram and Facebook) for Ukrainians in \
+Canada. Below is the last month: posts published (with reader reactions), drafts the editors skipped, the editors' \
+feedback and ideas, and readers' comments.
+
+Write:
+- "report": a short report in Ukrainian for the editors (8-12 lines): which topics and formats worked best and \
+  worst (by reactions, comments, shares), what the editors kept skipping or correcting, and the useful themes in \
+  readers' comments (questions, requests, corrections). Ignore emotional, abusive, spam or off-topic comments.
+- "lessons": 2-6 short, concrete rules in English for the writers and story pickers, each supported by several \
+  signals (not a single comment); don't repeat the current notes; nothing that conflicts with accuracy or neutrality.
+
+Current editorial notes:
+{notes}
+
+Last month:
+{events}
+
+Readers' comments:
+{comments}
+"""

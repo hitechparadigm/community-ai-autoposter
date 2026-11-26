@@ -27,7 +27,7 @@ from email.utils import parsedate_to_datetime
 from zoneinfo import ZoneInfo
 
 import config
-from prompts import (COMMUNITY_FOCUS, REVISE_PROMPT, TIPS_PICK_PROMPT, TIPS_WRITE_PROMPT, TIPS_CHECK, AUDIENCE, DIGEST_PROMPT, EDIT_PROMPT, FIX_PROMPT, REVIEW_PROMPT, HISTORY_WRITE_PROMPT, PICK_PROMPT,
+from prompts import (COMMUNITY_FOCUS, REVIEW_MONTH_PROMPT, REVISE_PROMPT, TIPS_PICK_PROMPT, TIPS_WRITE_PROMPT, TIPS_CHECK, AUDIENCE, DIGEST_PROMPT, EDIT_PROMPT, FIX_PROMPT, REVIEW_PROMPT, HISTORY_WRITE_PROMPT, PICK_PROMPT,
                      REFERRAL_MATCH_PROMPT, STORY_PICK_PROMPT, STYLE, THISDAY_PICK_PROMPT, WRITE_PROMPT,
                      DATE_WORDS)
 
@@ -111,6 +111,22 @@ def merge_state(base, ours, theirs):
     out["ref_news"] = max((rn_t, rn_o), key=lambda r: (r.get("date", ""), r.get("count", 0)))
     if ours.get("thisday_last"):
         out["thisday_last"] = ours["thisday_last"]
+    # learning data: lists are combined (no duplicates), dicts updated with this run's values
+    for k in ("learn", "tg_comments"):
+        seen_items = {json.dumps(x, sort_keys=True) for x in out.get(k, [])}
+        out[k] = out.get(k, []) + [x for x in ours.get(k, []) if json.dumps(x, sort_keys=True) not in seen_items]
+    for k in ("tg_reactions", "lessons_pending"):
+        out[k] = {**out.get(k, {}), **ours.get(k, {})}
+    for k in ("lessons_pending",):  # handled (removed) by this run
+        for lid in base.get(k, {}):
+            if lid not in ours.get(k, {}):
+                out[k].pop(lid, None)
+    log = out.setdefault("published_log", {})
+    for day, kinds in ours.get("published_log", {}).items():
+        for kind, n in kinds.items():
+            log.setdefault(day, {})[kind] = max(log.get(day, {}).get(kind, 0), n)
+    if len(ours.get("editorial_notes", [])) >= len(out.get("editorial_notes", [])):
+        out["editorial_notes"] = ours.get("editorial_notes", [])
     out.pop("telegraph_token", None)
     return out
 
@@ -234,6 +250,9 @@ SCHEMA_REVIEW = {"type": "object", "properties": {
     "verdict": {"type": "string", "enum": ["ok", "fix"]},
     "problems": {"type": "array", "items": {"type": "string"}}}, "required": ["verdict"]}
 SCHEMA_REVISED = {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}
+SCHEMA_LESSONS = {"type": "object", "properties": {"report": {"type": "string"},
+                                                   "lessons": {"type": "array", "items": {"type": "string"}}},
+                  "required": ["report", "lessons"]}
 SCHEMA_TIPS = {"type": "object", "properties": {"tips": {"type": "string"}}, "required": ["tips"]}
 SCHEMA_REFERRAL = {"type": "object", "properties": {"id": {"type": ["integer", "null"]}}, "required": ["id"]}
 _ITEMS = {"type": "array", "items": {"type": "object", "properties": {
@@ -259,6 +278,20 @@ def _load_glossary():
 GLOSSARY = _load_glossary()
 
 
+_NOTES = None
+
+
+def _editorial_notes():
+    """Rules the approvers accepted from the monthly review (kept in state.json)."""
+    global _NOTES
+    if _NOTES is None:
+        try:
+            _NOTES = json.load(open(STATE_FILE, encoding="utf-8")).get("editorial_notes", [])
+        except (OSError, ValueError):
+            _NOTES = []
+    return _NOTES
+
+
 def glossary_for(text):
     """The glossary entries whose English names appear in this text (ALL-CAPS names only in capitals)."""
     found = []
@@ -280,6 +313,10 @@ def ask_claude(prompt, source=None, schema=None):
     # Established names for the institutions this text mentions (only the matching glossary entries)
     writes = schema not in (SCHEMA_IDS, SCHEMA_REFERRAL)  # picking stories needs no names
     names = glossary_for((source or "") + "\n" + prompt.replace(STYLE, "").replace(AUDIENCE, "")) if writes else []
+    notes = _editorial_notes() if writes else []
+    if notes:
+        prompt += ("\n\nEDITORIAL NOTES (learned from the editors' feedback and readers; follow them):\n"
+                   + "\n".join(f"- {n}" for n in notes))
     if names:
         prompt += ("\n\nGLOSSARY: use exactly these Ukrainian names on first mention (a reviewer treats any other "
                    "version as an error to fix):\n" + "\n".join(names))
@@ -592,6 +629,55 @@ def close_draft(d, status):
 
 # ---------- commands ----------
 
+def _draft_item(s, it, stamp, mode="news", idea=""):
+    """Write, edit, review and send one news (or "Варто знати") draft. idea: an approver's note to follow."""
+    tips = mode == "tips"
+    article = fetch_article(it["url"])
+    src_text = article or "(not available)"
+    write_prompt = TIPS_WRITE_PROMPT if tips else WRITE_PROMPT
+    summary = it["summary"] + (f"\nEDITOR'S REQUEST (follow it): {idea}" if idea else "")
+    post = parse_post(ask_claude(write_prompt.format(
+        source=it["source"], title=it["title"], summary=summary, article=SOURCE_REF), source=src_text,
+        schema=schema_post(("title", "body"), ("image_query", "emoji", "tips"))))
+    if not post:
+        print(f"Could not write post for: {it['title']}")
+        return False
+    photo_query = (post.pop("image_query", "") or "").strip()  # for the Facebook card
+    emoji = (post.pop("emoji", "") or "").strip()[:4]  # shown before the headline
+    advice = (post.pop("tips", "") or "").strip() if tips else ""  # general advice, checked on its own
+    edited = parse_post(ask_claude(EDIT_PROMPT.format(
+        draft=json.dumps(post, ensure_ascii=False), title=it["title"],
+        summary=it["summary"], article=SOURCE_REF), source=src_text, schema=schema_post(("title", "body"))))
+    if edit_ok(post, edited):
+        post = edited
+    else:
+        print("Copy edit failed; using the first draft")
+    post, problems = review_post(post, ("title", "body"), article or it["summary"], it["title"])
+    if advice:  # general advice, not from the article: checked separately for accuracy and invented details
+        checked = _json(ask_claude(TIPS_CHECK.format(story=post["body"], tips=advice),
+                                   schema=SCHEMA_TIPS), "{", "}") or {}
+        if str(checked.get("tips", "")).count("•") >= 2:
+            advice = checked["tips"].strip()
+        post["body"] += f"\n\n{config.LABELS['tips_what_to_do']}\n{advice}"
+    header = config.LABELS["tips_header"] if tips else ""
+    text = format_post(f"{emoji} {post['title']}".strip(), post["body"], it["source"], it["url"], header=header)
+    ref = matching_referral(s, post)
+    if ref:
+        text += f'\n\n<a href="{html.escape(ref[1], quote=True)}">{html.escape(ref[0], quote=False)}</a>'
+    region, fallback = getattr(config, "REGIONS", {}).get(it["region"], (it["region"], ""))
+    community = it.get("community")
+    card = {"kind": "community" if community else "news", "title": post["title"],
+            "tag": (re.sub(r"^\W+", "", config.LABELS["tips_header"]).strip() if tips
+                    else config.CARD.get("community_tag", region) if community else region),
+            "queries": [*split_queries(photo_query), fallback]}
+    if not send_draft(s, it["url"], text, stamp, note=review_note(problems), card=card, kind=mode):
+        return False
+    if ref:
+        s["pending"][hashlib.sha1(it["url"].encode()).hexdigest()[:10]]["referral"] = True
+    print(f"Draft sent: {it['title']}")
+    return True
+
+
 def cmd_draft(mode="news"):
     """News drafts. mode="tips": the daily practical story (consumer and family matters) with what to do."""
     tips = mode == "tips"
@@ -619,51 +705,8 @@ def cmd_draft(mode="news"):
         s["seen"][it["url"]] = stamp
 
     for i in picks[:config.DRAFTS_PER_RUN]:
-        if i >= len(items):
-            continue
-        it = items[i]
-        article = fetch_article(it["url"])
-        src_text = article or "(not available)"
-        write_prompt = TIPS_WRITE_PROMPT if tips else WRITE_PROMPT
-        post = parse_post(ask_claude(write_prompt.format(
-            source=it["source"], title=it["title"], summary=it["summary"], article=SOURCE_REF), source=src_text,
-            schema=schema_post(("title", "body"), ("image_query", "emoji", "tips"))))
-        if not post:
-            print(f"Could not write post for: {it['title']}")
-            continue
-        photo_query = (post.pop("image_query", "") or "").strip()  # for the Facebook card
-        emoji = (post.pop("emoji", "") or "").strip()[:4]  # shown before the headline
-        advice = (post.pop("tips", "") or "").strip() if tips else ""  # general advice, checked on its own
-        edited = parse_post(ask_claude(EDIT_PROMPT.format(
-            draft=json.dumps(post, ensure_ascii=False), title=it["title"],
-            summary=it["summary"], article=SOURCE_REF), source=src_text, schema=schema_post(("title", "body"))))
-        if edit_ok(post, edited):
-            post = edited
-        else:
-            print("Copy edit failed; using the first draft")
-        post, problems = review_post(post, ("title", "body"), article or it["summary"], it["title"])
-        if advice:  # general advice, not from the article: checked separately for accuracy and invented details
-            checked = _json(ask_claude(TIPS_CHECK.format(story=post["body"], tips=advice),
-                                       schema=SCHEMA_TIPS), "{", "}") or {}
-            if str(checked.get("tips", "")).count("•") >= 2:
-                advice = checked["tips"].strip()
-            post["body"] += f"\n\n{config.LABELS['tips_what_to_do']}\n{advice}"
-        header = config.LABELS["tips_header"] if tips else ""
-        text = format_post(f"{emoji} {post['title']}".strip(), post["body"], it["source"], it["url"], header=header)
-        ref = matching_referral(s, post)
-        if ref:
-            text += f'\n\n<a href="{html.escape(ref[1], quote=True)}">{html.escape(ref[0], quote=False)}</a>'
-        region, fallback = getattr(config, "REGIONS", {}).get(it["region"], (it["region"], ""))
-        community = it.get("community")
-        card = {"kind": "community" if community else "news", "title": post["title"],
-                "tag": (re.sub(r"^\W+", "", config.LABELS["tips_header"]).strip() if tips
-                        else config.CARD.get("community_tag", region) if community else region),
-                "queries": [*split_queries(photo_query), fallback]}
-        if not send_draft(s, it["url"], text, stamp, note=review_note(problems), card=card, kind=mode):
-            continue
-        if ref:
-            s["pending"][hashlib.sha1(it["url"].encode()).hexdigest()[:10]]["referral"] = True
-        print(f"Draft sent: {it['title']}")
+        if i < len(items):
+            _draft_item(s, items[i], stamp, mode)
     save_state(s)
 
 
@@ -820,6 +863,7 @@ def send_draft(s, url, text, stamp, image="", preview_url="", kind="news", note=
         lp = {"url": image, "prefer_large_media": True, "show_above_text": True}
     else:
         lp = preview(url)
+    note += "\n\n<i>" + html.escape(count_note(s, kind), quote=False) + "</i>"
     if auto_publish_on(kind):
         at = (now() + timedelta(minutes=config.AUTO_PUBLISH_AFTER_MINUTES)).astimezone(LOCAL)
         note += "\n\n<i>⏱ " + config.LABELS["auto_publish_note"].format(time=f"{at:%H:%M}") + "</i>"
@@ -1459,14 +1503,15 @@ def answer(cq, text, alert=False):
 def publish_draft(d, s):
     """Post a draft to the channel (and Facebook). Returns a status suffix, or None if Telegram failed."""
     try:
-        tg("sendMessage", chat_id=config.CHANNEL, text=d["text"], parse_mode="HTML",
-           link_preview_options=d.get("lp") or preview(d["url"]))
+        sent = tg("sendMessage", chat_id=config.CHANNEL, text=d["text"], parse_mode="HTML",
+                  link_preview_options=d.get("lp") or preview(d["url"]))
     except Exception as e:
         print(f"PUBLISH ERROR: {e}")
         return None
-    fb = ""
+    fb, fb_id = "", None
     try:
-        if post_to_facebook(d):
+        fb_id = post_to_facebook(d)
+        if fb_id:
             fb = " + Facebook"
     except Exception as e:
         print(f"FACEBOOK ERROR: {e}")
@@ -1474,8 +1519,42 @@ def publish_draft(d, s):
     if d.get("referral"):
         today = now().astimezone(LOCAL).strftime("%Y-%m-%d")
         s["ref_news"] = {"date": today, "count": _ref_today(s) + 1}
+    kind = d.get("kind") or "news"
+    n, limit = daily_count(s, kind, add=1)
+    learn(s, "published", d, tg=sent.get("message_id"), fb=fb_id if isinstance(fb_id, str) else None)
     print(f"Published {d['url']}")
-    return fb
+    return fb + f" · {n}/{limit}" + (" ⚠️" if n > limit else "")
+
+
+# ---------- daily counts and the learning log ----------
+
+def daily_count(s, kind, add=0):
+    """(published today, daily limit) for this kind of post; add=1 counts one more."""
+    today = now().astimezone(LOCAL).strftime("%Y-%m-%d")
+    log = s.setdefault("published_log", {})
+    if add:
+        log.setdefault(today, {})[kind] = log.get(today, {}).get(kind, 0) + add
+        for day in [d for d in log if d < (now() - timedelta(days=60)).strftime("%Y-%m-%d")]:
+            del log[day]
+    limit = getattr(config, "DAILY_LIMITS", {}).get(kind) or len(config.SCHEDULE.get(kind, [])) or 1
+    return log.get(today, {}).get(kind, 0), limit
+
+
+def count_note(s, kind):
+    n, limit = daily_count(s, kind)
+    name = config.KIND_NAMES.get(kind, kind)
+    over = " ⚠️" if n >= limit else ""
+    return config.LABELS["count_line"].format(n=n, limit=limit, kind=name) + over
+
+
+def learn(s, event, d=None, text="", **extra):
+    """Remember what happened to a post (published, skipped, feedback, idea) for the monthly review."""
+    m = re.search(r"<b>(.*?)</b>", (d or {}).get("text", ""), re.S)
+    entry = {"t": now().isoformat(timespec="seconds"), "event": event, "kind": (d or {}).get("kind", ""),
+             "title": html.unescape(re.sub(r"<[^>]+>", "", m.group(1)))[:150] if m else "", "text": text[:500],
+             **extra}
+    cutoff = (now() - timedelta(days=120)).isoformat()
+    s["learn"] = [e for e in s.get("learn", []) if e["t"] > cutoff][-1500:] + [entry]
 
 
 # ---------- rewriting a draft from an approver's feedback ----------
@@ -1485,10 +1564,10 @@ def handle_feedback(msg, s):
     sender = str((msg.get("from") or {}).get("id", ""))
     reply = msg.get("reply_to_message") or {}
     feedback = (msg.get("text") or "").strip()
-    if sender not in ADMIN_IDS or not feedback or feedback.startswith("/"):
+    if sender not in ADMIN_IDS or not feedback:
         return
     if not reply:
-        tg("sendMessage", chat_id=sender, text=config.LABELS["feedback_hint"])
+        handle_idea(msg, s, sender)
         return
     key = admin_key(sender)
     did, d = next(((k, v) for k, v in s["pending"].items()
@@ -1500,6 +1579,7 @@ def handle_feedback(msg, s):
     tg("sendMessage", chat_id=sender, text=config.LABELS["feedback_working"],
        reply_parameters={"message_id": msg["message_id"]})
     print(f"Feedback on {d['url']}: {feedback[:200]}")
+    learn(s, "feedback", d, feedback)
     who = html.escape(str(msg["from"].get("first_name") or sender))
     try:
         if d.get("telegraph_path"):
@@ -1514,6 +1594,60 @@ def handle_feedback(msg, s):
     else:
         tg("sendMessage", chat_id=sender, text=config.LABELS["feedback_failed"],
            reply_parameters={"message_id": msg["message_id"]})
+
+
+def page_title(url):
+    try:
+        page = http(url, timeout=30).decode("utf-8", errors="replace")
+    except Exception:
+        return ""
+    m = (re.search(r'<meta[^>]+property="og:title"[^>]+content="([^"]+)"', page)
+         or re.search(r"(?is)<title[^>]*>(.*?)</title>", page))
+    return _clean(html.unescape(m.group(1)), 200) if m else ""
+
+
+def handle_idea(msg, s, sender):
+    """A message to the bot (not a reply): a link or an idea for a post. "історія …" / "/history …" makes a
+    long-read, "варто знати …" / "/tips …" a practical story, a plain link a news post."""
+    text = (msg.get("text") or "").strip()
+    low = text.lower()
+    say = lambda t: tg("sendMessage", chat_id=sender, text=t, reply_parameters={"message_id": msg["message_id"]})
+    if low.startswith(("/start", "/help")) or not text:
+        return say(config.LABELS["ideas_help"])
+    mode = "news"
+    for prefix, m in (("/history", "history"), ("/історія", "history"), ("історія", "history"),
+                      ("/tips", "tips"), ("варто знати", "tips"), ("/news", "news")):
+        if low.startswith(prefix):
+            mode, text = m, text[len(prefix):].strip(" :—-")
+            break
+    urls = re.findall(r"https?://\S+", text)
+    note = re.sub(r"https?://\S+", "", text).strip()
+    if mode != "history" and not urls:
+        return say(config.LABELS["idea_needs_link"])
+    say(config.LABELS["idea_working"])
+    learn(s, "idea", None, msg.get("text", ""), mode=mode)
+    ok = False
+    try:
+        if mode == "history":
+            if urls:
+                u = urls[0]
+                src = ("wiki:" + urllib.parse.unquote(u.split("/wiki/", 1)[1])) if "wikipedia.org/wiki/" in u else u
+            else:  # a topic: find its English Wikipedia article
+                title = ask_claude("Give the exact English Wikipedia article title for this Canadian history topic: "
+                                   f"{note}\nReply with the title only.").strip().strip('"«»')[:120]
+                src = "wiki:" + title.replace(" ", "_")
+            ok = _history_from(s, src, False, note)
+        elif urls:
+            u = urls[0]
+            it = {"url": u, "title": page_title(u) or note or u, "summary": "", "source": outlet_name(u),
+                  "region": "Canada", "published": now(),
+                  "community": any(w in (note + " " + u) for w in config.COMMUNITY_WORDS)}
+            s["seen"][u] = now().isoformat()
+            ok = _draft_item(s, it, now().isoformat(), mode, idea=note)
+    except Exception as e:
+        print(f"IDEA ERROR: {e}")
+    if not ok:
+        say(config.LABELS["idea_failed"])
 
 
 def _revise_post(did, d, feedback, s):
@@ -1571,12 +1705,118 @@ def _redo_long_read(d, feedback, s):
                           now().isoformat(), image)
 
 
+# ---------- learning from feedback and readers (monthly) ----------
+
+def record_comment(m, s):
+    """A comment in the channel's discussion group, under one of our posts."""
+    parent = m.get("reply_to_message") or {}
+    origin = parent.get("forward_origin") or {}
+    post_id = origin.get("message_id") if origin.get("type") == "channel" else None
+    text = (m.get("text") or "").strip()
+    if post_id and text:
+        s["tg_comments"] = (s.get("tg_comments", []) + [{"post": post_id, "text": text[:400],
+                                                          "t": now().isoformat(timespec="seconds")}])[-800:]
+
+
+def fb_stats(post_id):
+    """Reactions, comments (with text) and shares of a Facebook post."""
+    q = urllib.parse.urlencode({"fields": "reactions.summary(total_count).limit(0),shares,"
+                                          "comments.summary(total_count).limit(25){message}",
+                                "access_token": FB_TOKEN})
+    try:
+        r = json.loads(http(f"https://graph.facebook.com/{post_id}?{q}"))
+    except Exception as e:
+        print(f"Facebook stats failed for {post_id}: {str(e)[:120]}")
+        return {}
+    return {"reactions": r.get("reactions", {}).get("summary", {}).get("total_count", 0),
+            "shares": r.get("shares", {}).get("count", 0),
+            "comments": r.get("comments", {}).get("summary", {}).get("total_count", 0),
+            "comment_texts": [c.get("message", "")[:300] for c in r.get("comments", {}).get("data", [])
+                              if c.get("message")]}
+
+
+def cmd_review(force=False):
+    """Monthly: what was published, skipped, rewritten and asked for, and how readers reacted. Claude writes a
+    short report and proposes a few rules; approvers decide whether the rules guide future posts."""
+    if not force and now().astimezone(LOCAL).day != getattr(config, "REVIEW_DAY", 1):
+        return
+    s = load_state()
+    since = (now() - timedelta(days=30)).isoformat()
+    events = [e for e in s.get("learn", []) if e["t"] > since]
+    if len(events) < 10:
+        print("Not enough history for a review yet")
+        return save_state(s)
+    comments_by_post = {}
+    for c in s.get("tg_comments", []):
+        if c["t"] > since:
+            comments_by_post.setdefault(c["post"], []).append(c["text"])
+    lines, comments = [], []
+    for e in events:
+        if e["event"] == "published":
+            stats = fb_stats(e["fb"]) if e.get("fb") and FB_TOKEN else {}
+            tg_r = sum(s.get("tg_reactions", {}).get(str(e.get("tg")), {}).values())
+            lines.append(f"PUBLISHED {e['kind']}: {e['title']} | Telegram reactions {tg_r}, comments "
+                         f"{len(comments_by_post.get(e.get('tg'), []))} | Facebook reactions "
+                         f"{stats.get('reactions', '-')}, comments {stats.get('comments', '-')}, "
+                         f"shares {stats.get('shares', '-')}")
+            comments += [f"[{e['title'][:60]}] {t}" for t in
+                         comments_by_post.get(e.get("tg"), []) + stats.get("comment_texts", [])]
+        elif e["event"] == "skipped":
+            lines.append(f"SKIPPED by editors {e['kind']}: {e['title']}")
+        elif e["event"] == "feedback":
+            lines.append(f"EDITOR FEEDBACK on {e['kind']} «{e['title']}»: {e['text']}")
+        elif e["event"] == "idea":
+            lines.append(f"EDITOR IDEA ({e.get('mode', '')}): {e['text']}")
+    notes = "\n".join(f"- {n}" for n in s.get("editorial_notes", [])) or "(none yet)"
+    r = _json(ask_claude(REVIEW_MONTH_PROMPT.format(events="\n".join(lines[:400]),
+                                                    comments="\n".join(comments[:250]) or "(none)", notes=notes),
+                         schema=SCHEMA_LESSONS), "{", "}") or {}
+    report, lessons = str(r.get("report", "")).strip(), [str(x).strip() for x in r.get("lessons", []) if str(x).strip()]
+    if not report:
+        print("Review failed")
+        return save_state(s)
+    lid = hashlib.sha1(report.encode()).hexdigest()[:8]
+    text = f"📈 <b>{config.LABELS['review_title']}</b>\n\n{html.escape(report, quote=False)}"
+    markup = None
+    if lessons:
+        s.setdefault("lessons_pending", {})[lid] = lessons[:6]
+        text += f"\n\n<b>{config.LABELS['review_rules']}</b>\n" + "\n".join(
+            f"{i}. {html.escape(x, quote=False)}" for i, x in enumerate(lessons[:6], 1))
+        markup = {"inline_keyboard": [[{"text": "✅ " + config.LABELS["review_accept"], "callback_data": f"lessons:{lid}:yes"},
+                                       {"text": "❌ " + config.LABELS["review_reject"], "callback_data": f"lessons:{lid}:no"}]]}
+    for admin in ADMIN_IDS:
+        try:
+            tg("sendMessage", chat_id=admin, text=text[:4096], parse_mode="HTML", reply_markup=markup)
+        except Exception as e:
+            print(f"Could not send the review: {e}")
+    print("Review sent")
+    save_state(s)
+
+
+def handle_lessons(cq, s):
+    _, lid, choice = (cq.get("data") or "::").split(":", 2)
+    lessons = s.get("lessons_pending", {}).pop(lid, None)
+    if lessons is None:
+        return answer(cq, "Already handled")
+    if choice == "yes":
+        s["editorial_notes"] = (s.get("editorial_notes", []) + lessons)[-getattr(config, "MAX_EDITORIAL_NOTES", 30):]
+        answer(cq, config.LABELS["review_saved"])
+    else:
+        answer(cq, config.LABELS["review_dropped"])
+    try:
+        tg("editMessageReplyMarkup", chat_id=cq["message"]["chat"]["id"], message_id=cq["message"]["message_id"],
+           reply_markup={"inline_keyboard": []})
+    except Exception:
+        pass
+    save_state(s)
+
+
 def cmd_approve():
     s = load_state()
     updates = None
     for attempt in range(3):  # reading taps is safe to retry; a dropped connection is usually momentary
         try:
-            updates = tg("getUpdates", offset=s["tg_offset"], timeout=0, allowed_updates=["callback_query", "message"])
+            updates = tg("getUpdates", offset=s["tg_offset"], timeout=0, allowed_updates=["callback_query", "message", "message_reaction_count"])
             break
         except (urllib.error.URLError, ConnectionError, TimeoutError) as e:
             print(f"Telegram unreachable ({e}); retrying" if attempt < 2 else
@@ -1592,17 +1832,30 @@ def cmd_approve():
         # of state.json (another tick, or a manual run) would get the same taps again and post twice.
         try:
             tg("getUpdates", offset=updates[-1]["update_id"] + 1, timeout=0, limit=1,
-               allowed_updates=["callback_query", "message"])
+               allowed_updates=["callback_query", "message", "message_reaction_count"])
         except Exception as e:
             print(f"(could not confirm the taps: {e})")
     for u in updates:
         s["tg_offset"] = u["update_id"] + 1
-        if u.get("message"):  # an approver's reply to a draft = feedback: rewrite the draft
-            handle_feedback(u["message"], s)
-            save_state(s)
+        if u.get("message_reaction_count"):  # readers' reactions to a channel post (anonymous counts)
+            r = u["message_reaction_count"]
+            s.setdefault("tg_reactions", {})[str(r["message_id"])] = {
+                (x["type"].get("emoji") or x["type"].get("type", "?")): x["total_count"] for x in r.get("reactions", [])}
+            continue
+        if u.get("message"):
+            m = u["message"]
+            if m.get("chat", {}).get("type") in ("group", "supergroup"):  # a reader's comment under a post
+                record_comment(m, s)
+            else:  # an approver's message: a reply to a draft = feedback; anything else = an idea for a post
+                handle_feedback(m, s)
+                save_state(s)
             continue
         cq = u.get("callback_query")
         if not cq:
+            continue
+        if (cq.get("data") or "").startswith("lessons:"):
+            if str(cq["from"]["id"]) in ADMIN_IDS:
+                handle_lessons(cq, s)
             continue
         if str(cq["from"]["id"]) not in ADMIN_IDS:
             answer(cq, "Not allowed")
@@ -1623,6 +1876,7 @@ def cmd_approve():
         else:
             answer(cq, "Skipped")
             close_draft(d, f"❌ Skipped by {who}")
+            learn(s, "skipped", d)
             retire_telegraph(d, s)
         del s["pending"][did]
         save_state(s)  # save after every tap so a later error can never cause a double post
@@ -1690,7 +1944,7 @@ def cmd_tick():
     """Runs every 5 minutes: starts the drafts that are due by config.SCHEDULE (local time, catching up on
     late runs), then publishes approved posts."""
     jobs = {"digest": cmd_digest, "thisday": cmd_thisday, "news": cmd_draft, "history": cmd_history,
-            "tips": lambda: cmd_draft("tips")}
+            "tips": lambda: cmd_draft("tips"), "review": cmd_review}
     local = now().astimezone(LOCAL)
     for job, slots in config.SCHEDULE.items():
         for slot in slots:
@@ -1858,6 +2112,11 @@ def cmd_recard(match):
 def cmd_history_from(source, thisday=False):
     """A history (or this-day) draft from a source you choose: a web page, or "wiki:Article_title"."""
     s = _history_state()
+    _history_from(s, source, thisday)
+    save_state(s)
+
+
+def _history_from(s, source, thisday=False, idea=""):
     if source.startswith("wiki:"):
         article, url = wiki_text(source[5:])
         image = fetch_page(url)[1] if url else ""
@@ -1866,16 +2125,20 @@ def cmd_history_from(source, thisday=False):
         article, image = fetch_page(source, 15000)
         url, source_name = source, urllib.parse.urlparse(source).netloc.replace("www.", "")
     if len(article) < 500:
-        sys.exit(f"Not enough text at {source}")
+        print(f"Not enough text at {source}")
+        return False
     topic = source[5:].replace("_", " ") if source.startswith("wiki:") else source
     d = now().astimezone(LOCAL)
     header = config.LABELS["thisday_header" if thisday else "history_header"]
     opening = ("Start with the date" + DATE_WORDS[:-1] + " and what happened on it." if thisday
                else "Open with a vivid detail or the key moment.")
-    if _write_history(f"{topic} ({d:%B} {d.day})" if thisday else topic, source_name, article, opening, header,
-                      source_name, url, s, now().isoformat(), image):
+    if idea:
+        opening += f"\n\nEDITOR'S REQUEST (follow it): {idea}"
+    ok = _write_history(f"{topic} ({d:%B} {d.day})" if thisday else topic, source_name, article, opening, header,
+                        source_name, url, s, now().isoformat(), image)
+    if ok:
         print(f"Draft sent: {topic}")
-    save_state(s)
+    return ok
 
 
 def _print_usage():
@@ -1912,6 +2175,8 @@ if __name__ == "__main__":
         cmd_recard(sys.argv[2] if len(sys.argv) > 2 else "")
     elif cmd == "history-from":  # history-from SOURCE [thisday]
         cmd_history_from(sys.argv[2], len(sys.argv) > 3 and sys.argv[3] == "thisday")
+    elif cmd == "review":  # the monthly review now (normally on REVIEW_DAY)
+        cmd_review(force=True)
     elif cmd == "check":  # test the connections, posts nothing
         cmd_check()
     elif cmd == "merge-state":  # used by save_state.sh: merge-state BASE OURS (theirs = state.json)
