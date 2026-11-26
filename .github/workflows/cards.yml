@@ -20,8 +20,17 @@ jobs:
       group: news
       cancel-in-progress: false
     timeout-minutes: 10
+    env:
+      STATE_TOKEN: ${{ secrets.STATE_TOKEN }}   # access to the private <repo>-state repository (optional)
     steps:
       - uses: actions/checkout@v4
+      - name: Get the bot's memory from the private state repository
+        if: env.STATE_TOKEN != ''
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}-state
+          token: ${{ env.STATE_TOKEN }}
+          path: .state
       - name: Draw cards
         run: |
           if [ -n "$DRAFT" ]; then python3 bot.py recard "$DRAFT"; else python3 bot.py cards; fi

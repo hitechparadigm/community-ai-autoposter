@@ -26,8 +26,17 @@ jobs:
       group: history
       cancel-in-progress: false
     timeout-minutes: 10
+    env:
+      STATE_TOKEN: ${{ secrets.STATE_TOKEN }}   # access to the private <repo>-state repository (optional)
     steps:
       - uses: actions/checkout@v4
+      - name: Get the bot's memory from the private state repository
+        if: env.STATE_TOKEN != ''
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}-state
+          token: ${{ env.STATE_TOKEN }}
+          path: .state
       - name: Write a Canadian history story
         run: |
           if [ -n "$SOURCE" ]; then python3 bot.py history-from "$SOURCE" $THISDAY

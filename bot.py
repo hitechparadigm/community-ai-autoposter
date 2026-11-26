@@ -32,7 +32,14 @@ from prompts import (COMMUNITY_FOCUS, COMMENT_GIST_PROMPT, REVIEW_MONTH_PROMPT, 
                      DATE_WORDS)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-STATE_FILE = os.path.join(HERE, "state.json")
+# The bot's memory: in the private "<repository>-state" repository when the workflow checked it out into .state
+# (keeps drafts and reader data out of the public repo), otherwise state.json next to this file.
+STATE_FILE = (os.path.join(HERE, ".state", "state.json") if os.path.isdir(os.path.join(HERE, ".state"))
+              else os.path.join(HERE, "state.json"))
+if (STATE_FILE.endswith(os.path.join(".state", "state.json")) and not os.path.exists(STATE_FILE)
+        and os.path.exists(os.path.join(HERE, "state.json"))):  # first run with the state repo: move the memory over
+    import shutil
+    shutil.copyfile(os.path.join(HERE, "state.json"), STATE_FILE)
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/131.0 Safari/537.36")
 # Wikimedia asks bots to identify themselves (and throttles generic browser user agents)
