@@ -44,7 +44,8 @@ def _search(queries, skip_urls):
     skip = config.RESEARCH.get("skip_domains", ())
     for q in queries:
         web, news = web_search(q), web_search(q, news=True)[:4]
-        print(f"Search '{q}': {len(web)} web, {len(news)} news results")
+        print(f"Search '{q}': {len(web)} web, {len(news)} news results: "
+              + ", ".join(urllib.parse.urlparse(it["url"]).netloc for it in web[:10]))
         for it in web + news:
             u = it["url"]
             if u in skip_urls or any(d in urllib.parse.urlparse(u).netloc for d in skip):
