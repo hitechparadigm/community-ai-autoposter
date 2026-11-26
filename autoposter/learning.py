@@ -136,7 +136,7 @@ def cmd_stats(days=30, path="docs/RESULTS.md"):
              "Updated by the Results workflow; totals and averages only.", "",
              "| Measure | Value |", "| --- | --- |",
              f"| Posts published | {len(published)} |",
-             *(f"| – {config.KIND_NAMES.get(k, k) if hasattr(config, 'KIND_NAMES') else k} ({k}) | {n} |"
+             *(f"| – {k} | {n} |"
                for k, n in sorted(by_kind.items(), key=lambda x: -x[1])),
              f"| Drafts approved (of those decided) | {len(published) / decided:.0%} ({len(published)}/{decided}) |"
              if decided else "| Drafts approved | – |",

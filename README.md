@@ -51,8 +51,39 @@ Any other community can run its own channel by changing two settings files (see
   draft, and taps confirmed at once so a post can't go out twice. No servers, no third-party Python packages.
 - **Modular and tested.** A small package with one job per module (below) and layered imports with no cycles;
   unit tests plus an end-to-end test (draft → approval → publish with the network faked) run on every push.
+- **Measured, not guessed.** An evaluation set of test stories runs whenever the prompts or glossary change:
+  automatic checks plus an independent Claude judge, with cost per post (see [Results](#results)).
 - **Configurable, not hard-coded.** Sources, schedules, approvers, referral offers and publishing rules live in
   `community/config.py`; all editorial instructions live in `community/prompts.py`, so the same code can serve another community.
+
+## Results
+
+**Evaluation** ([full scorecard](evals/results/latest.md), [history of runs](evals/results/history.csv)).
+Nine fictional test stories (`evals/cases.json`: news, community and 💡 Варто знати, each built around the rules
+that are easy to break) go through the same write → copy-edit → review pipeline as real drafts. Each post is then
+checked automatically and graded by a separate Claude call acting as a judge:
+
+| Automatic check | What it verifies |
+|---|---|
+| facts | Key numbers, dates and places from the story are in the post (in any grammatical form) |
+| glossary | Every institution in the story uses its established Ukrainian name (any grammatical case) |
+| people | People's names keep the original spelling in brackets |
+| names_kept | Organization names stay untranslated; known wrong forms don't appear |
+| language | No russianisms or calques from the style guide's list; no letters of other alphabets |
+| form | Headline length, post length, no broken words or stray links, ends with a full sentence |
+| reviewer | The reviewer agent found nothing left to fix |
+
+The judge scores accuracy, language and usefulness from 1 to 5 (5 = would publish unchanged). Baseline run, model
+`claude-sonnet-5-5`: all nine posts written; glossary, people, names, language and reviewer checks 100%;
+facts and form 89% each; judge average 4.0 for accuracy and language and 3.8 for usefulness; about **$0.06 per
+post** for the full pipeline (40 Claude calls for nine posts, $0.58). The judge's notes point at the next
+improvement: the 💡 Варто знати "what to do" lists repeat the story and sometimes add advice that isn't in the
+source. Run it yourself: `python3 bot.py eval`, or Actions → Evaluation.
+
+**In production** ([monthly numbers](docs/RESULTS.md)). Posts published per type, the share of drafts editors
+approve, how often they ask for a rewrite, and reader reactions per post on Telegram and Facebook, refreshed
+monthly by the Results workflow from the bot's learning log (which started on 26 November 2026). The channel
+has about 17,000 subscribers; single Facebook posts have reached about 5,000 views.
 
 ### Reusable for any community
 
@@ -159,9 +190,11 @@ sequenceDiagram
 | Edit a published post | `edit.yml` | Replace the text of a channel post (link, new text, optional source link) |
 | Monthly review | `review.yml` | Report on the last month and proposed rules (runs by itself on the 1st) |
 | Tests | `tests.yml` | Runs by itself on every code change: unit tests and an end-to-end test |
+| Evaluation | `eval.yml` | Write and score posts from the test stories in `evals/` (runs by itself when the prompts or glossary change) |
+| Results | `stats.yml` | Production numbers for the last 30 days into `docs/RESULTS.md` (monthly) |
 | Check connections | `check.yml` | Test the Telegram and Facebook tokens and every news feed without posting; optionally try new feeds |
 
-All of them except Tick and Tests are for running something by hand: Actions → pick it → Run workflow.
+All of them except Tick, Tests and Results are for running something by hand: Actions → pick it → Run workflow.
 
 ## Daily schedule (Toronto time)
 
@@ -376,7 +409,8 @@ fine-grained token with Contents read/write on just that repository, and save it
 | `drafts.py` | Drafts for approval, daily counts, learning log, publishing |
 | `news.py` | News, 💡 Варто знати and the morning digest |
 | `history.py` | 📅 Цей день and 🍁 history long-reads |
-| `learning.py` | Reader comments and reactions, the monthly review |
+| `learning.py` | Reader comments and reactions, the monthly review, production numbers |
+| `evals.py` | The evaluation set: test posts, automatic checks, judge, scorecard |
 | `approval.py` | Taps, feedback replies, ideas and links sent to the bot |
 | `cli.py` | The 5-minute tick and the other commands |
 
@@ -392,6 +426,8 @@ fine-grained token with Contents read/write on just that repository, and save it
 | API keys, bot token, approver IDs, Telegraph and Facebook keys | GitHub → Settings → Secrets and variables → Actions |
 | The program itself | `autoposter/` (no settings inside); `bot.py` is the command line |
 | Tests | `tests/` (`python3 -m unittest discover -s tests`) |
+| Evaluation set (test stories) and its results | `evals/cases.json`, `evals/results/`; settings in `community/config.py` → `EVAL` |
+| Production numbers | `docs/RESULTS.md` (written by the Results workflow) |
 | Guide for approvers | `docs/USER_GUIDE.md` |
 | How the code works (for developers) | `docs/DEVELOPER_GUIDE.md` |
 | What the bot remembers (seen stories, drafts, learning log) | `state.json` in the private `<this repo>-state` repository when the `STATE_TOKEN` secret is set (recommended: keeps drafts and reader data private and this repo free of bot commits); otherwise `state.json` here. Automatic; don't edit by hand |

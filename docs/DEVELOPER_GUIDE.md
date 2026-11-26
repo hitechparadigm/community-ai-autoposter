@@ -39,7 +39,8 @@ Each module imports only from the ones above it in this table, so there are no i
 | `drafts.py` | Drafts for approval, publishing, daily counts, the learning log | `send_draft`, `publish_draft`, `close_draft`, `learn` |
 | `news.py` | News, 💡 Варто знати and the morning digest | `cmd_draft`, `_draft_item`, `cmd_digest` |
 | `history.py` | 📅 This day and 🍁 history long-reads | `cmd_thisday`, `cmd_history`, `_write_history` |
-| `learning.py` | Reader comments, reactions and the monthly review | `cmd_review`, `record_comment` |
+| `learning.py` | Reader comments, reactions, the monthly review and production numbers | `cmd_review`, `record_comment`, `cmd_stats` |
+| `evals.py` | The evaluation set: test posts, checks, judge, scorecard | `cmd_eval`, `score`, `judge` |
 | `approval.py` | What approvers send: taps, feedback replies, ideas | `cmd_approve`, `handle_feedback`, `handle_idea` |
 | `cli.py` | The tick and the other commands | `cmd_tick`, `main` |
 
@@ -52,7 +53,7 @@ Every function has a short docstring saying what it does; start from the main fu
 2. **Gather** (`sources.fetch_news`): read every feed in `FEEDS`, keep recent stories the bot hasn't offered before
    (`state["seen"]`), Ukrainian-community stories first.
 3. **Pick** (`ask_claude` with `PICK_PROMPT`): Claude returns the id of the best story.
-4. **Write** (`news._draft_item`): fetch the article; Claude writes title, body, a topic emoji and photo searches
+4. **Write** (`news.write_news`, called by `news._draft_item`): fetch the article; Claude writes title, body, a topic emoji and photo searches
    (`WRITE_PROMPT`). The article is sent once as a cached block and reused by the next steps.
 5. **Copy-edit** (`EDIT_PROMPT`), then `ai.edit_ok` rejects a version that came back cut short or garbled.
 6. **Review** (`ai.review_post`): a separate Claude call checks the draft against the article, fixes it once and
@@ -111,13 +112,30 @@ runs' changes. A tap is confirmed to Telegram as soon as it is read, so overlapp
   `drafts.publish_draft`, the way Facebook is called.
 - **Change the card design:** edit `community/card.html`, then run the Preview Facebook cards workflow.
 
+## Evaluation
+
+Tests check the code; the evaluation set checks the writing. `evals/cases.json` holds fictional test stories,
+each with what a good post must contain. `python3 bot.py eval` (or Actions → Evaluation) writes a post from
+each with `news.write_news`, the same function real drafts use, then:
+
+- `evals.score` runs the automatic checks (facts, glossary names, people's original names, untranslated
+  organization names, forbidden words from `EVAL` in `community/config.py`, form, reviewer verdict);
+- `evals.judge` asks a separate Claude call to grade accuracy, language and usefulness from 1 to 5;
+- the scorecard goes to `evals/results/latest.md` and `latest.json`, and a full run adds a line to
+  `history.csv` with the prompts' fingerprint and cost, so runs can be compared.
+
+The workflow runs by itself when `community/prompts.py`, `community/glossary.json` or the cases change, and
+commits the results. A run costs about $0.60. To add a case, copy one in `cases.json`; facts are regular
+expressions matched against the post with numbers written one way (`40 000` and `40,000` both become `40000`).
+Keep cases fictional: real articles are copyrighted.
+
 ## Tests
 
 ```
 python3 -m unittest discover -s tests -v
 ```
 
-`tests/test_core.py` covers parsing, merging, writing checks, Facebook text, cards, counts and approvers'
+`tests/test_evals.py` covers the evaluation checks; `tests/test_core.py` covers parsing, merging, writing checks, Facebook text, cards, counts and approvers'
 messages; `tests/test_flow.py` runs a whole draft → approval → publish cycle with the network faked. They run on
 GitHub on every code change (`tests.yml`) and need no keys or packages. Add a test with every fix.
 
