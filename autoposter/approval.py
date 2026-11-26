@@ -170,7 +170,8 @@ def cmd_approve():
     if updates is None:
         return
     if updates:
-        print(f"{len(updates)} update(s): " + ", ".join(k for u in updates for k in u if k != "update_id"))
+        print(f"{len(updates)} update(s) from {s['tg_offset']}: " + ", ".join(
+            f"{u['update_id']} " + "/".join(k for k in u if k != "update_id") for u in updates))
         # Tell Telegram right away that these taps are handled. Otherwise a run that started from an older copy
         # of state.json (another tick, or a manual run) would get the same taps again and post twice.
         try:
