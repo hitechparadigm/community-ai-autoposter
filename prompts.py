@@ -399,3 +399,14 @@ Last month:
 Readers' comments:
 {comments}
 """
+
+
+# A reader's comment, reduced to an anonymous gist (state.json is public)
+COMMENT_GIST_PROMPT = """A reader commented under a post of a Ukrainian channel for Ukrainians in Canada. If the \
+comment is constructive (a question, a request, a correction, a suggestion, a clear opinion on the topic or the \
+post), summarize it in one short neutral sentence in English, without names, quotes or personal details. If it \
+is emotional, abusive, spam, off-topic or just a reaction, reply SKIP.
+
+Comment:
+{comment}
+"""

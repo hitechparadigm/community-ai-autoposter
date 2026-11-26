@@ -27,7 +27,7 @@ from email.utils import parsedate_to_datetime
 from zoneinfo import ZoneInfo
 
 import config
-from prompts import (COMMUNITY_FOCUS, REVIEW_MONTH_PROMPT, REVISE_PROMPT, TIPS_PICK_PROMPT, TIPS_WRITE_PROMPT, TIPS_CHECK, AUDIENCE, DIGEST_PROMPT, EDIT_PROMPT, FIX_PROMPT, REVIEW_PROMPT, HISTORY_WRITE_PROMPT, PICK_PROMPT,
+from prompts import (COMMUNITY_FOCUS, COMMENT_GIST_PROMPT, REVIEW_MONTH_PROMPT, REVISE_PROMPT, TIPS_PICK_PROMPT, TIPS_WRITE_PROMPT, TIPS_CHECK, AUDIENCE, DIGEST_PROMPT, EDIT_PROMPT, FIX_PROMPT, REVIEW_PROMPT, HISTORY_WRITE_PROMPT, PICK_PROMPT,
                      REFERRAL_MATCH_PROMPT, STORY_PICK_PROMPT, STYLE, THISDAY_PICK_PROMPT, WRITE_PROMPT,
                      DATE_WORDS)
 
@@ -115,7 +115,7 @@ def merge_state(base, ours, theirs):
     for k in ("learn", "tg_comments"):
         seen_items = {json.dumps(x, sort_keys=True) for x in out.get(k, [])}
         out[k] = out.get(k, []) + [x for x in ours.get(k, []) if json.dumps(x, sort_keys=True) not in seen_items]
-    for k in ("tg_reactions", "lessons_pending"):
+    for k in ("tg_reactions", "lessons_pending", "tg_comment_count"):
         out[k] = {**out.get(k, {}), **ours.get(k, {})}
     for k in ("lessons_pending",):  # handled (removed) by this run
         for lid in base.get(k, {}):
@@ -1713,9 +1713,15 @@ def record_comment(m, s):
     origin = parent.get("forward_origin") or {}
     post_id = origin.get("message_id") if origin.get("type") == "channel" else None
     text = (m.get("text") or "").strip()
-    if post_id and text:
-        s["tg_comments"] = (s.get("tg_comments", []) + [{"post": post_id, "text": text[:400],
-                                                          "t": now().isoformat(timespec="seconds")}])[-800:]
+    if post_id and text:  # state.json is in a public repo: readers' words are kept only as a short, unsigned
+        # gist of what they ask or say (no names, no quotes), written by Claude; emotional or off-topic ones not at all
+        gist = ask_claude(COMMENT_GIST_PROMPT.format(comment=text[:600])).strip()
+        if gist and gist.upper() != "SKIP":
+            s["tg_comments"] = (s.get("tg_comments", []) + [{"post": post_id, "text": gist[:200],
+                                                              "t": now().isoformat(timespec="seconds")}])[-800:]
+        else:
+            s["tg_comment_count"] = {**s.get("tg_comment_count", {}),
+                                     str(post_id): s.get("tg_comment_count", {}).get(str(post_id), 0) + 1}
 
 
 def fb_stats(post_id):
