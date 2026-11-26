@@ -85,7 +85,7 @@
       "summary": "The five-year deal funds joint patrols and a new station on Cornwall Island.",
       "article": "The Mohawk Council of Akwesasne and the Ontario Provincial Police (OPP) have signed a five-year policing agreement worth $12 million, the council said Monday.\n\nUnder the deal, the Akwesasne Mohawk Police Service and the OPP will run joint patrols on the river and the highways near the community, which straddles the borders of Ontario, Quebec and New York State. The money will also pay for a new police station on Cornwall Island and for training eight new officers.\n\nGrand Chief Laura Benedict said the agreement recognizes that the Mohawk police are the first responders in the community. \"Our officers know these waters and these families. This gives them the resources to do the job,\" she said.\n\nThe OPP said the joint patrols would focus on smuggling and on boating safety in the summer months.",
       "expect": {
-        "facts": [["12 млн"], ["п'ять рок", "5 рок", "п’ять рок", "п’ятиріч", "п'ятиріч"], ["(вісім|вісьм)\\w* (нов|офіц|поліц)", "8 (нов|офіц|поліц)"]],
+        "facts": [["12 млн"], ["п'ять рок", "5 рок", "п’ять рок", "п’ятиріч", "п'ятиріч"], ["(вісім|вісьм|восьм)\\w* (нов|офіц|поліц)", "8 (нов|офіц|поліц)"]],
         "people": ["Laura Benedict"],
         "keep": [],
         "avoid": ["мохок", "Мохок", "Могаук"]
