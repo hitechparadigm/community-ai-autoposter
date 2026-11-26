@@ -27,6 +27,9 @@
   .top { position: absolute; top: 56px; left: 64px; right: 64px; display: flex; align-items: center;
          justify-content: space-between; font-weight: 700; font-size: 30px; letter-spacing: .04em; }
   .brand { display: flex; align-items: center; gap: 18px; text-transform: uppercase; }
+  .brand small { display: block; font-size: 22px; font-weight: 500; letter-spacing: .02em; text-transform: none;
+                 opacity: .85; margin-top: 4px; }
+  .brand small:empty { display: none; }
   .flag { width: 46px; height: 46px; border-radius: 50%; overflow: hidden; display: flex; flex-direction: column;
           box-shadow: 0 0 0 3px rgba(255,255,255,.9); }
   .flag i { flex: 1; } .flag i:first-child { background: #0057B7; } .flag i:last-child { background: #FFD700; }
@@ -39,6 +42,7 @@
   .footer { margin-top: 44px; padding-top: 28px; border-top: 4px solid var(--yellow); display: flex;
             justify-content: space-between; font-size: 30px; font-weight: 700; }
   .footer span:last-child { opacity: .8; font-weight: 500; }
+  .footer .cta { color: var(--yellow); font-weight: 800; }
   .credit { position: absolute; right: 22px; top: 50%; transform: rotate(-90deg) translateX(50%);
             transform-origin: right top; font-size: 18px; opacity: .55; white-space: nowrap; }
 
@@ -92,7 +96,7 @@
   <div class="ornament"></div>
   <div class="pic">{{background}}<div class="shade"></div>{{credit}}</div>
   <div class="top">
-    <div class="brand"><div class="flag"><i></i><i></i></div>{{brand}}</div>
+    <div class="brand"><div class="flag"><i></i><i></i></div><div>{{brand}}<small>{{tagline}}</small></div></div>
     <div class="date">{{date}}</div>
   </div>
   <div class="bottom">
@@ -102,7 +106,7 @@
       <h1 id="title">{{title}}</h1>
       {{items}}
     </div>
-    <div class="footer"><span>{{handle}}</span><span>{{handle2}}</span></div>
+    <div class="footer"><span><b class="cta">{{cta}}</b> {{handle}}</span><span>{{handle2}}</span></div>
   </div>
 </div>
 <script>

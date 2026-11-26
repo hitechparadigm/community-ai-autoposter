@@ -32,7 +32,7 @@ LABELS = {
     "photo": "Фото",
     "read_more": "Читати повністю",
     "wikipedia": "Вікіпедія",
-    "digest_title": "Головне за вчора",
+    "digest_title": "Головне в Канаді за вчора",
     "digest_national": "🇨🇦 Канада",
     "digest_community": "🇺🇦 Українська громада",
     "digest_today": "Сьогодні",
@@ -243,6 +243,8 @@ FB_COMMENT_READ_MORE = "📖 Версія з фото: {url}"   # added to the c
 CARD = {
     "size": (1080, 1350),                 # 4:5, the tallest shape Facebook shows in full in the feed
     "brand": "Українська Канада",
+    "tagline": "Новини Канади українською",  # small line under the brand
+    "cta": "Підписуйтеся:",               # call to action before the handle in the footer
     "handle": "t.me/UkrainianCanada",
     "handle2": "ukrainiancanada.ca",
     "colors": {"blue": "#0057B7", "yellow": "#FFD700", "dark": "#081228"},

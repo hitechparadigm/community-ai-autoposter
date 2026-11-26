@@ -63,6 +63,7 @@ def render_card(card):
     tag = f'<div class="tag">{e(card["tag"])}</div>' if card.get("tag") else ""
     values = {"kind": kind, "layout": "withphoto" if background else "nophoto", "background": background, "credit": credit, "items": items, "bigdate": bigdate,
               "tag": tag, "title": e(card.get("title", "")), "brand": e(c["brand"]),
+              "tagline": e(c.get("tagline", "")), "cta": e(c.get("cta", "")),
               "date": f"{d.day} {config.MONTHS[d.month - 1]} {d.year}", "handle": e(c.get("handle", "")),
               "handle2": e(c.get("handle2", "")), "width": w, "height": h, "band": c.get("band", 0),
               "band_color": c.get("band_color", "#A51D18"), **c.get("colors", {})}
