@@ -18,8 +18,59 @@ from .history import _history_from, _write_history
 from .learning import handle_lessons, record_comment
 
 
+# What Telegram sends the bot: taps, messages, approvers' reactions on drafts, readers' reaction counts
+ALLOWED_UPDATES = ["callback_query", "message", "message_reaction", "message_reaction_count"]
+
+
+def find_draft(s, sender, message_id):
+    """The waiting draft whose message (the text or its Facebook card) this approver has as message_id."""
+    key = admin_key(sender)
+    return next(((k, v) for k, v in s["pending"].items()
+                 if [key, message_id] in v.get("msgs", []) + v.get("card_msgs", [])), (None, None))
+
+
+def decide(s, did, d, action, who):
+    """Publish or skip a waiting draft (from a tap, a reply or a reaction). Returns the publish result text,
+    "" for a skip, or None if publishing failed (the draft then stays waiting)."""
+    if action == "pub":
+        result = publish_draft(d, s)
+        if result is None:
+            return None
+        close_draft(d, f"✅ Published by {who}{result}")
+    else:
+        result = ""
+        close_draft(d, f"❌ Skipped by {who}")
+        learn(s, "skipped", d)
+        retire_telegraph(d, s)
+    del s["pending"][did]
+    save_state(s)  # save after every decision so a later error can never cause a double post
+    return result
+
+
+def _word(text):
+    """A reply reduced to compare with PUBLISH_WORDS / SKIP_WORDS: lower case, no spaces or punctuation."""
+    return re.sub(r"[\s.,!?:;\-—«»\"']+", "", text.lower())
+
+
+def handle_reaction(r, s):
+    """An approver put a reaction on a draft or its card: PUBLISH_REACTIONS (👍) publishes it."""
+    sender = str((r.get("user") or {}).get("id", ""))
+    if sender not in ADMIN_IDS:
+        return
+    new = {x.get("emoji") for x in r.get("new_reaction", [])} - {x.get("emoji") for x in r.get("old_reaction", [])}
+    if not new & set(getattr(config, "PUBLISH_REACTIONS", ())):
+        return
+    did, d = find_draft(s, sender, r.get("message_id"))
+    if d:
+        who = html.escape(str(r["user"].get("first_name") or sender))
+        print(f"Published by reaction: {d['url']}")
+        if decide(s, did, d, "pub", who) is None:
+            tg("sendMessage", chat_id=sender, text="Publishing failed, check the bot is a channel admin")
+
+
 def handle_feedback(msg, s):
-    """An approver replied to a draft with feedback: rewrite it and send the new version for approval."""
+    """An approver replied to a draft: "publish"/"skip" (PUBLISH_WORDS, SKIP_WORDS) decides it; anything else is
+    feedback, and the bot rewrites the draft and sends the new version for approval."""
     sender = str((msg.get("from") or {}).get("id", ""))
     reply = msg.get("reply_to_message") or {}
     feedback = (msg.get("text") or "").strip()
@@ -28,9 +79,17 @@ def handle_feedback(msg, s):
     if not reply:
         handle_idea(msg, s, sender)
         return
-    key = admin_key(sender)
-    did, d = next(((k, v) for k, v in s["pending"].items()
-                   if [key, reply.get("message_id")] in v.get("msgs", [])), (None, None))
+    did, d = find_draft(s, sender, reply.get("message_id"))
+    word = _word(feedback)
+    action = ("pub" if word in map(_word, getattr(config, "PUBLISH_WORDS", ())) else
+              "skip" if word in map(_word, getattr(config, "SKIP_WORDS", ())) else "")
+    if d and action:
+        who = html.escape(str(msg["from"].get("first_name") or sender))
+        print(f"{'Published' if action == 'pub' else 'Skipped'} by reply: {d['url']}")
+        if decide(s, did, d, action, who) is None:
+            tg("sendMessage", chat_id=sender, text="Publishing failed, check the bot is a channel admin",
+               reply_parameters={"message_id": msg["message_id"]})
+        return
     if not d:
         tg("sendMessage", chat_id=sender, text=config.LABELS["feedback_gone"],
            reply_parameters={"message_id": msg["message_id"]})
@@ -161,7 +220,7 @@ def cmd_approve():
     updates = None
     for attempt in range(3):  # reading taps is safe to retry; a dropped connection is usually momentary
         try:
-            updates = tg("getUpdates", offset=s["tg_offset"], timeout=0, allowed_updates=["callback_query", "message", "message_reaction_count"])
+            updates = tg("getUpdates", offset=s["tg_offset"], timeout=0, allowed_updates=ALLOWED_UPDATES)
             break
         except (urllib.error.URLError, ConnectionError, TimeoutError) as e:
             print(f"Telegram unreachable ({e}); retrying" if attempt < 2 else
@@ -177,8 +236,7 @@ def cmd_approve():
         # Tell Telegram right away that these taps are handled. Otherwise a run that started from an older copy
         # of state.json (another tick, or a manual run) would get the same taps again and post twice.
         try:
-            tg("getUpdates", offset=updates[-1]["update_id"] + 1, timeout=0, limit=1,
-               allowed_updates=["callback_query", "message", "message_reaction_count"])
+            tg("getUpdates", offset=updates[-1]["update_id"] + 1, timeout=0, limit=1, allowed_updates=ALLOWED_UPDATES)
         except Exception as e:
             print(f"(could not confirm the taps: {e})")
     for u in updates:
@@ -187,6 +245,9 @@ def cmd_approve():
             r = u["message_reaction_count"]
             s.setdefault("tg_reactions", {})[str(r["message_id"])] = {
                 (x["type"].get("emoji") or x["type"].get("type", "?")): x["total_count"] for x in r.get("reactions", [])}
+            continue
+        if u.get("message_reaction"):  # an approver's reaction on a draft (👍 = publish)
+            handle_reaction(u["message_reaction"], s)
             continue
         if u.get("message"):
             m = u["message"]
@@ -212,20 +273,11 @@ def cmd_approve():
         if not d:
             answer(cq, "Already handled or expired")
             continue
-        if action == "pub":
-            result = publish_draft(d, s)
-            if result is None:
-                answer(cq, "Publishing failed, check the bot is a channel admin", alert=True)
-                continue
-            answer(cq, "Published" + result)
-            close_draft(d, f"✅ Published by {who}{result}")
+        result = decide(s, did, d, "pub" if action == "pub" else "skip", who)
+        if result is None:
+            answer(cq, "Publishing failed, check the bot is a channel admin", alert=True)
         else:
-            answer(cq, "Skipped")
-            close_draft(d, f"❌ Skipped by {who}")
-            learn(s, "skipped", d)
-            retire_telegraph(d, s)
-        del s["pending"][did]
-        save_state(s)  # save after every tap so a later error can never cause a double post
+            answer(cq, "Published" + result if action == "pub" else "Skipped")
 
     # Auto-publish: drafts of the kinds switched on in config.AUTO_PUBLISH go out after the waiting time
     due = (now() - timedelta(minutes=getattr(config, "AUTO_PUBLISH_AFTER_MINUTES", 60))).isoformat()

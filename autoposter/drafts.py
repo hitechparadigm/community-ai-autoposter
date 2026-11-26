@@ -62,9 +62,11 @@ def send_draft(s, url, text, stamp, image="", preview_url="", kind="news", note=
                              "kind": kind}
         if fb:
             s["pending"][did]["fb"] = fb
-        file_id = make_card(card)
+        card_msgs = []
+        file_id = make_card(card, card_msgs)
         if file_id:
             s["pending"][did]["card"] = file_id
+            s["pending"][did]["card_msgs"] = card_msgs
             s["pending"][did]["card_spec"] = {k: v for k, v in card.items() if k != "queries"}
     return bool(msgs)
 

@@ -6,7 +6,7 @@ import urllib.parse
 
 from community import config
 
-from .core import ADMIN_IDS, FB_PAGE_ID, FB_TOKEN, HERE, LOCAL, TG_TOKEN, http, now, post_multipart, tg
+from .core import ADMIN_IDS, admin_key, FB_PAGE_ID, FB_TOKEN, HERE, LOCAL, TG_TOKEN, http, now, post_multipart, tg
 from .sources import commons_image, wiki_thumb
 
 
@@ -86,24 +86,29 @@ def render_card(card):
             return b""
 
 
-def send_card(png, caption="Facebook"):
-    """Show the card to the approvers in Telegram; Telegram also stores it until it's published."""
+def send_card(png, caption="Facebook", sent=None):
+    """Show the card to the approvers in Telegram; Telegram also stores it until it's published.
+    sent: a list that gets [approver key, message id] per copy (so a reply or 👍 on the card counts too)."""
     file_id = ""
     for admin in ADMIN_IDS:
         try:
             fields = {"chat_id": admin, "caption": caption}
             if file_id:  # already uploaded once: reuse it
-                tg("sendPhoto", photo=file_id, **fields)
+                r = tg("sendPhoto", photo=file_id, **fields)
+                if sent is not None:
+                    sent.append([admin_key(admin), r["message_id"]])
                 continue
             r = post_multipart(f"https://api.telegram.org/bot{TG_TOKEN}/sendPhoto", fields,
                                {"photo": ("card.png", png, "image/png")})
             file_id = r["result"]["photo"][-1]["file_id"]
+            if sent is not None:
+                sent.append([admin_key(admin), r["result"]["message_id"]])
         except Exception as ex:
             print(f"Could not send the card to approver #{ADMIN_IDS.index(admin) + 1}: {ex}")
     return file_id
 
 
-def make_card(card):
+def make_card(card, sent=None):
     """Render and store a card for Facebook. Only when Facebook is set up (or CARDS_ALWAYS for testing)."""
     if not card or not ((FB_PAGE_ID and FB_TOKEN) or os.environ.get("CARDS_ALWAYS")):
         return ""
@@ -112,4 +117,4 @@ def make_card(card):
             break
         card["photo"] = card_photo(commons_image(q)) if q else ""
     png = render_card(card)
-    return send_card(png, "🖼 Facebook") if png else ""
+    return send_card(png, "🖼 Facebook", sent) if png else ""

@@ -49,7 +49,8 @@ LABELS = {
     "feedback_failed": "Не вдалося переписати. Спробуйте сформулювати інакше або змініть вручну.",
     "ideas_help": ("Надішліть посилання — я підготую новину. «історія …» (тема або посилання) — довгий текст з "
                    "історії Канади. «варто знати …» + посилання — практична історія з порадами. Щоб змінити "
-                   "чернетку, відповідайте (Reply) на неї."),
+                   "чернетку, відповідайте (Reply) на неї. Якщо кнопка не спрацювала, відповідайте «опублікувати» "
+                   "або поставте 👍 на чернетку чи картку."),
     "idea_working": "✍️ Готую чернетку, вона прийде за кілька хвилин.",
     "idea_needs_link": "Для новини потрібне посилання на статтю. Для теми з історії почніть з «історія …».",
     "idea_failed": "Не вдалося підготувати чернетку з цього джерела. Спробуйте інше посилання.",
@@ -64,6 +65,12 @@ LABELS = {
     "unpublished": "Матеріал не опубліковано",
     "review_warning": "Перевірка знайшла проблеми, перегляньте уважно",
 }
+
+# Fallbacks when a button tap doesn't get through: reply to a draft (or its card) with one of these words,
+# or put one of these reactions on it. Replies are compared ignoring case, spaces and punctuation.
+PUBLISH_WORDS = ("publish", "опублікувати", "опублікуй", "публікуй", "публікувати", "так", "ok", "ок", "👍", "✅")
+SKIP_WORDS = ("skip", "пропустити", "пропусти", "❌")
+PUBLISH_REACTIONS = ("👍",)
 
 # Daily limits shown on drafts ("📊 Сьогодні опубліковано новин: 4 з 5"); you may still publish more.
 # A kind not listed here uses the number of its times in SCHEDULE.

@@ -32,7 +32,9 @@ Each draft arrives as a message with two buttons, followed by a separate **🖼 
 
 1. Read the draft. Open the link at the bottom if you want to check the original article.
 2. Tap **✅ Publish** or **❌ Skip**. The bot checks for taps every 5 minutes, so publishing can take up to 5 minutes. When it's done, the draft shows "✅ Published by … + Facebook".
-3. If the buttons are still there a minute after tapping, the tap probably didn't go through: tap again.
+3. If the buttons are still there 5 minutes after tapping, the tap didn't reach the bot (this happens when the app is briefly offline). Two other ways that always work:
+   - **Reply** to the draft or its Facebook card with **опублікувати** (or publish, так, ok, 👍); reply **пропустити** (or skip, ❌) to skip it.
+   - Put a **👍 reaction** on the draft or its card to publish it.
 
 Things you'll see on drafts (they are for us only and are never published):
 

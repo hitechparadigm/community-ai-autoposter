@@ -157,6 +157,39 @@ class Approvals(unittest.TestCase):
         self.assertEqual(self.calls, [])
 
 
+class PublishFallbacks(unittest.TestCase):
+    """A reply "publish" or a 👍 reaction on a draft (or its card) publishes it, like the ✅ button."""
+
+    def setUp(self):
+        self.decided = []
+        key = core.admin_key("1")
+        self.s = {"pending": {"abc": {"url": "u", "msgs": [[key, 10]], "card_msgs": [[key, 11]]}}, "seen": {}}
+        for p in (mock.patch.object(approval, "ADMIN_IDS", ["1"]),
+                  mock.patch.object(approval, "tg", lambda m, **k: {"message_id": 1}),
+                  mock.patch.object(approval, "decide", lambda s, did, d, action, who:
+                                    self.decided.append((did, action)) or "")):
+            p.start()
+            self.addCleanup(p.stop)
+
+    def reply(self, text, to=10, sender=1):
+        approval.handle_feedback({"from": {"id": sender, "first_name": "D"}, "text": text, "message_id": 7,
+                                  "reply_to_message": {"message_id": to}}, self.s)
+
+    def test_reply_publish_or_skip(self):
+        self.reply("Publish!")
+        self.reply("опублікуй", to=11)  # a reply to the card works too
+        self.reply("❌")
+        self.assertEqual(self.decided, [("abc", "pub"), ("abc", "pub"), ("abc", "skip")])
+
+    def test_thumbs_up_publishes_other_reactions_dont(self):
+        r = lambda emoji, mid=10, uid=1: {"user": {"id": uid}, "message_id": mid, "old_reaction": [],
+                                         "new_reaction": [{"type": "emoji", "emoji": emoji}]}
+        approval.handle_reaction(r("❤"), self.s)
+        approval.handle_reaction(r("👍", uid=99), self.s)  # not an approver
+        approval.handle_reaction(r("👍", mid=11), self.s)
+        self.assertEqual(self.decided, [("abc", "pub")])
+
+
 class CommandLine(unittest.TestCase):
     def test_unknown_command_prints_usage(self):
         from autoposter import cli

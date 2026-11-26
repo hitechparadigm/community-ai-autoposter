@@ -24,8 +24,9 @@ Any other community can run its own channel by changing two settings files (see
   "what happens today", each item linked to its source, with a mix of outlets.
 - **Canadian history.** A daily "This day in Canadian history" post and a history long-read, published as
   Telegraph articles (Instant View in Telegram), grounded in Canadian archives and encyclopedias.
-- **Human in the loop.** Every draft goes to the editors in Telegram with ✅ / ❌; nothing is published
-  without approval (optional timed auto-publish per post type). Approved posts also go to the Facebook Page.
+- **Human in the loop.** Every draft goes to the editors in Telegram with ✅ / ❌ (or a reply "опублікувати" /
+  a 👍 reaction if a tap doesn't get through); nothing is published without approval (optional timed
+  auto-publish per post type). Approved posts also go to the Facebook Page.
 
 ### Engineering highlights
 
