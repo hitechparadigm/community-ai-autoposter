@@ -422,6 +422,8 @@ def write_long(prompt, keys, tries=2, source=None, optional=()):
 def parse_post(text, keys=("title", "body")):
     post = _json(text, "{", "}")
     if isinstance(post, dict):
+        # The model sometimes writes line breaks as the two characters "\n" inside its answer: turn them back
+        post = {k: v.replace("\\n", "\n").replace("\\t", " ") if isinstance(v, str) else v for k, v in post.items()}
         post = {k: fix_homoglyphs(v) if isinstance(v, str) and k != "image_query" else v for k, v in post.items()}
     if isinstance(post, dict) and all(post.get(k) for k in keys):
         return post
