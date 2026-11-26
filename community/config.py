@@ -384,6 +384,8 @@ WIKI_REGIONAL_TOPICS = [
 ]
 
 
+TITLE_MAX_WORDS = 12   # a longer news headline is shortened by one extra Claude call
+
 # ── Evaluation set (evals/): automatic checks on posts written from fixed test stories ──
 EVAL = {
     # words that must never appear: russianisms and calques (whole words or word starts, any case)
@@ -391,7 +393,7 @@ EVAL = {
                   "прийняли участь", "на протязі", "слідуюч", "в якості", "співпада", "міроприємств",
                   "згідно закону", "получ", "являлось", "являлася", "являвся", "любий з", "прибульц"],
     "foreign_letters": "[ыэъёЫЭЪЁ]",     # letters of other alphabets that must not appear
-    "title_max_words": 12,
+    "title_max_words": TITLE_MAX_WORDS,
     "body_chars": {"news": (450, 1400), "tips": (350, 1800)},   # tips include the "what to do" list
     "judge_pass": 4,                    # judge scores at or above this count as a pass
 }

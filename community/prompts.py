@@ -440,3 +440,11 @@ Be strict: give 5 only when you would publish the post unchanged. In "notes", na
 Post:
 {post}
 """
+
+
+# A headline that came out too long (news and "Варто знати")
+SHORTEN_TITLE = """Shorten this Ukrainian news headline to at most {words} words. Keep the key fact and the meaning, \
+use natural literary Ukrainian, no clickbait. Reply with the headline only.
+
+Headline: {title}
+"""

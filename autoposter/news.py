@@ -7,7 +7,7 @@ import sys
 from datetime import timedelta
 
 from community import config
-from community.prompts import (DIGEST_PROMPT, EDIT_PROMPT, PICK_PROMPT, TIPS_CHECK, TIPS_PICK_PROMPT, TIPS_WRITE_PROMPT,
+from community.prompts import (DIGEST_PROMPT, EDIT_PROMPT, PICK_PROMPT, SHORTEN_TITLE, TIPS_CHECK, TIPS_PICK_PROMPT, TIPS_WRITE_PROMPT,
                      WRITE_PROMPT)
 
 from .core import ADMIN_IDS, LOCAL, load_state, now, save_state, visible_length
@@ -41,6 +41,11 @@ def write_news(it, article, mode="news", idea=""):
         post = edited
     else:
         print("Copy edit failed; using the first draft")
+    limit = getattr(config, "TITLE_MAX_WORDS", 0)
+    if limit and len(post["title"].split()) > limit:  # the writers sometimes run long: one short call to fix it
+        short = ask_claude(SHORTEN_TITLE.format(words=limit, title=post["title"])).strip().strip("«»\"")
+        if short and len(short.split()) <= limit:
+            post["title"] = short
     post, problems = review_post(post, ("title", "body"), article or it["summary"], it["title"])
     if advice:  # general advice, not from the article: checked separately for accuracy and invented details
         checked = _json(ask_claude(TIPS_CHECK.format(story=post["body"], tips=advice), source=src_text,
