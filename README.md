@@ -73,12 +73,17 @@ checked automatically and graded by a separate Claude call acting as a judge:
 | form | Headline length, post length, no broken words or stray links, ends with a full sentence |
 | reviewer | The reviewer agent found nothing left to fix |
 
-The judge scores accuracy, language and usefulness from 1 to 5 (5 = would publish unchanged). Latest run, model
-`claude-sonnet-5-5`: all nine posts written; facts, glossary, people, language and reviewer checks 100%,
-untranslated names and form 89% each (one museum name translated, one headline over 12 words); judge average
-3.9 on all three criteria (3.7–4.0 across runs); about **$0.06 per post** for the full pipeline (38 Claude calls
-for nine posts, $0.51). The judge's notes point at the next improvement: the 💡 Варто знати "what to do" lists
-repeat the story and sometimes add advice that isn't in the source. Run it yourself: `python3 bot.py eval`, or Actions → Evaluation.
+The judge scores accuracy, language and usefulness from 1 to 5 (5 = would publish unchanged).
+
+What the evaluation changed. The first runs passed 4-5 of 9 posts on every check. The judge's notes showed that
+the 💡 Варто знати "what to do" lists repeated the story and added specifics not in the source, that some
+headlines ran over 12 words, and that the naming rule left museums ambiguous. Fixes: advice moved out of the story
+into the tips, a tips check that sees the article, a one-call headline shortener, short forms after an
+institution's first mention, and a clear rule for public institutions. Latest run, model `claude-sonnet-5-5`:
+**all automatic checks 100%**, 7 of 9 posts passing everything (the other two only scored 3 for usefulness),
+judge average 4.0 accuracy, 4.1 language, 3.8 usefulness, about **$0.05 per post** for the whole pipeline. Every
+run is in [history.csv](evals/results/history.csv); with nine cases, one post moves a rate by 11 points, so
+compare trends rather than single runs. Run it yourself: `python3 bot.py eval`, or Actions → Evaluation.
 
 **In production** ([monthly numbers](docs/RESULTS.md)). Posts published per type, the share of drafts editors
 approve, how often they ask for a rewrite, and reader reactions per post on Telegram and Facebook, refreshed
