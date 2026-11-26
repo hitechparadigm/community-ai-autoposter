@@ -9,6 +9,8 @@ Any other community can run its own channel by changing two settings files (see
 
 **Live demo:** [t.me/UkrainianCanada](https://t.me/UkrainianCanada)
 
+**Approving posts?** Start with the [guide for approvers](docs/USER_GUIDE.md): drafts, replies with feedback, sending your own links and ideas.
+
 ### What it does
 
 - **News, 5 times a day.** Reads ~50 Canadian feeds (CBC, Global News and CTV News for every province and territory,
@@ -388,6 +390,7 @@ fine-grained token with Contents read/write on just that repository, and save it
 | API keys, bot token, approver IDs, Telegraph and Facebook keys | GitHub → Settings → Secrets and variables → Actions |
 | The program itself | `autoposter/` (no settings inside); `bot.py` is the command line |
 | Tests | `tests/` (`python3 -m unittest discover -s tests`) |
+| Guide for approvers | `docs/USER_GUIDE.md` |
 | What the bot remembers (seen stories, drafts, learning log) | `state.json` in the private `<this repo>-state` repository when the `STATE_TOKEN` secret is set (recommended: keeps drafts and reader data private and this repo free of bot commits); otherwise `state.json` here. Automatic; don't edit by hand |
 
 The timer is cron-job.org (see Setup, step 4); the `cron:` line in `tick.yml` is a backup. GitHub runs its
