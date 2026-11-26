@@ -177,7 +177,7 @@ HOMOGLYPHS = str.maketrans("aceiopxyACEHIKMOPTXB", "асеіорхуАСЕНІК
 BROKEN_WORD = re.compile(r"[а-яіїєґ][a-z]{3,}|[a-z]{3,}[а-яіїєґ]", re.I)
 
 
-def claude_search(prompt, max_uses=8):
+def claude_search(prompt, max_uses=6):
     """Let Claude search the web itself (Anthropic's web search tool) and answer the prompt.
     Returns (Claude's final text, [{"url", "title"}, ...] of every search result it saw); ("", []) on failure
     (for example when web search isn't enabled for the API key's organization)."""
@@ -210,6 +210,39 @@ def claude_search(prompt, max_uses=8):
         messages = [messages[0], {"role": "assistant", "content": resp["content"]}]
     print(f"Claude web search: {len(results)} results seen")
     return text, results
+
+
+def claude_fetch(urls, max_chars=7000):
+    """Read pages through Anthropic's web fetch tool (for pages the bot's own reader can't load: slow sites,
+    PDFs, sites that refuse plain scripts). Returns {url: text} for the pages that came back as text."""
+    if not urls or not ANTHROPIC_KEY:
+        return {}
+    body = {"model": config.MODEL, "max_tokens": 1000,
+            "messages": [{"role": "user", "content": "Fetch each of these pages with the web_fetch tool (one call "
+                          "per address), then reply DONE.\n" + "\n".join(urls)}],
+            "tools": [{"type": "web_fetch_20250910", "name": "web_fetch", "max_uses": len(urls),
+                       "max_content_tokens": max_chars // 2}]}
+    try:
+        resp = json.loads(http("https://api.anthropic.com/v1/messages", body,
+                               {"x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01",
+                                "anthropic-beta": "web-fetch-2025-09-10"}, timeout=300))
+    except Exception as e:
+        print(f"Claude web fetch failed: {str(e)[:200]}")
+        return {}
+    u = resp.get("usage", {})
+    _usage["calls"] += 1
+    for k, f in (("input", "input_tokens"), ("cache_read", "cache_read_input_tokens"),
+                 ("cache_write", "cache_creation_input_tokens"), ("output", "output_tokens")):
+        _usage[k] += u.get(f) or 0
+    pages = {}
+    for b in resp.get("content", []):
+        c = b.get("content") or {}
+        if b.get("type") == "web_fetch_tool_result" and c.get("type") == "web_fetch_result":
+            src = (c.get("content") or {}).get("source") or {}
+            if src.get("type") == "text" and src.get("data"):
+                pages[c.get("url", "")] = src["data"][:max_chars]
+    print(f"Claude web fetch: {len(pages)} of {len(urls)} pages read")
+    return pages
 
 
 def fix_homoglyphs(text):

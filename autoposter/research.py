@@ -13,7 +13,7 @@ from community.prompts import (EDIT_PROMPT, RESEARCH_COVERAGE_PROMPT, RESEARCH_P
 
 from .core import now
 from .sources import commons_image, fetch_article, outlet_name, split_queries, web_search
-from .ai import (SCHEMA_IDS, claude_search, SOURCE_REF, _json, ask_claude, edit_ok, parse_picks, parse_post, review_note,
+from .ai import (SCHEMA_IDS, claude_fetch, claude_search, SOURCE_REF, _json, ask_claude, edit_ok, parse_picks, parse_post, review_note,
                  review_post, schema_post, write_long)
 from .channels import fb_long, telegraph, telegraph_nodes
 from .drafts import send_draft
@@ -100,17 +100,24 @@ def _claude_found(topic, n, seen, missing=""):
 
 
 def _read_pages(found, n):
-    """Read pages in order until n have enough text: [(site, url, text), ...]."""
+    """Read pages in order until n have enough text: [(site, url, text), ...]. Pages the bot's own reader can't
+    load are read through Claude's web fetch tool instead (in one call), keeping the order."""
+    texts = {}
+    for it in found:
+        texts[it["url"]] = fetch_article(_readable(it["url"]), 7000)
+        if sum(len(t) >= 600 for t in texts.values()) >= n:
+            break
+    failed = [u for u, t in texts.items() if len(t) < 600]
+    if failed:
+        texts.update(claude_fetch(failed))
     out = []
     for it in found:
-        text = fetch_article(_readable(it["url"]), 7000)
-        if len(text) >= 600:
+        text = texts.get(it["url"], "")
+        if len(text) >= 600 and len(out) < n:
             out.append((it["source"], it["url"], text))
             print(f"Source: {it['source']} {it['url']} ({len(text)} characters)")
-        else:
+        elif it["url"] in texts and len(text) < 600:
             print(f"Skipped (only {len(text)} characters of text): {it['url']}")
-        if len(out) >= n:
-            break
     return out
 
 

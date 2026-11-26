@@ -507,9 +507,13 @@ RESEARCH_COVERAGE_PROMPT = """An editor asked for an article on this topic:
 {topic}
 
 The source text (given above) holds the pages found so far. Do they contain enough specific, reliable information
-to write the article the editor asked for, on THAT topic (not a related one)? If not, say what is missing and give
-2-4 new web search queries (mostly English) likely to find it, e.g. official pages on canada.ca or
-laws-lois.justice.gc.ca, lawyers' explanations, or forum threads if the editor asked for people's experiences.
+to write the article the editor asked for, on THAT topic (not a related one)?
+- "enough": true when the sources cover the core of the request (what it is, how it works, the main question),
+  even if some parts are thin (for example few personal stories): the article will say plainly what the sources
+  don't cover. false when they are mostly about something else or miss the main question.
+- "missing": what is missing, one short sentence in Ukrainian (also when enough is true, if something is thin).
+- "queries": if not enough, 2-4 new web search queries (mostly English) likely to find it, e.g. official pages on
+  canada.ca or laws-lois.justice.gc.ca, lawyers' explanations, or forum threads for people's experiences.
 
 Reply with JSON only: {{"enough": true or false, "missing": "what is missing, one short sentence in Ukrainian",
 "queries": ["...", "..."]}}
