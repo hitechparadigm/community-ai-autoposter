@@ -73,12 +73,12 @@ checked automatically and graded by a separate Claude call acting as a judge:
 | form | Headline length, post length, no broken words or stray links, ends with a full sentence |
 | reviewer | The reviewer agent found nothing left to fix |
 
-The judge scores accuracy, language and usefulness from 1 to 5 (5 = would publish unchanged). Baseline run, model
-`claude-sonnet-5-5`: all nine posts written; glossary, people, names, language and reviewer checks 100%;
-facts and form 89% each; judge average 4.0 for accuracy and language and 3.8 for usefulness; about **$0.06 per
-post** for the full pipeline (40 Claude calls for nine posts, $0.58). The judge's notes point at the next
-improvement: the 💡 Варто знати "what to do" lists repeat the story and sometimes add advice that isn't in the
-source. Run it yourself: `python3 bot.py eval`, or Actions → Evaluation.
+The judge scores accuracy, language and usefulness from 1 to 5 (5 = would publish unchanged). Latest run, model
+`claude-sonnet-5-5`: all nine posts written; facts, glossary, people, language and reviewer checks 100%,
+untranslated names and form 89% each (one museum name translated, one headline over 12 words); judge average
+3.9 on all three criteria (3.7–4.0 across runs); about **$0.06 per post** for the full pipeline (38 Claude calls
+for nine posts, $0.51). The judge's notes point at the next improvement: the 💡 Варто знати "what to do" lists
+repeat the story and sometimes add advice that isn't in the source. Run it yourself: `python3 bot.py eval`, or Actions → Evaluation.
 
 **In production** ([monthly numbers](docs/RESULTS.md)). Posts published per type, the share of drafts editors
 approve, how often they ask for a rewrite, and reader reactions per post on Telegram and Facebook, refreshed
