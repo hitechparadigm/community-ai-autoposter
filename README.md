@@ -43,9 +43,12 @@ Any other community can run its own channel by changing two settings files (see
   institutions (Dictionary of Canadian Biography, Library and Archives Canada, CBC Archives, provincial
   societies), with Wikipedia only as a fallback. Images are checked to be real photos (not logos or banners),
   with freely licensed Wikimedia Commons photos as a fallback.
-- **Serverless and free to run.** GitHub Actions jobs started every 5 minutes by a free external timer, Telegram Bot API, Telegraph API and the
-  Facebook Graph API; state is a JSON file in the repo, with a three-way merge so overlapping runs never lose
-  a draft or double-post. No servers, no database, no third-party Python packages.
+- **Serverless and free to run.** GitHub Actions jobs started every 5 minutes by a free external timer, Telegram
+  Bot API, Telegraph API and the Facebook Graph API. The bot's memory is a JSON file in a separate private
+  repository (drafts and reader data stay private), with a three-way merge so overlapping runs never lose a
+  draft, and taps confirmed at once so a post can't go out twice. No servers, no third-party Python packages.
+- **Modular and tested.** A small package with one job per module (below) and layered imports with no cycles;
+  unit tests plus an end-to-end test (draft → approval → publish with the network faked) run on every push.
 - **Configurable, not hard-coded.** Sources, schedules, approvers, referral offers and publishing rules live in
   `config.py`; all editorial instructions live in `prompts.py`, so the same code can serve another community.
 
@@ -344,6 +347,24 @@ fine-grained token with Contents read/write on just that repository, and save it
      body `{"ref":"main"}`. A test run returns 204 and a "Tick" run appears in Actions.
 5. Test: Actions → "Draft posts" → Run workflow; a draft should arrive in Telegram within a minute.
 
+## Code layout
+
+`bot.py` only starts the command line; the code is the `autoposter` package. Each layer uses only the ones above it:
+
+| Module | Job |
+|---|---|
+| `core.py` | Settings from the environment, time, HTTP, the bot's memory, Telegram calls |
+| `sources.py` | News feeds and news searches, article pages, photos, Wikipedia |
+| `ai.py` | Claude calls (caching, structured answers), glossary, editorial notes, copy-edit checks, reviewer agent |
+| `cards.py` | Facebook picture cards (`card.html` + headless Chrome) |
+| `channels.py` | Telegraph long-reads, Facebook Page posts and comments, Telegram post format |
+| `drafts.py` | Drafts for approval, daily counts, learning log, publishing |
+| `news.py` | News, 💡 Варто знати and the morning digest |
+| `history.py` | 📅 Цей день and 🍁 history long-reads |
+| `learning.py` | Reader comments and reactions, the monthly review |
+| `approval.py` | Taps, feedback replies, ideas and links sent to the bot |
+| `cli.py` | The 5-minute tick and the other commands |
+
 ## Where things are
 
 | What you want to change | Where |
@@ -354,7 +375,8 @@ fine-grained token with Contents read/write on just that repository, and save it
 | Facebook card design | `card.html` (+ `CARD` in `config.py`) |
 | Run times (local time) | `config.py` → `SCHEDULE` |
 | API keys, bot token, approver IDs, Telegraph and Facebook keys | GitHub → Settings → Secrets and variables → Actions |
-| The program itself | `bot.py` (no settings inside) |
+| The program itself | `autoposter/` (no settings inside); `bot.py` is the command line |
+| Tests | `tests/` (`python3 -m unittest discover -s tests`) |
 | What the bot remembers (seen stories, drafts, learning log) | `state.json` in the private `<this repo>-state` repository when the `STATE_TOKEN` secret is set (recommended: keeps drafts and reader data private and this repo free of bot commits); otherwise `state.json` here. Automatic; don't edit by hand |
 
 The timer is cron-job.org (see Setup, step 4); the `cron:` line in `tick.yml` is a backup. GitHub runs its
