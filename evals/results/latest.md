@@ -1,13 +1,13 @@
 # Evaluation results
 
-2026-11-26 · model `claude-sonnet-5-5` · prompts `217d6d8f` · 9/9 posts written · **4/9 passed every check** · 38 Claude calls · $0.51 ($0.057 per post)
+2026-11-26 · model `claude-sonnet-5-5` · prompts `a890f71d` · 9/9 posts written · **6/9 passed every check** · 40 Claude calls · $0.54 ($0.060 per post)
 
 | Check | Pass rate |
 | --- | --- |
 | facts | 100% |
 | glossary | 100% |
 | people | 100% |
-| names_kept | 89% |
+| names_kept | 100% |
 | language | 100% |
 | form | 89% |
 | reviewer | 100% |
@@ -15,20 +15,20 @@
 | Judge (1-5) | Average |
 | --- | --- |
 | accuracy | 3.89 |
-| language | 3.89 |
+| language | 4.00 |
 | usefulness | 3.89 |
 
 ## Cases
 
 | Case | facts | glossary | people | names_kept | language | form | reviewer | Judge (acc/lang/use) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| min-wage-mb | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 4/3/4 |
+| min-wage-mb | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 4/4/4 |
 | rcmp-deepfake | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 4/4/5 |
-| ucc-mentorship | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 4/4/4 |
-| ircc-cuaet-pr | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 4/4/4 |
-| statcan-population | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | 4/4/4 |
+| ucc-mentorship | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 5/4/4 |
+| ircc-cuaet-pr | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | 3/4/4 |
+| statcan-population | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 4/4/4 |
 | akwesasne-policing | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 4/4/4 |
-| quebec-museum | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | 4/4/4 |
+| quebec-museum | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 4/4/4 |
 | cra-ccb-tips | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 3/4/3 |
 | health-canada-recall-tips | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 4/4/3 |
 
@@ -36,139 +36,140 @@
 
 ### min-wage-mb
 
-**Мінімальна зарплата в Манітобі зросте до 16,50 долара на годину**
+**У Манітобі мінімальну зарплату підвищать до 16,50 долара за годину**
 
-Нова мінімальна погодинна ставка почне діяти 1 жовтня, повідомив у вівторок уряд провінції.
+Від 1 жовтня мінімальна погодинна оплата праці в Манітобі становитиме 16,50 долара. Про це в уряді провінції повідомили у вівторок. Підвищення — 65 центів на годину.
 
-Вона зросте на 65 центів. Підвищення прив'язане до інфляції в провінції — цього вимагає закон, ухвалений 2023 року. Міністр праці Манітоби Деніел Моро (Daniel Moreau) сказав на пресконференції у Вінніпезі, що мінімальну оплату отримують близько 40 тисяч людей, здебільшого в роздрібній торгівлі та сфері харчування.
+Розмір мінімальної зарплати прив'язаний до інфляції в провінції: так вимагає закон, ухвалений 2023 року. За словами міністра праці Деніела Моро (Daniel Moreau), мінімальну ставку отримують близько 40 тисяч працівників, здебільшого в роздрібній торгівлі та закладах харчування. Роботодавці мають платити за новою ставкою за всі години, відпрацьовані від 1 жовтня, зокрема студентам і працівникам на неповну зайнятість. Ставка в Манітобі залишиться нижчою, ніж у Британській Колумбії, але вищою, ніж у Саскачевані.
 
-Торгові палати Манітоби (Manitoba Chambers of Commerce) зазначили, що малий бізнес покриє додаткові витрати сам. Водночас організація просить у майбутньому повідомляти роботодавців про такі зміни завчасніше. За її словами, багато компаній і так платять більше за мінімальну ставку, щоб залучити працівників.
+Торгово-промислова палата Манітоби (Manitoba Chambers of Commerce) зазначила, що малий бізнес візьме додаткові витрати на себе, але просить у наступні роки повідомляти про зміни заздалегідь. За словами представників палати, багато її членів і так платять вище мінімальної ставки, щоб залучити персонал.
 
-Роботодавці мають оновити оплату за всі години, відпрацьовані з 1 жовтня, зокрема для студентів і працівників з неповним навантаженням. Мінімальна ставка в Манітобі залишиться нижчою, ніж у Британській Колумбії, але вищою, ніж у Саскачевані.
-
-Judge: Accuracy: the source's minister quote about groceries and rent is omitted (not an error). "Manitoba Chambers of Commerce" is rendered as "Торгові палати Манітоби" (plural, awkward; better "Торгово-промислова палата Манітоби"). "Employers must update pay for all hours worked from October 1" is rendered fine. "Small businesses would absorb the change" became "покриє додаткові витрати сам", which is a slight interpretive shift, and the tense is a bit off. Language: "платять більше за мінімальну ставку" is wrong; it should be "більше, ніж мінімальна ставка" or "вище за мінімальну". "Мінімальну оплату отримують близько 40 тисяч людей" is awkward; "працівників" or "отримують мінімальну зарплату" would be better. "Сфері харчування" is a calque of "food service" (better "громадське харчування"). "Сказав на пресконференції" is acceptable. "Працівників з неповним навантаженням" is slightly clumsy. The Latin-script names in parentheses are unnecessary clutter. "Мінімальна ставка залишиться нижчою, ніж..." is fine. Usefulness: clear and covers the key facts, but it omits the minister's quote on why the change matters and doesn't say what the old rate was ($15.85); the final comparison is a bit generic.
+Judge: Accuracy: facts and numbers match the source. Minor omission: Moreau's quote about groceries and rent is left out, and the Winnipeg news conference is not mentioned. "Manitoba Chambers of Commerce" is rendered as "Торгово-промислова палата Манітоби", which is a slight liberty because it is really a network of chambers, and a rendering like "Торговельні палати Манітоби" would fit better. Language: mostly natural. "Торгово-промислова" should be "торговельно-промислова". "Візьме додаткові витрати на себе" is slightly clumsy, and "візьме на себе додаткові витрати" is better. "Від 1 жовтня" is fine, but "з 1 жовтня" is more standard. "Працівникам на неповну зайнятість" is a bit stilted, and "працівникам, що працюють неповний день" would be more natural. "Повідомили в уряді" is fine. Usefulness: clear and concise. It does not explain why this matters to readers, such as workers or employers in the Ukrainian community, and the key point about all hours worked from Oct 1 is buried in the middle of a paragraph.
 
 ### rcmp-deepfake
 
 **Шахраї з дипфейками виманили в мешканців Метро-Ванкувера 2,3 млн доларів**
 
-Канадська королівська кінна поліція (RCMP) попереджає мешканців агломерації Метро-Ванкувер про любовні шахрайства, у яких аферисти видають себе за інших людей за допомогою відео, створеного штучним інтелектом.
+Канадська королівська кінна поліція (RCMP) попереджає мешканців агломерації Метро-Ванкувер про романтичні шахрайства, у яких зловмисники видають себе за інших людей за допомогою відео, створеного штучним інтелектом.
 
-Від початку року про втрати повідомили 85 осіб. Разом вони позбулися 2,3 млн доларів. Здебільшого зловмисники знайомилися з жертвою в застосунку для побачень або в соцмережах, а потім влаштовували короткі відеодзвінки. Під час них дипфейк підміняв обличчя та голос, і фальшива особа виглядала переконливо. Сержантка підрозділу фінансових злочинів RCMP у місті Серрі (Surrey) Прія Сандху (Priya Sandhu) зазначає: щойно з'являється довіра, шахраї починають просити гроші — на лікування, через заблокований рахунок або для вигідного вкладення.
+Цього року про втрати повідомили 85 людей, а загальна сума сягає 2,3 млн доларів. Здебільшого шахраї знайомилися з жертвами в застосунках для знайомств або в соцмережах. Потім вони проводили короткі відеодзвінки, під час яких обличчя й голос підміняв дипфейк, і через це вигадана особа здавалася переконливою. Коли довіра з'являлася, починалися прохання про гроші: нібито на лікування, через заблокований банківський рахунок або для вигідного вкладення.
 
-Поліція називає тривожні ознаки: співрозмовник не може зустрітися наживо, дзвінок раптово уривається, коли його просять повернути голову, а ще він вимагає криптовалюту або подарункові картки. Якщо ви вже надіслали гроші, одразу зверніться до банку, а також повідомте місцеву поліцію та Канадський антишахрайський центр (Canadian Anti-Fraud Centre).
+«Дзвінки виглядають справжніми, і саме тому такі шахрайства так ефективно діють», — наголосила сержантка Пріая Сандху (Priya Sandhu) з відділу фінансових злочинів RCMP у Саррі.
 
-Judge: Accuracy: the headline says scammers "виманили" $2.3M from residents, but the source says 85 people reported losing it. That is a slight overstatement, since it covers reported losses only. "Метро-Ванкувера" is fine. "Від початку року" matches "so far this year". The body is faithful and the glossary name is used correctly. Language: mostly natural. "аферисти" and "зловмисники" are fine. "Сержантка ... зазначає: щойно з'являється довіра" is a paraphrase of the quote, which is acceptable. "вигідного вкладення" slightly softens "investment opportunity". "Вимагає" is stronger than "any request for", so "просить" would be better. "Дипфейк підміняв обличчя та голос" is a bit loose. "Любовні шахрайства" is acceptable, though "романтичні шахрайства" is also used. The English names in parentheses are unnecessary clutter. Usefulness: clear, with practical advice and no padding. The post says "Здебільшого" for "in most cases", which is correct.
+Поліція радить насторожитися, якщо співрозмовник не може зустрітися наживо, різко обриває дзвінок, коли його просять повернути голову, або вимагає криптовалюту чи подарункові картки. Якщо ви вже переказали гроші, негайно зв'яжіться з банком, а потім повідомте місцеву поліцію та Канадський антишахрайський центр (Canadian Anti-Fraud Centre).
+
+Judge: Accuracy: the name Priya is rendered "Пріая", which is an odd transliteration (should be "Пріа" or "Прія"). "а потім повідомте поліцію" adds an order of steps that the source does not specify. The headline "виманили" states the losses as proven fact, whereas the source says victims "reported losing". Language: "і через це вигадана особа здавалася переконливою" is a bit clunky. "ефективно діють" is slightly awkward. "Коли довіра з'являлася" is acceptable but could be smoother. Otherwise the text is natural and the glossary name is used correctly. Usefulness: clear, includes the warning signs and what to do, with no padding.
 
 ### ucc-mentorship
 
-**В Едмонтоні запустили менторську програму для новоприбулих українців**
+**В Едмонтоні запустили програму наставництва для новоприбулих українців**
 
-Провінційна рада Конгресу українців Канади (КУК) в Альберті запустила в Едмонтоні менторську програму для українців, які приїхали до Канади за програмою CUAET.
+Провінційна рада Альберти Конгресу українців Канади (КУК) започаткувала в Едмонтоні програму наставництва для українців, які приїхали до Канади за програмою CUAET.
 
-Новоприбулим допомагатимуть 120 волонтерів, переважно канадські українці, які працюють у кваліфікованих робітничих професіях, медицині та інженерії. Ментор зустрічається зі своїм підопічним щонайменше двічі на місяць упродовж шести місяців. Він підказує, як шукати роботу, визнавати кваліфікацію, орендувати житло та заповнювати державні документи. Програму фінансує приватний фонд Prairie Bridges Foundation із Калгарі: за два роки він виділить 250 тисяч доларів.
+Новоприбулим допомагатимуть 120 волонтерів-наставників. Здебільшого це українські канадці, які працюють у кваліфікованих робітничих професіях, медицині та інженерії. Наставник зустрічається з підопічним щонайменше двічі на місяць упродовж шести місяців. Він допомагає шукати роботу, визнавати кваліфікацію, орендувати житло та заповнювати урядові форми. Програму фінансує приватний фонд Prairie Bridges Foundation з Калгарі: він виділив 250 тис. доларів на два роки.
 
-«Багато людей приїхали з сильними фаховими навичками, але не знають, як тут усе працює, а пояснити їм нікому, — каже координаторка програми Галина Мороз (Halyna Moroz). — Ментор заощаджує місяці проб і помилок».
+Заявки приймають і від новоприбулих, і від охочих стати наставниками — до 15 січня. «Багато хто приїхав із міцним фахом, але не знає, як тут усе працює, а пояснити нікому», — каже координаторка програми Галина Мороз (Halyna Moroz). За її словами, наставник заощаджує місяці спроб і помилок. Якщо вистачить коштів, наступного року програму розширять на Калгарі.
 
-Новоприбулі й охочі стати менторами можуть подати заявки до 15 січня. Наступного року рада планує поширити програму й на Калгарі, якщо вистачить коштів.
+Judge: Accuracy: facts, numbers, dates and names match the source. Glossary terms are used correctly. "Кваліфіковані робітничі професії" is a reasonable rendering of "trades". The quote is slightly reworded ("пояснити нікому" for "nobody tells them") but the meaning is kept.
 
-Judge: Accuracy: mostly faithful. Minor slip: "кваліфікованих робітничих професіях" is a loose rendering of "trades" (acceptable, but slightly interpretive). "Alberta Provincial Council" is rendered as "Провінційна рада ... в Альберті", which is fine. "Сильними фаховими навичками" is OK. "Mentors... 120 volunteer mentors" is rendered as "120 волонтерів", which is fine. The post adds "Він підказує" (fine). The glossary term is used correctly: "за програмою CUAET" and "Конгрес українців Канади (КУК)". The expansion to Calgary is correct.
-Language: natural overall. Small issues: "запустили/запустила" repeated in the headline and lead. "Виділить 250 тисяч доларів" omits the currency being Canadian, but the source doesn't say that either. "Заощаджує місяці проб і помилок" is slightly calque-like; "Ментор допомагає заощадити місяці..." or "позбавляє місяців проб і помилок" would be more natural. "Поширити програму й на Калгарі" is slightly awkward. "Приватний фонд ... із Калгарі" is fine. The Latin transliteration "(Halyna Moroz)" is unnecessary clutter. "Новоприбулим допомагатимуть 120 волонтерів" is fine.
-Usefulness: clear, covers who, what, how, funding, deadline and expansion. It lacks mention of how to apply (no link or contact in the source). Slightly dense paragraph in the middle. The Latin name in brackets and the repeated "запустили" add small padding.
+Language: mostly natural. "Урядові форми" is a calque of "government forms". "Урядові бланки", "анкети" or "документи" would be more idiomatic. "Заощаджує місяці спроб і помилок" is acceptable, but "економить" would read more smoothly.
+
+Usefulness: clear and concise. It says what the program is and who it is for, and it gives the deadline. It does not say how to apply or whom to contact. The funding details sit awkwardly in the middle of the mentor-duties paragraph, before the deadline and the quote.
 
 ### ircc-cuaet-pr
 
-**Для українців, які приїхали за CUAET, відкриють шлях до постійного резидентства**
+**Канада відкриє новий шлях до постійного резидентства для українців, які приїхали за CUAET**
 
-Міністерство імміграції, біженців і громадянства Канади (IRCC) запускає нову програму постійного резидентства (PR) для українців, які приїхали за програмою CUAET. Про це відомство повідомило в четвер.
+Міністерство імміграції, біженців і громадянства Канади (IRCC) відкриє новий шлях до постійного резидентства (PR) для українців, які приїхали за програмою CUAET. Про це відомство повідомило в четвер.
 
-Прийом заявок почнеться 2 березня. Міністерство прийме до 10 000 заяв. Кандидатам потрібен щонайменше рік повної зайнятості в Канаді, здобутий після приїзду за CUAET, а також результат мовного тесту не нижче CLB 5 з англійської або NCLC 5 з французької. У ту саму заяву можна включити членів родини, які перебувають у Канаді. Тим, хто живе поза Квебеком, потрібно мати намір оселитися також поза межами провінції: Квебек самостійно відбирає іммігрантів. Інструкцію до заяви й перелік потрібних документів міністерство оприлюднить за два тижні до відкриття програми.
+Заявки почнуть приймати 2 березня, усього — до 10 000. Потрібен щонайменше рік роботи на повну ставку в Канаді після приїзду за CUAET і мовний тест не нижче CLB 5 з англійської або NCLC 5 з французької. До заявки можна включити членів родини, які живуть у Канаді. Той, хто подається поза Квебеком, має й жити поза Квебеком: ця провінція сама відбирає іммігрантів. Посібник із заповнення заявки та перелік потрібних документів міністерство оприлюднить за два тижні до старту.
 
-Конгрес українців Канади (Ukrainian Canadian Congress, КУК) привітав рішення, але вважає ліміт замалим. За даними організації, з 2022 року за CUAET приїхали понад 300 000 українців, і десятки тисяч із них досі мають тимчасовий статус.
-
-Judge: Accuracy: the 300,000 arrivals figure is attributed to the UCC ("За даними організації"), but the source states it as fact. The UCC claim applies only to the tens of thousands on temporary status. "Pathway" is rendered as "програма", which is a slight shift. Language: mostly natural. "Рік повної зайнятості" is a slightly heavy rendering of "full-time work experience". The UCC name is given as "(Ukrainian Canadian Congress, КУК)", which departs from the glossary form "Конгрес українців Канади (КУК)". "Міністерство" is repeated several times in a row. Usefulness: clear on eligibility, cap, date and the Quebec rule. The body is one dense paragraph, and it does not say what applicants should do now or what the cap means for them.
-
-### statcan-population
-
-**Населення Канади зросло лише на 0,2 % — найменше для третього кварталу з 2020 року**
-
-У третьому кварталі населення Канади збільшилося на 0,2 %. Так повільно воно не зростало в цей період із 2020 року, повідомило Статистичне управління Канади (Statistics Canada). Станом на 1 жовтня в країні налічувалося 41,7 млн мешканців.
-
-Зростання майже повністю забезпечили нові постійні резиденти. Кількість тимчасових резидентів, зокрема міжнародних студентів і тимчасових працівників-іноземців, скоротилася на 65 тисяч. Це наслідок обмежень на видачу дозволів на навчання та змін у програмах тимчасової праці, які федеральний уряд оголосив протягом двох останніх років. В Оттаві кажуть, що хочуть зменшити частку тимчасових резидентів у населенні. Серед провінцій найшвидше зростала Альберта — на 0,5 %. В Онтаріо та Британській Колумбії приріст не сягнув і 0,1 %.
-
-Економісти вважають, що повільніше зростання послабить тиск на оренду житла у великих містах. Водночас дефіцит кадрів у медицині та будівництві може посилитися.
+Конгрес українців Канади (Ukrainian Canadian Congress, КУК) вітає рішення, але вважає ліміт замалим. За даними організації, з 2022 року за CUAET приїхали понад 300 000 українців, і десятки тисяч із них досі мають тимчасовий статус.
 
 Failed checks: form: title too long
 
-Judge: Accuracy: the numbers and facts match the source (0.2%, 41.7 million, October 1, 65,000, Alberta 0.5%, Ontario and BC under 0.1%). Minor slip: "the slowest pace since 2020" is rendered as "не зростало так повільно з 2020 року", which could be read as the slowest since 2020 rather than the slowest for that period since 2020. The source is itself ambiguous. The "non-permanent residents" category is rendered as "тимчасові резиденти", which is a slight simplification. "Сягнув і 0,1 %" is acceptable but changes the nuance of "less than 0.1". Language: natural and fluent. "Статистичне управління Канади (Statistics Canada)" follows the glossary. Small stylistic points: "В Оттаві кажуть" is a metonym that is fine, but "Ottawa" here means the federal government, and "У Оттаві" would be the more standard form. "Дефіцит кадрів" is fine. Usefulness: clear and concise, with no padding. The headline is repeated in the lede, which is slightly redundant. It does not explain explicitly why this matters to Ukrainians in Canada, for example for those on temporary status (CUAET), although the source does not give that either.
+Judge: Accuracy: the headline and lead say Canada "opens" the pathway, but the post says "відкриє" (will open) and the source says it opens, with applications starting March 2. That is acceptable, not an error. The real slip is "Той, хто подається поза Квебеком, має й жити поза Квебеком". It is faithful in meaning, but "ця провінція сама відбирає іммігрантів" is a loose rendering of "runs its own selection". Also, "Ukrainian Canadian Congress, КУК" adds an English name that the glossary does not require; "Конгрес українців Канади (КУК)" would suffice. The source says "up to 10,000 applications", and "усього — до 10 000" is fine. The source says the CUAET work experience must be gained after arrival, and the post conveys that. The source says Quebec "runs its own selection", and the post's "відбирає іммігрантів" is close but a bit imprecise. Minor: the post omits that the "March 2" date has no year, which matches the source. Language: mostly natural. "Заявки почнуть приймати" is fine. "Посібник із заповнення заявки" is a slight expansion of "application guide". "Вітає рішення" is slightly off, since the source says "welcomed the announcement" (past tense). "Приїхали за CUAET" in the headline lacks "програмою", so the glossary form is not used on first mention in the headline. The lead uses the glossary names correctly. Usefulness: clear and concise. It states what happened and the conditions. It does not explain how this matters to the audience beyond the conditions, and the "PR" abbreviation is not explained as the status. It is a bit dense in the middle paragraph, which is one block of many conditions.
+
+### statcan-population
+
+**Населення Канади в третьому кварталі зросло лише на 0,2 %**
+
+Це найповільніше зростання за третій квартал від 2020 року, повідомило в середу Статистичне управління Канади (Statistics Canada). Станом на 1 жовтня в країні налічувалося 41,7 млн осіб.
+
+Населення зростало майже винятково завдяки новим постійним резидентам. Кількість непостійних резидентів, до яких належать іноземні студенти й тимчасові працівники, скоротилася на 65 тисяч. Це сталося після того, як за останні два роки Оттава обмежила видачу дозволів на навчання та змінила програми тимчасової роботи. Федеральний уряд заявляє, що хоче зменшити частку тимчасових резидентів у населенні.
+
+Серед провінцій найшвидше зросла Альберта — на 0,5 %. В Онтаріо та Британській Колумбії приріст був меншим за 0,1 %.
+
+Економісти кажуть, що повільніше зростання може послабити тиск на ціни оренди у великих містах. Водночас нестача працівників у медицині та будівництві може посилитися.
+
+Judge: Accuracy: "найповільніше зростання за третій квартал від 2020 року" is fine. Minor: the source says "the slowest pace for that period since 2020"; the post's "від 2020 року" is slightly ambiguous (should be "з 2020 року"). Also "Це сталося після того, як..." slightly overstates causality, while the source says "follows caps/changes announced"; and "обмежила видачу" is OK. "Федеральний уряд заявляє" fine. Source says "changes announced", post says Ottawa already restricted/changed – minor shift. Language: "від 2020 року" is a calque/wrong preposition (should be "з 2020 року"); "майже винятково" is okay, though "майже виключно" is more standard; "іноземні студенти й тимчасові працівники" omits "foreign" for workers (the source says temporary foreign workers) – minor. "Кількість... скоротилася на 65 тисяч" fine. Glossary: Statistics Canada name used correctly. Usefulness: clear and concise, but no explicit explanation of why it matters for Ukrainians in Canada (e.g., Ukrainians on temporary status such as CUAET); only generic economic effects. Headline "лише" adds slight editorializing.
 
 ### akwesasne-policing
 
 **Поліція могавків Аквесасне й OPP підписали угоду на 12 млн доларів**
 
-Рада могавків Аквесасне (Mohawk Council of Akwesasne) і Провінційна поліція Онтаріо (OPP) уклали п'ятирічну угоду про поліцейське обслуговування на 12 млн доларів. Про це в понеділок повідомили в раді.
+Рада могавків Аквесасне (Mohawk Council of Akwesasne) і Провінційна поліція Онтаріо (OPP) підписали п'ятирічну угоду про поліцейське обслуговування вартістю 12 млн доларів. Про це в понеділок повідомила рада.
 
-Громада Аквесасне розташована на перетині кордонів Онтаріо, Квебеку та штату Нью-Йорк. Поліцейська служба могавків Аквесасне (Akwesasne Mohawk Police Service) і OPP спільно патрулюватимуть річку та шосе поблизу громади. Частину грошей витратять на новий поліцейський відділок на острові Корнволл (Cornwall Island), ще частину — на навчання восьми нових поліцейських.
+Поліцейська служба могавків Аквесасне (Akwesasne Mohawk Police Service) та OPP спільно патрулюватимуть річку й шосе поблизу громади. Її територія лежить на межі Онтаріо, Квебеку та штату Нью-Йорк. Гроші підуть також на новий поліцейський відділок на острові Корнволл (Cornwall Island) і навчання восьми нових офіцерів. За словами OPP, влітку спільні патрулі зосередяться на боротьбі з контрабандою та безпеці на воді.
 
-Головна вождиня Лора Бенедикт (Laura Benedict) наголосила, що угода визнає роль поліцейських-могавків: вони першими реагують на виклики в громаді. «Наші поліцейські знають ці води й ці родини. Це дає їм ресурси, щоб виконувати свою роботу», — сказала вона.
+Головна вождиня Лора Бенедикт (Laura Benedict) зазначила, що угода визнає поліцію могавків першою службою, яка реагує на виклики в громаді. «Наші офіцери знають ці води й ці родини. Тепер у них є ресурси, щоб робити свою роботу», — сказала вона.
 
-В OPP уточнили, що влітку спільні патрулі зосередяться на боротьбі з контрабандою та безпеці на воді.
+Judge: Accuracy: no invented facts, but there are small distortions. "Grand Chief" is rendered as "Головна вождиня", which is acceptable. "Тепер у них є ресурси" adds "now" and slightly changes "This gives them the resources". The source says the OPP said the patrols focus on smuggling and boating safety "in the summer months". The post attributes this correctly but loosely, with "влітку" placed ahead of the focus. The post says "поліцію могавків першою службою, яка реагує на виклики", which is a reasonable rendering of "first responders". "Training eight new officers" is fine. The phrase "Cornwall Island" is rendered "острів Корнволл", which is a transliteration. The established Ukrainian form is "Корнволл", so this is acceptable.
 
-Judge: Accuracy: facts largely match. Minor issues: the source says the community straddles the borders of Ontario, Quebec and New York State, and the post says "на перетині кордонів", which is acceptable. "Поліцейське обслуговування" is a slight calque of "policing agreement". The source says the money pays for a new station and training, and the post's "частину грошей... ще частину" slightly implies a split that the source doesn't state. The source says the joint patrols are "on the river and the highways", and the post keeps this. The source says "in the summer months" and the post says "влітку", which is fine. "Головна вождиня" for Grand Chief is acceptable, though "велика вождиня" is also used. The title uses the English abbreviation OPP without expanding it, while the body does expand it, which is fine. The glossary is followed on first mention in the body. The headline says "Поліція могавків Аквесасне", which is fine. Language: "уклали угоду про поліцейське обслуговування" is slightly stilted. "Реагують на виклики" adds nuance beyond "first responders", though that is acceptable. English names in parentheses are somewhat cluttered, with four of them in a short text. Usefulness: it states what happened, but doesn't say why it matters to Ukrainians in Canada, which the source doesn't provide either. The text is clear and without padding."
+Language: The text is mostly natural. "Поліцейське обслуговування" is a bit of a calque from "policing". "Офіцери" for police officers is an anglicism, and "поліцейські" would be more natural. "Головна вождиня" is slightly awkward. The headline uses the Latin "OPP" without Ukrainian on first mention, but the glossary allows the abbreviation in parentheses. The headline should use the glossary name. The phrase "Її територія лежить на межі" is fine. "Спільно патрулюватимуть" is good.
+
+Usefulness: The post is clear and concise. It does not explain why it matters to Ukrainians in Canada, but it also adds no padding. The OPP abbreviation is not explained in the headline. Overall it is a decent news summary with no context for the audience."
 
 ### quebec-museum
 
-**Музей сучасного мистецтва в Монреалі відкривається після ремонту за 40 млн доларів**
+**Музей сучасного мистецтва Монреаля відкривається після реконструкції виставкою художниці з Харкова**
 
-У суботу для відвідувачів знову відчиняє двері Музей сучасного мистецтва Монреаля (Musée d'art contemporain de Montréal). Реконструкція будівлі на Place des Arts тривала чотири роки й коштувала 40 млн доларів.
+Музей сучасного мистецтва Монреаля (Musée d'art contemporain de Montréal) у суботу знову відкриє двері для відвідувачів. Реконструкція будівлі в комплексі Place des Arts тривала чотири роки й коштувала 40 млн доларів.
 
-Галерейна площа збільшилася на 2000 квадратних метрів. З'явилися новий вхід з боку вулиці Сент-Катрін і безкоштовна громадська тераса. Першої неділі кожного місяця вхід до музею вільний.
+Площа виставкових залів збільшилася на 2000 квадратних метрів. З'явилися новий вхід з вулиці Сент-Катрін (Sainte-Catherine) і безкоштовна громадська тераса. Першої неділі кожного місяця вхід до музею буде безкоштовним.
 
-Першою виставкою стала ретроспектива Катерини Лисенко (Kateryna Lysenko). Художниця народилася в Харкові, а з 1998 року живе в Монреалі. На виставці 60 робіт, серед них серія великих полотен, які вона написала після поїздки до рідного міста 2023 року. «Я хотіла, щоб люди бачили Харків як місто світла, студентів і музики, а не лише як місце з новин», — сказала Лисенко на попередньому показі в четвер.
+Оновлений простір відкриває виставка художниці Катерини Лисенко (Kateryna Lysenko). Вона народилася в Харкові, а в Монреалі живе з 1998 року. Експозиція налічує 60 робіт, серед них серія великих полотен, створених після поїздки до рідного міста 2023 року. «Я хотіла, щоб люди побачили Харків як місто світла, студентів і музики, а не лише як місце з випусків новин», — сказала Лисенко на передпоказі в четвер.
 
 Виставка триватиме до 12 квітня.
 
-Failed checks: names_kept: wrong form: Музей сучасного мистецтва Монреаля
-
-Judge: Accuracy: "survey" rendered as "ретроспектива", which is a slight narrowing (a retrospective implies a career-spanning look back; the source says only "survey"). Other facts, numbers and dates match. Language: "галерейна площа" is a calque of "gallery space"; "виставкова площа" would be more natural. "Place des Arts" is left in Latin script without a Ukrainian form. Otherwise fluent and idiomatic. Usefulness: clear and concise, with the practical details (free first Sundays, free terrace, end date). It does not state who the audience for the Ukrainian-born artist from Kharkiv is, which is the main reason it matters to Ukrainians in Canada. It also doesn't give the museum's address or say that the post is for Montreal readers.
+Judge: Facts all match the source (dates, numbers, quote, names). Minor issues: the headline calls her "художниця з Харкова", though she was born there and has lived in Montreal since 1998, so it blurs her current base. "40 млн доларів" does not say Canadian dollars, which is ambiguous for a Canadian audience. The phrase "місце з випусків новин" is slightly clumsy and calques "a place on the news"; "місце з новин" would be more natural. "Survey of the work" is rendered only as "виставка", losing the retrospective sense. The post is clear and concise but does not spell out why this matters to Ukrainians in Canada beyond the Kharkiv link.
 
 ### cra-ccb-tips
 
-**Без декларації до 30 квітня можна втратити допомогу на дітей**
+**Без декларації допомога на дітей припиниться з липня**
 
-Агенція доходів Канади (CRA) нагадує: щоб без перерви отримувати канадську допомогу на дітей (CCB), податкову декларацію мають подати обоє батьків до 30 квітня. Це потрібно навіть тим, хто торік не мав доходу. Розмір допомоги щороку в липні перераховують за чистим доходом сім'ї за попередній рік. Якщо CRA не має декларації одного з батьків, виплати зупиняють у липні й поновлюють після подання та опрацювання декларації.
+Агенція доходів Канади (CRA) нагадує: щоб без перерви отримувати канадську допомогу на дітей (CCB), сім'ї мають подати податкову декларацію до 30 квітня. Це стосується й тих, хто торік не мав доходу. Розмір допомоги щороку в липні перераховують за чистим доходом сім'ї за попередній рік. Якщо в CRA немає декларації когось із батьків, виплати з липня зупинять, доки її не подадуть і не опрацюють.
 
-Новоприбулі, які ще не оформили допомогу, можуть подати заяву через CRA My Account після отримання номера соціального страхування (SIN) або поштою. У такому разі потрібні форми RC66 і RC66SCH, де запитують про статус резидента та доходи за межами Канади.
-
-Безплатно подати декларацію можна в громадських волонтерських податкових клініках, які допомагають людям зі скромними доходами. Максимальна допомога на дитину до шести років зараз становить 8157 доларів на рік.
+Новоприбулі, які ще не оформили допомогу, можуть подати заявку в особистому кабінеті CRA My Account після отримання номера соціального страхування (SIN). Є й поштовий варіант: форма RC66 разом із формою RC66SCH, у якій запитують про статус резидента й доходи за межами Канади. Безкоштовно подати декларацію допоможуть волонтерські податкові клініки для людей зі скромним доходом. За даними агенції, максимальна допомога на дитину віком до шести років наразі становить 8157 доларів на рік.
 
 Що можна зробити:
-• Подайте декларацію до 30 квітня — і за себе, і за партнера, навіть якщо торік не було доходу, щоб без перерви отримувати допомогу на дітей (CCB).
-• Якщо ще не оформили допомогу, зареєструйтеся в CRA My Account і подайте заяву онлайн після отримання номера соціального страхування (SIN). Можна й поштою.
-• Люди зі скромними доходами можуть безплатно подати декларацію в громадських волонтерських податкових клініках.
-• Якщо виплати зупинили, переконайтеся, що обоє батьків подали декларації: допомогу поновлять після їх опрацювання.
+• Подайте податкову декларацію до 30 квітня, навіть якщо торік не мали доходу, — і за себе, і за партнера чи партнерку.
+• Якщо ви нещодавно приїхали й ще не оформили допомогу, подайте заявку одразу після отримання номера соціального страхування (SIN).
+• Безкоштовно допоможуть волонтерські податкові клініки для людей зі скромним доходом — шукайте їх на сайті Агенції доходів Канади (CRA).
+• Якщо виплата не надійшла, перевірте в особистому кабінеті CRA My Account, чи опрацьовано декларації обох батьків.
 
-Judge: Accuracy: the source says "2026 income tax return" and the post omits the year. This is a minor omission. Also, "if CRA doesn't have a return for both parents" is rendered as "одного з батьків", which slightly shifts the meaning, though it is basically consistent. The post says "Можна й поштою" and "У такому разі потрібні форми RC66 і RC66SCH" – this is fine. The source says "families can file for free"; this is fine. "Зараз становить 8157 доларів" is fine. The headline "Без декларації ... можна втратити допомогу" is fine.
-Language: mostly natural. "Новоприбулі" is okay. "Безплатно" is acceptable. "Не має декларації" is a slight calque of "doesn't have"; "не отримала" would be better. "Подайте ... за себе, і за партнера" is a slight stretch. The glossary is followed on first mention, although CCB is repeated in the bullets.
-Usefulness: The "Що можна зробити" section repeats the body almost entirely, which is padding. The last bullet adds little. The post would be better without the duplication.
+Judge: Accuracy: the bullet list adds claims not in the source: that the volunteer tax clinics can be found on the CRA website, and that My Account shows whether both parents' returns were processed. The source says neither. The post also drops the "2026" return year, which is minor. Language: "скромним доходом" is a calque of "modest income", and "невисоким" would be more natural. The full glossary names (CRA, SIN) are repeated in the bullets after the first mention. Usefulness: the "Що можна зробити" list mostly repeats the body text (the April 30 deadline, newcomers applying after getting a SIN, the free clinics), so it reads as padding. The lead and the key facts are clear.
 
 ### health-canada-recall-tips
 
-**Три партії дитячої суміші Maple Meadow відкликали через можливе зараження бактерією**
+**Maple Meadow відкликає дитячу суміш через ризик бактерії Cronobacter**
 
-Міністерство охорони здоров'я Канади (Health Canada) радить батькам більше не використовувати три партії сухої дитячої суміші Maple Meadow. Вона може бути заражена бактерією Cronobacter. Про випадки захворювання поки не повідомляли.
+Міністерство охорони здоров'я Канади (Health Canada) закликає батьків припинити користуватися трьома партіями сухої дитячої суміші Maple Meadow. У продукті може бути бактерія Cronobacter. Випадків захворювання поки не зафіксовано.
 
-Відкликані банки по 800 грамів продавали в продуктових магазинах і аптеках по всій Канаді. Їх позначено датою «найкраще вжити до» — червень 2027 року. Коди партій надруковані на денці банки.
+Відкликання стосується банок по 800 грамів, які продавали в продуктових магазинах і аптеках по всій країні. Дата «найкраще вжити до» — червень 2027 року. Коди партій надруковані на денці кожної банки.
 
-Інфекція Cronobacter трапляється рідко, але для новонароджених може бути серйозною. Найбільший ризик — для дітей, які народилися передчасно або мають ослаблений імунітет. Симптоми: гарячка, погане годування, незвичний плач і сильна млявість.
+Інфекція Cronobacter трапляється рідко, але може бути небезпечною для новонароджених, особливо недоношених або з ослабленим імунітетом. Її ознаки: гарячка, погана охота до їжі, незвичний плач і сильна кволість.
 
-Суміш не можна давати дітям. Її можна повернути до магазину, де купили, і отримати гроші назад. Якщо після такої суміші в дитини з'явилися симптоми, одразу зверніться до лікаря або зателефонуйте на номер 811.
+Відкликаною сумішшю не можна годувати дітей. Банку варто повернути в магазин, де її купили, і отримати гроші назад. Якщо після суміші в дитини з'явилися симптоми, негайно зверніться до лікаря або зателефонуйте на номер 811.
 
 Що можна зробити:
-• Перевірте на денці банки код партії та дату «найкраще вжити до».
-• Не годуйте дитину сумішшю з відкликаних партій, а банку поверніть у магазин, де її купили, — вам повернуть гроші.
-• Якщо після цієї суміші в дитини з'явилися гарячка, млявість чи погане годування, одразу зверніться до лікаря або зателефонуйте на 811.
-• Не знаєте, яку суміш обрати натомість, — запитайте сімейного лікаря чи фармацевта.
+• Перегляньте на денці банки код партії та дату «найкраще вжити до» і порівняйте їх зі списком відкликаних партій на сайті міністерства охорони здоров'я Канади (Health Canada).
+• Не годуйте дитину сумішшю з відкликаних партій. Поверніть банку в магазин, де її купили, і отримайте гроші назад.
+• Якщо після суміші в дитини з'явилися гарячка, погана охота до їжі, незвичний плач або сильна кволість, негайно зверніться до лікаря або зателефонуйте на номер 811.
 
-Judge: Accuracy: facts match the source. Minor additions: "Відкликали" in the headline is fine. The advice to ask a family doctor or pharmacist about which formula to choose is not in the source (small addition). "Вам повернуть гроші" slightly firmer than the source's "refund". Glossary: "Міністерство" is capitalized, whereas the glossary form is lowercase "міністерство охорони здоров'я Канади (Health Canada)"; this could be flagged. Language: mostly natural. "Погане годування" is a calque of "poor feeding" (better: "відмова від їжі" or "поганий апетит"). "Гарячка" is acceptable, but "підвищена температура" is more natural. "Сильна млявість" is fine. "Їх позначено датою" is a bit clumsy. "Після такої суміші" is awkward. "Не знаєте, яку суміш обрати" is a loose phrase. Usefulness: the "Що можна зробити" list repeats the body text almost verbatim (return to store, symptoms, 811, bottom of can). This is padding and repetition. The paragraph "Суміш не можна давати дітям..." also duplicates the list.
+Judge: Accuracy: the post says the formula was sold "по всій країні", which matches "across Canada". It adds "на сайті ... зі списком відкликаних партій", but the source never mentions a website or a list of recalled lots. That is a minor invented detail. The source says lot codes are on the bottom of the can, but it doesn't say the best-before date is there. The post's call to check the date at the bottom is a small distortion.
+
+Language: the post is mostly natural. "Погана охота до їжі" is slightly awkward, and "відмова від їжі" or "поганий апетит" would be better. "Сильна кволість" is acceptable. "Гарячка" is fine, though "температура" is more common. The glossary form is used correctly on first mention. Later in the text, "міністерство охорони здоров'я Канади (Health Canada)" is repeated in full, which is clumsy. The headline keeps "Cronobacter" in Latin, which is acceptable.
+
+Usefulness: the content is clear and relevant. The "Що можна зробити" list repeats the body almost word for word: returning the can, the symptoms and 811 all appear twice. That is padding and repetition. The post also never says the 811 line is a Canadian health line, which could help newcomers. The post doesn't say that the lot codes themselves weren't provided in the source, so readers can't check them unless they go to an outside source.
 
