@@ -68,7 +68,7 @@ checked automatically and graded by a separate Claude call acting as a judge:
 | facts | Key numbers, dates and places from the story are in the post (in any grammatical form) |
 | glossary | Every institution in the story uses its established Ukrainian name (any grammatical case) |
 | people | People's names keep the original spelling in brackets |
-| names_kept | Organization names stay untranslated; known wrong forms don't appear |
+| names_kept | Organization names follow the naming rule (original name kept where it must be); known wrong forms don't appear |
 | language | No russianisms or calques from the style guide's list; no letters of other alphabets |
 | form | Headline length, post length, no broken words or stray links, ends with a full sentence |
 | reviewer | The reviewer agent found nothing left to fix |

@@ -30,12 +30,14 @@ Later mentions: Ukrainian only. Do the same for lesser-known places (e.g. Гал
 names like Торонто or Оттава need no brackets. Use feminine job titles for women.
 - Organizations, companies, brands, venues, programs and events: never transliterate them. Choose one way:
   1. Translate when the name simply describes what the body is and reads naturally in Ukrainian: government
-     bodies, courts, councils, associations, unions, Ukrainian organizations, or any that already has an
-     established Ukrainian name. Give the original in brackets on first mention (e.g. міністерство імміграції
-     Канади (IRCC); Банк Канади; Конгрес українців Канади (Ukrainian Canadian Congress); Канадська рада у
-     справах біженців (Canadian Council for Refugees)).
+     bodies, courts, councils, associations, unions, Ukrainian organizations, public museums, galleries,
+     universities, colleges, hospitals and libraries, or any that already has an established Ukrainian name.
+     Give the original in brackets on first mention (e.g. міністерство імміграції Канади (IRCC); Банк Канади;
+     Конгрес українців Канади (Ukrainian Canadian Congress); Канадська рада у справах біженців (Canadian Council
+     for Refugees); Музей сучасного мистецтва Монреаля (Musée d'art contemporain de Montréal); Університет
+     Макгілла (McGill University)).
   2. Otherwise keep the original English or French name as is, without quotation marks: companies, brands,
-     venues, programs, and names that are more than a description (e.g. Air Canada, Tim Hortons, Maple Leaf
+     arenas, theatres and other venues, programs, charities and community groups, and names that are more than a description (e.g. Air Canada, Tim Hortons, Maple Leaf
      Gardens, Open Harbour Refugee Association, Blended Visa Office-Referred (BVOR)). You may add a few
      Ukrainian words about what it is (e.g. організація Open Harbour Refugee Association з Галіфакса).
 - Typography: apostrophe ' (м'ясо), em dash with spaces " — ", quotation marks «...», no double spaces.

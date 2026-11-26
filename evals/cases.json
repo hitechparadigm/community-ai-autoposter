@@ -1,5 +1,5 @@
 {
-  "_about": "Test stories for the evaluation set. They are FICTIONAL: written for testing (no real news articles, so nothing copyrighted is stored), with facts, names and institutions chosen to exercise the style rules. Each case lists what a good post must contain: 'facts' (regular expressions, any case; at least one alternative per fact must match), 'people' (original spellings that must appear in brackets), 'keep' (names that must stay untranslated) and 'avoid' (wrong forms that must not appear).",
+  "_about": "Test stories for the evaluation set. They are FICTIONAL: written for testing (no real news articles, so nothing copyrighted is stored), with facts, names and institutions chosen to exercise the style rules. Each case lists what a good post must contain: 'facts' (regular expressions, any case; at least one alternative per fact must match), 'people' (original spellings that must appear in brackets), 'keep' (names that must appear in the original spelling) and 'avoid' (wrong forms that must not appear). Naming rule being tested: public institutions (museums, universities, hospitals) get a Ukrainian name with the original in brackets; companies, charities and community groups keep the original name.",
   "cases": [
     {
       "id": "min-wage-mb",
@@ -100,10 +100,11 @@
       "summary": "The Musée d'art contemporain de Montréal opens with a show by a Ukrainian-born artist.",
       "article": "The Musée d'art contemporain de Montréal reopens to the public on Saturday after a four-year, $40-million renovation of its building at Place des Arts.\n\nThe museum has added 2,000 square metres of gallery space, a new entrance on Sainte-Catherine Street and a free public terrace. Admission will be free on the first Sunday of every month.\n\nThe opening exhibition is a survey of the work of Kateryna Lysenko, a painter born in Kharkiv who has lived in Montreal since 1998. It includes 60 works, among them a series of large canvases she painted after visiting her home city in 2023.\n\n\"I wanted people to see Kharkiv as a city of light and students and music, not only as a place on the news,\" Lysenko said at a preview on Thursday. The exhibition runs until April 12.",
       "expect": {
-        "facts": [["40 млн"], ["60 (робіт|творів)"], ["12 квітня"], ["Харків"]],
+        "facts": [["40 млн"], ["60 (робіт|творів)"], ["12 квітня"], ["Харків"],
+                  ["музе\\w* сучасного мистецтва"], ["\\(musée d'art contemporain de montréal\\)"]],
         "people": ["Kateryna Lysenko"],
-        "keep": ["Musée d'art contemporain de Montréal"],
-        "avoid": ["Музей сучасного мистецтва Монреаля"]
+        "keep": [],
+        "avoid": ["Мюзе"]
       }
     },
     {
