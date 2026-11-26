@@ -407,7 +407,7 @@ RESEARCH = {
     "web_search": "https://www.bing.com/search?format=rss&cc=CA&q={q}",
     "news_search": "https://www.bing.com/news/search?format=rss&cc=CA&q={q}",
     "max_sources": 6,         # pages read for one article
-    "min_sources": 2,         # fewer readable pages than this: the bot says it couldn't find enough
+    "min_sources": 3,         # fewer readable pages than this: the bot says it couldn't find enough
     "skip_domains": ("facebook.com", "instagram.com", "tiktok.com", "x.com", "twitter.com", "youtube.com",
                      "linkedin.com", "pinterest."),
 }

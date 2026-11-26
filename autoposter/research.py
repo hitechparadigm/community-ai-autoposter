@@ -161,13 +161,17 @@ def research_topic(s, topic, feedback=""):
     feedback: an approver's notes on an earlier version, to follow this time.
     Raises NotCovered when the sources found don't cover the topic (nothing is written then)."""
     sources, missing = find_sources(topic)
-    if len(sources) < config.RESEARCH.get("min_sources", 2) or missing:
+    if len(sources) < config.RESEARCH.get("min_sources", 3):
         print(f"Not enough sources for: {topic}")
         raise NotCovered(missing)
+    # Enough pages, but some asked-for parts aren't covered: write anyway, and say plainly what's not covered
+    gaps = (f"WHAT THE SOURCES DON'T COVER (say so plainly where it fits; never fill it in from memory): {missing}\n"
+            if missing else "")
     source = _joined(sources)
     request = topic + (f"\nEDITOR'S FEEDBACK on the previous version (follow it closely): {feedback}" if feedback else "")
     keys = ("title", "teaser", "body")
-    post = write_long(RESEARCH_WRITE_PROMPT.format(topic=request), keys, source=source, optional=("image_query",))
+    post = write_long(RESEARCH_WRITE_PROMPT.format(topic=request, gaps=gaps), keys, source=source,
+                      optional=("image_query",))
     if not post:
         print("Could not write the article")
         return False

@@ -480,7 +480,7 @@ RESEARCH_WRITE_PROMPT = AUDIENCE + "\n\n" + STYLE + """
 
 Write an explainer article in Ukrainian for the channel's "Розбираємося" column, on the topic an editor asked for.
 EDITOR'S REQUEST (follow it): {topic}
-
+{gaps}
 The source text (given above) holds several sources, each starting with [number], its site and its address.
 
 - "title": a clear, informative headline, at most 12 words (no clickbait)

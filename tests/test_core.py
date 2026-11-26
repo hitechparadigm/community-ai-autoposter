@@ -228,7 +228,8 @@ class Research(unittest.TestCase):
                 mock.patch.object(research, "review_post", lambda p, keys, src, topic: (p, [])), \
                 mock.patch.object(research, "telegraph", lambda *a, **k: {"url": "https://telegra.ph/x", "path": "x"}), \
                 mock.patch.object(research, "commons_image", lambda q: ""), \
-                mock.patch.object(research, "send_draft", send):
+                mock.patch.object(research, "send_draft", send), \
+                mock.patch.dict(config.RESEARCH, {"min_sources": 2}):
             self.assertTrue(research.research_topic(s, "comprehensive security check для CUAET"))
         self.assertEqual(read, ["https://www.canada.ca/a", "https://old.reddit.com/r/x/1"])  # Facebook skipped
         key, text, extra = sent[0]
