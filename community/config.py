@@ -41,18 +41,25 @@ LABELS = {
     "history_header": "🍁 Історія Канади",
     "tips_header": "💡 Варто знати",
     "tips_what_to_do": "Що можна зробити:",
+    "research_header": "🔎 Розбираємося",
+    "sources": "Джерела",
+    "research_working": "🔎 Шукаю джерела й пишу статтю на цю тему. Чернетка прийде за 5–10 хвилин.",
+    "research_failed": ("Не знайшов достатньо надійних джерел на цю тему. Сформулюйте її інакше "
+                        "або надішліть посилання на статтю."),
     # Replies to drafts (approvers see these in the bot chat)
     "feedback_hint": "Щоб переписати чернетку, відповідайте (Reply) саме на неї й напишіть, що змінити.",
     "feedback_gone": "Цю чернетку вже опубліковано, пропущено або вона застаріла.",
     "feedback_working": "✍️ Переписую за вашим відгуком, нова версія прийде за кілька хвилин.",
     "feedback_done": "Переписано, нова версія нижче",
     "feedback_failed": "Не вдалося переписати. Спробуйте сформулювати інакше або змініть вручну.",
-    "ideas_help": ("Надішліть посилання — я підготую новину. «історія …» (тема або посилання) — довгий текст з "
+    "ideas_help": ("Надішліть посилання — я підготую новину. Напишіть тему або завдання — я знайду джерела й "
+                   "напишу статтю «Розбираємося». «історія …» (тема або посилання) — довгий текст з "
                    "історії Канади. «варто знати …» + посилання — практична історія з порадами. Щоб змінити "
                    "чернетку, відповідайте (Reply) на неї. Якщо кнопка не спрацювала, відповідайте «опублікувати» "
                    "або поставте 👍 на чернетку чи картку."),
     "idea_working": "✍️ Готую чернетку, вона прийде за кілька хвилин.",
-    "idea_needs_link": "Для новини потрібне посилання на статтю. Для теми з історії почніть з «історія …».",
+    "idea_needs_link": ("Напишіть тему докладніше (хоча б одне речення) — я знайду джерела й напишу статтю. "
+                        "Або надішліть посилання на статтю."),
     "idea_failed": "Не вдалося підготувати чернетку з цього джерела. Спробуйте інше посилання.",
     "count_line": "📊 Сьогодні опубліковано {kind}: {n} з {limit}",
     "review_title": "Підсумки місяця",
@@ -76,7 +83,7 @@ PUBLISH_REACTIONS = ("👍",)
 # A kind not listed here uses the number of its times in SCHEDULE.
 DAILY_LIMITS = {"news": 5}
 KIND_NAMES = {"news": "новин", "tips": "«Варто знати»", "digest": "дайджестів", "thisday": "«Цей день»",
-              "history": "історій"}
+              "history": "історій", "research": "статей «Розбираємося»"}
 
 # News sources: (display name, RSS/Atom feed URL, region)
 # If a feed stops working, the run log shows "FEED ERROR" and the rest still run.
@@ -394,6 +401,16 @@ WIKI_REGIONAL_TOPICS = [
 
 
 TITLE_MAX_WORDS = 12   # a longer news headline is shortened by one extra Claude call
+
+# ── Articles on a topic an approver sends (no link): the bot searches the web, reads the best pages, writes ──
+RESEARCH = {
+    "web_search": "https://www.bing.com/search?format=rss&cc=CA&q={q}",
+    "news_search": "https://www.bing.com/news/search?format=rss&cc=CA&q={q}",
+    "max_sources": 6,         # pages read for one article
+    "min_sources": 2,         # fewer readable pages than this: the bot says it couldn't find enough
+    "skip_domains": ("facebook.com", "instagram.com", "tiktok.com", "x.com", "twitter.com", "youtube.com",
+                     "linkedin.com", "pinterest."),
+}
 
 # ── Evaluation set (evals/): automatic checks on posts written from fixed test stories ──
 EVAL = {

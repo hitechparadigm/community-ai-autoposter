@@ -9,6 +9,7 @@
   python bot.py history-from SOURCE [thisday] - a long-read from a page or wiki:Article_title
   python bot.py approve   - read approvers' taps, replies and ideas; publish approved posts
   python bot.py review    - the monthly review of feedback and reader reactions, now
+  python bot.py research TOPIC - an article on a topic from web sources (🔎 Розбираємося)
   python bot.py eval [ID ...] - the evaluation set: write posts from test stories and score them (evals/)
   python bot.py stats [DAYS] - production numbers for the last DAYS days (default 30) into docs/RESULTS.md
   python bot.py rewrite PAGE SOURCE - rewrite a published Telegraph long-read in place

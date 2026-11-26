@@ -24,6 +24,9 @@ Any other community can run its own channel by changing two settings files (see
   "what happens today", each item linked to its source, with a mix of outlets.
 - **Canadian history.** A daily "This day in Canadian history" post and a history long-read, published as
   Telegraph articles (Instant View in Telegram), grounded in Canadian archives and encyclopedias.
+- **Articles on request.** An editor can send the bot a topic in plain words; it searches the web (official
+  sites first, then media and forums), reads the best pages and writes a "🔎 Розбираємося" long-read with its
+  list of sources, checked like every other post.
 - **Human in the loop.** Every draft goes to the editors in Telegram with ✅ / ❌ (or a reply "опублікувати" /
   a 👍 reaction if a tap doesn't get through); nothing is published without approval (optional timed
   auto-publish per post type). Approved posts also go to the Facebook Page.
@@ -189,6 +192,7 @@ sequenceDiagram
 | Draft posts | `draft.yml` | Make a news draft now (tick "Варто знати" for a practical story) |
 | Draft morning digest | `digest.yml` | Make the digest now |
 | Draft this-day post | `thisday.yml` | Make a "This day" draft now |
+| Draft an article on a topic | `research.yml` | A 🔎 Розбираємося article on a topic you type, written from web sources (the same as sending the bot a topic) |
 | Draft history story | `history.yml` | Make a history long-read now (tick "Community-history story" for a Ukrainian-Canadian one), or from a source you give (a page or `wiki:Article_title`, optionally as "this day") |
 | Rewrite a published long-read | `rewrite.yml` | Rewrite a published Telegraph article in place from a source you give |
 | Preview Facebook cards | `cards.yml` | Draw the sample cards in `community/samples/cards.json`, one card from JSON, or redraw a waiting draft's card |
@@ -415,6 +419,7 @@ fine-grained token with Contents read/write on just that repository, and save it
 | `drafts.py` | Drafts for approval, daily counts, learning log, publishing |
 | `news.py` | News, 💡 Варто знати and the morning digest |
 | `history.py` | 📅 Цей день and 🍁 history long-reads |
+| `research.py` | 🔎 Розбираємося: articles on a topic an approver sends, from web search |
 | `learning.py` | Reader comments and reactions, the monthly review, production numbers |
 | `evals.py` | The evaluation set: test posts, automatic checks, judge, scorecard |
 | `approval.py` | Taps, feedback replies, ideas and links sent to the bot |

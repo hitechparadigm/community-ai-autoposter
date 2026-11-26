@@ -1,4 +1,5 @@
 """Unit tests (standard library only): python -m unittest discover -s tests"""
+import hashlib
 import json
 import os
 import sys
@@ -147,10 +148,17 @@ class Approvals(unittest.TestCase):
         self.send("історія Банф")
         self.assertEqual(self.calls, [("wiki:Banff_National_Park", "history", "Банф")])
 
-    def test_news_idea_without_link_asks_for_one(self):
+    def test_too_short_topic_asks_for_more(self):
         self.send("просто ідея")
         self.assertEqual(self.calls, [])
         self.assertEqual(self.said, [config.LABELS["idea_needs_link"]])
+
+    def test_topic_without_link_becomes_research_article(self):
+        with mock.patch.object(approval, "research_topic",
+                               lambda s, topic, feedback="": self.calls.append((topic, "research")) or True):
+            self.send("Напиши статтю про comprehensive security check для українців з CUAET")
+        self.assertEqual(self.calls, [("Напиши статтю про comprehensive security check для українців з CUAET",
+                                       "research")])
 
     def test_strangers_are_ignored(self):
         approval.handle_feedback({"from": {"id": 99}, "text": "https://x.ca", "message_id": 1}, {"pending": {}})
@@ -188,6 +196,42 @@ class PublishFallbacks(unittest.TestCase):
         approval.handle_reaction(r("👍", uid=99), self.s)  # not an approver
         approval.handle_reaction(r("👍", mid=11), self.s)
         self.assertEqual(self.decided, [("abc", "pub")])
+
+
+class Research(unittest.TestCase):
+    """A topic without a link: search, pick, read, write a Telegraph article with its sources."""
+
+    def test_article_from_web_sources(self):
+        from autoposter import research
+        post = {"title": "Перевірка безпеки", "teaser": "Що перевіряють.", "body": "## Як це працює\n\nТекст.",
+                "image_query": ""}
+        answers = iter(['{"queries": ["security screening Canada", "CUAET PR reddit"]}', "[0, 1]",
+                        json.dumps({k: post[k] for k in ("title", "teaser", "body")}, ensure_ascii=False)])
+        results = [{"url": "https://www.canada.ca/a", "title": "A", "summary": "", "source": "canada.ca"},
+                   {"url": "https://www.facebook.com/x", "title": "F", "summary": "", "source": "facebook.com"},
+                   {"url": "https://www.reddit.com/r/x/1", "title": "R", "summary": "", "source": "reddit.com"}]
+        sent, read = [], []
+        s = {"pending": {}}
+
+        def send(s_, key, text, stamp, **k):
+            sent.append((key, text, k))
+            s_["pending"][hashlib.sha1(key.encode()).hexdigest()[:10]] = {}
+            return True
+
+        with mock.patch.object(research, "ask_claude", lambda *a, **k: next(answers)), \
+                mock.patch.object(research, "web_search", lambda q, news=False: [] if news else results), \
+                mock.patch.object(research, "fetch_article", lambda u, limit=0: read.append(u) or "текст " * 200), \
+                mock.patch.object(research, "write_long", lambda *a, **k: dict(post)), \
+                mock.patch.object(research, "review_post", lambda p, keys, src, topic: (p, [])), \
+                mock.patch.object(research, "telegraph", lambda *a, **k: {"url": "https://telegra.ph/x", "path": "x"}), \
+                mock.patch.object(research, "commons_image", lambda q: ""), \
+                mock.patch.object(research, "send_draft", send):
+            self.assertTrue(research.research_topic(s, "comprehensive security check для CUAET"))
+        self.assertEqual(read, ["https://www.canada.ca/a", "https://old.reddit.com/r/x/1"])  # Facebook skipped
+        key, text, extra = sent[0]
+        self.assertEqual(extra["kind"], "research")
+        self.assertIn("telegra.ph/x", text)
+        self.assertEqual(list(s["pending"].values())[0]["topic"], "comprehensive security check для CUAET")
 
 
 class CommandLine(unittest.TestCase):

@@ -450,3 +450,55 @@ use natural literary Ukrainian, no clickbait. Reply with the headline only.
 
 Headline: {title}
 """
+
+
+# ── Articles on a topic an approver sends ("Розбираємося"): search, pick sources, write ──
+RESEARCH_QUERIES_PROMPT = AUDIENCE + """
+
+An editor asked for an article on this topic (their words, often in Ukrainian):
+{topic}
+
+Write 4-6 web search queries that will find reliable sources for it: official Canadian government pages
+(canada.ca, laws-lois.justice.gc.ca, the Immigration and Refugee Board), reputable media, explanations by
+immigration lawyers or settlement agencies, and, if the editor asks for people's experiences, forum discussions
+(add "reddit" to one or two queries). Mostly in English; at most one in Ukrainian. Keep each query short.
+Reply with JSON only: {{"queries": ["...", "..."]}}
+"""
+
+RESEARCH_PICK_PROMPT = """An editor asked for an article on this topic:
+{topic}
+
+Below are web search results. Pick up to {n} that are most likely to give reliable, specific information on this
+topic in Canada: official government pages first, then reputable media and expert explanations, plus at most two
+forum threads with personal experiences if the topic asks for them. Skip ads, unrelated pages and pages about
+other countries' rules. Reply with JSON only: {{"ids": [3, 0, 7]}}
+
+{results}
+"""
+
+RESEARCH_WRITE_PROMPT = AUDIENCE + "\n\n" + STYLE + """
+
+Write an explainer article in Ukrainian for the channel's "Розбираємося" column, on the topic an editor asked for.
+EDITOR'S REQUEST (follow it): {topic}
+
+The source text (given above) holds several sources, each starting with [number], its site and its address.
+
+- "title": a clear, informative headline, at most 12 words (no clickbait)
+- "teaser": 2-3 sentences (at most 400 characters) for the channel post that make people want to read on
+- "body": the article, up to about 6000 characters: short paragraphs separated by blank lines, with 3-5
+  subheadings on their own line starting with "## ". Explain what it is and how it works, what is checked and
+  why, what it means for Ukrainians in Canada (especially those who came under CUAET), and what people can do.
+- "image_query": a place or object for the photo (never a person), e.g. "Immigration Refugees and Citizenship Canada"
+
+Rules:
+- Use only facts from the sources. Never invent rules, numbers, dates, cases, names or quotes. If the sources
+  don't cover a point the editor asked about, or disagree, say so plainly.
+- Rules and procedures come from official or expert sources; say where they come from in words (e.g. «за
+  даними сайту уряду Канади»). Experiences from forums are individual stories: present them as such («на форумах
+  люди розповідають…»), never as rules, and never give names or usernames.
+- Neutral, calm and factual: no fearmongering, no promises about outcomes.
+- For legal or immigration topics, give no advice for a specific case, and end with one sentence recommending a
+  licensed immigration consultant (RCIC) or a lawyer for one's own situation.
+
+Reply with JSON only: {{"title": "...", "teaser": "...", "body": "...", "image_query": "..."}}
+"""

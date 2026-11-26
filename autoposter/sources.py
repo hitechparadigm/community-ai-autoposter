@@ -373,3 +373,18 @@ def outlet_name(url):
         if urllib.parse.urlparse(feed).netloc.replace("www.", "") == host:
             return re.sub(r"\s+(Politics|BC|Calgary|Edmonton|Toronto|Winnipeg|Montreal|Halifax)$", "", name)
     return host
+
+
+def web_search(query, news=False):
+    """Web (or news) search results as feed items (title, url, summary, source), from the search feeds in
+    config.RESEARCH; [] if the search fails."""
+    tpl = config.RESEARCH["news_search" if news else "web_search"]
+    try:
+        items = parse_feed(http(tpl.format(q=urllib.parse.quote_plus(query)), timeout=30), "Web")
+    except Exception as e:
+        print(f"Search failed for '{query}': {str(e)[:100]}")
+        return []
+    for it in items:
+        if it["source"] == "Web":
+            it["source"] = outlet_name(it["url"])
+    return items

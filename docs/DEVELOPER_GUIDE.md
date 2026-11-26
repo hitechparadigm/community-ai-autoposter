@@ -39,6 +39,7 @@ Each module imports only from the ones above it in this table, so there are no i
 | `drafts.py` | Drafts for approval, publishing, daily counts, the learning log | `send_draft`, `publish_draft`, `close_draft`, `learn` |
 | `news.py` | News, 💡 Варто знати and the morning digest | `cmd_draft`, `_draft_item`, `cmd_digest` |
 | `history.py` | 📅 This day and 🍁 history long-reads | `cmd_thisday`, `cmd_history`, `_write_history` |
+| `research.py` | 🔎 Розбираємося: an article on a topic from web search | `research_topic`, `find_sources` |
 | `learning.py` | Reader comments, reactions, the monthly review and production numbers | `cmd_review`, `record_comment`, `cmd_stats` |
 | `evals.py` | The evaluation set: test posts, checks, judge, scorecard | `cmd_eval`, `score`, `judge` |
 | `approval.py` | What approvers send: taps, feedback replies, ideas | `cmd_approve`, `handle_feedback`, `handle_idea` |
@@ -64,6 +65,11 @@ Every function has a short docstring saying what it does; start from the main fu
 8. **Approve** (next tick, `approval.cmd_approve`): Telegram reports the tap; `drafts.publish_draft` posts to the
    channel, then `channels.post_to_facebook` posts the card and text and adds the first comment. Approvers' copies
    are updated, the count goes up, and the event is logged for the monthly review.
+
+A topic sent without a link goes to `research.research_topic`: Claude writes search queries, `sources.web_search`
+runs them (the search feeds in `RESEARCH` in `community/config.py`), Claude picks the most reliable results, the
+pages are read and numbered as one source text, and the article is written, copy-edited and reviewed against it,
+then published on Telegraph with the list of sources.
 
 History long-reads follow the same path, but are written by `history._write_history`, published as a Telegraph
 page, and the channel gets a teaser with a "Read more" link.

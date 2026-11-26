@@ -50,8 +50,9 @@ def telegraph(method, s, **params):
     return resp["result"]
 
 
-def telegraph_nodes(body, image, image_credit, source_name, url):
-    """Turn the article text into Telegraph content: photo, paragraphs, subheadings, source."""
+def telegraph_nodes(body, image, image_credit, source_name, url, sources=None):
+    """Turn the article text into Telegraph content: photo, paragraphs, subheadings, source.
+    sources: [(name, url), ...] for an article written from several sources (listed at the end instead)."""
     nodes = []
     if image:
         nodes.append({"tag": "figure", "children": [{"tag": "img", "attrs": {"src": image}},
@@ -63,7 +64,12 @@ def telegraph_nodes(body, image, image_credit, source_name, url):
         elif block:
             nodes.append({"tag": "p", "children": [block]})
     nodes.append({"tag": "hr"})
-    nodes.append({"tag": "p", "children": [config.LABELS["source"] + ": ", {"tag": "a", "attrs": {"href": url}, "children": [source_name]}]})
+    if sources:
+        nodes.append({"tag": "p", "children": [config.LABELS["sources"] + ":"]})
+        nodes.append({"tag": "ol", "children": [{"tag": "li", "children": [
+            {"tag": "a", "attrs": {"href": u}, "children": [n]}]} for n, u in sources]})
+    else:
+        nodes.append({"tag": "p", "children": [config.LABELS["source"] + ": ", {"tag": "a", "attrs": {"href": url}, "children": [source_name]}]})
     nodes.append({"tag": "p", "children": [{"tag": "a", "attrs": {"href": config.TELEGRAPH_AUTHOR_URL},
                                             "children": [config.TELEGRAPH_AUTHOR]}]})
     return nodes

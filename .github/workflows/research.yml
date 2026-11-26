@@ -1,0 +1,45 @@
+name: Draft an article on a topic
+
+# The same as sending the bot a topic without a link: it searches the web, reads the best pages and writes a
+# "🔎 Розбираємося" long-read (Telegraph article + teaser post) for approval.
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: "The topic or task, in any language (e.g. what an approver would write to the bot)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: research
+      cancel-in-progress: false
+    timeout-minutes: 20
+    env:
+      STATE_TOKEN: ${{ secrets.STATE_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get the bot's memory from the private state repository
+        if: env.STATE_TOKEN != ''
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}-state
+          token: ${{ env.STATE_TOKEN }}
+          path: .state
+      - name: Research and write
+        run: python3 bot.py research
+        env:
+          TOPIC: ${{ inputs.topic }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ADMIN_ID: ${{ secrets.TELEGRAM_ADMIN_ID }}
+          TELEGRAPH_TOKEN: ${{ secrets.TELEGRAPH_TOKEN }}
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+          FACEBOOK_PAGE_TOKEN: ${{ secrets.FACEBOOK_PAGE_TOKEN }}
+      - name: Save state
+        if: always()
+        run: bash save_state.sh

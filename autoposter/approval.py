@@ -15,6 +15,7 @@ from .channels import retire_telegraph
 from .drafts import auto_publish_on, close_draft, learn, publish_draft, send_draft
 from .news import _draft_item
 from .history import _history_from, _write_history
+from .research import research_topic
 from .learning import handle_lessons, record_comment
 
 
@@ -100,7 +101,10 @@ def handle_feedback(msg, s):
     learn(s, "feedback", d, feedback)
     who = html.escape(str(msg["from"].get("first_name") or sender))
     try:
-        if d.get("telegraph_path"):
+        if d.get("topic"):  # a "Розбираємося" article: research and write it again with the feedback
+            retire_telegraph(d, s)
+            ok = research_topic(s, d["topic"], feedback)
+        elif d.get("telegraph_path"):
             ok = _redo_long_read(d, feedback, s)
         else:
             ok = _revise_post(did, d, feedback, s)
@@ -130,8 +134,19 @@ def handle_idea(msg, s, sender):
             break
     urls = re.findall(r"https?://\S+", text)
     note = re.sub(r"https?://\S+", "", text).strip()
-    if mode != "history" and not urls:
-        return say(config.LABELS["idea_needs_link"])
+    if mode != "history" and not urls:  # a topic or a task, no link: search the web and write an article
+        if len(note) < 15:
+            return say(config.LABELS["idea_needs_link"])
+        say(config.LABELS["research_working"])
+        learn(s, "idea", None, msg.get("text", ""), mode="research")
+        try:
+            ok = research_topic(s, note)
+        except Exception as e:
+            print(f"RESEARCH ERROR: {e}")
+            ok = False
+        if not ok:
+            say(config.LABELS["research_failed"])
+        return
     say(config.LABELS["idea_working"])
     learn(s, "idea", None, msg.get("text", ""), mode=mode)
     ok = False

@@ -20,6 +20,7 @@ from .news import cmd_digest, cmd_draft
 from .history import cmd_history, cmd_history_from, cmd_rewrite, cmd_thisday, history_card
 from .learning import cmd_review, cmd_stats
 from .evals import cmd_eval
+from .research import research_topic
 from .approval import cmd_approve
 
 
@@ -220,6 +221,13 @@ def main(argv=None):
         cmd_history_from(argv[2], len(argv) > 3 and argv[3] == "thisday")
     elif cmd == "review":  # the monthly review now (normally on REVIEW_DAY)
         cmd_review(force=True)
+    elif cmd == "research":  # an article on a topic (TOPIC), like a topic sent to the bot without a link
+        topic = os.environ.get("TOPIC", "").strip() or " ".join(argv[2:])
+        s = load_state()
+        ok = research_topic(s, topic)
+        save_state(s)
+        if not ok:
+            sys.exit("Could not write the article (not enough sources)")
     elif cmd == "eval":  # eval [CASE_ID ...]: the evaluation set (evals/)
         cmd_eval(argv[2:])
     elif cmd == "stats":  # stats [DAYS]: production numbers into docs/RESULTS.md
@@ -234,4 +242,4 @@ def main(argv=None):
         save_state(merge_state(base, ours, load_state()))
     else:
         sys.exit("Usage: python bot.py tick|draft [tips]|digest|thisday|history [community]|history-from SOURCE [thisday]|"
-                 "approve|review|eval [ID]|stats [DAYS]|rewrite PAGE SOURCE|post|edit LINK|recard MATCH|cards [FILE]|check|merge-state BASE OURS")
+                 "approve|research TOPIC|review|eval [ID]|stats [DAYS]|rewrite PAGE SOURCE|post|edit LINK|recard MATCH|cards [FILE]|check|merge-state BASE OURS")

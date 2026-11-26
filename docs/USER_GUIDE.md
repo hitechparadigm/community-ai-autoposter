@@ -64,12 +64,13 @@ Send the bot a normal message (not a reply to a draft) and it prepares a draft f
 | --- | --- |
 | A link to an article | A news draft from that article |
 | A link + a note, e.g. "https://… зроби акцент на українцях" | A news draft that follows the note |
+| A topic or task, no link, e.g. "Напиши статтю про comprehensive security check для українців з CUAET" | A 🔎 Розбираємося article: the bot searches the web (official sites, media, forums), reads the best pages and writes a long-read with its list of sources. Takes 5-10 minutes |
 | "історія" + a topic, e.g. "історія Банф" | A history long-read on that topic |
 | "історія" + a link | A history long-read from that page |
 | "варто знати" + a link | A practical story with tips |
 | /help | A reminder of these options |
 
-A news idea without a link gets a reply asking for one: news posts are always based on a real article.
+A 🔎 Розбираємося article uses only what its sources say: rules come from official and expert pages, and forum stories are presented as individual experiences, without names. Check it as carefully as any draft; reply with feedback to have it researched and written again. If the bot can't find enough reliable pages, it says so; rephrase the topic or send a link.
 
 To publish your own finished text, use **Draft from your own text** in GitHub (see the last section).
 
