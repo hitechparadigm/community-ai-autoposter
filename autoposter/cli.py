@@ -62,6 +62,11 @@ def cmd_check():
             ok = False
             print(f"Telegram: a webhook is set ({hook['url'].split('/')[2]}); taps can't be read. Revoke the token.")
         print(f"Telegram: waiting taps {hook.get('pending_update_count', 0)}")
+        if hook.get("pending_update_count"):  # peek (doesn't mark anything as read)
+            peek = tg("getUpdates", timeout=0, limit=10)
+            print("Telegram: waiting updates " + ", ".join(
+                f"{u['update_id']}:{'/'.join(k for k in u if k != 'update_id')}" for u in peek)
+                  + f"; the bot reads from {load_state().get('tg_offset')}")
     except Exception as e:
         ok = False
         print(f"Telegram: FAILED ({e})")
