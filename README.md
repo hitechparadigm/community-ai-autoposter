@@ -160,6 +160,7 @@ All of them except Tick are for running something by hand: Actions → pick it �
 | 8:30 | 📅 Цей день в історії Канади: an event or a person on today's date (alternating) |
 | 9:00, 12:00, 15:00, 18:00, 21:00 | 📰 News post (Ukrainian-community stories first) |
 | 11:30 | 🍁 Історія Канади long-read (Sundays: a Ukrainian-Canadian story) |
+| 19:30 | 💡 Варто знати: a practical story with what readers can do |
 | every 5 min, around the clock | Publisher: posts what was approved; drafts not tapped expire after 24 hours |
 
 Times are local (`TIMEZONE` in `config.py`), daylight saving time included. GitHub sometimes starts scheduled
@@ -229,6 +230,11 @@ amounts in `REFERRALS` when an offer changes.
 
 - Everyone listed in the `TELEGRAM_ADMIN_ID` secret gets each draft; whoever taps first decides, and every
   copy then shows "✅ Published by …" or "❌ Skipped by …".
+- **Rewrite by feedback:** reply (Reply) to a draft with what to change, e.g. "коротше" or "не перекладай назву
+  організації". Within one publish cycle (about 5 minutes) the bot rewrites it and sends the new version with
+  new buttons; the old one shows "✏️ Переписано…". News, practical stories and the digest are revised in place
+  (same links, facts checked against the source); long-reads are written again from their source, with a new
+  Telegraph page. The Facebook card follows the new headline.
 - A draft may carry notes for approvers only (never published): "⚠️ Перевірка знайшла проблеми…" from the
   reviewer, or "⏱ Опублікується автоматично о …" when auto-publish is on.
 - If taps seem to do nothing (buttons stay, nothing is published), another program may be using the bot's

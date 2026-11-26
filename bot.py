@@ -27,7 +27,7 @@ from email.utils import parsedate_to_datetime
 from zoneinfo import ZoneInfo
 
 import config
-from prompts import (COMMUNITY_FOCUS, TIPS_PICK_PROMPT, TIPS_WRITE_PROMPT, TIPS_CHECK, AUDIENCE, DIGEST_PROMPT, EDIT_PROMPT, FIX_PROMPT, REVIEW_PROMPT, HISTORY_WRITE_PROMPT, PICK_PROMPT,
+from prompts import (COMMUNITY_FOCUS, REVISE_PROMPT, TIPS_PICK_PROMPT, TIPS_WRITE_PROMPT, TIPS_CHECK, AUDIENCE, DIGEST_PROMPT, EDIT_PROMPT, FIX_PROMPT, REVIEW_PROMPT, HISTORY_WRITE_PROMPT, PICK_PROMPT,
                      REFERRAL_MATCH_PROMPT, STORY_PICK_PROMPT, STYLE, THISDAY_PICK_PROMPT, WRITE_PROMPT,
                      DATE_WORDS)
 
@@ -233,6 +233,7 @@ SCHEMA_IDS = {"type": "object", "properties": {"ids": {"type": "array", "items":
 SCHEMA_REVIEW = {"type": "object", "properties": {
     "verdict": {"type": "string", "enum": ["ok", "fix"]},
     "problems": {"type": "array", "items": {"type": "string"}}}, "required": ["verdict"]}
+SCHEMA_REVISED = {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}
 SCHEMA_TIPS = {"type": "object", "properties": {"tips": {"type": "string"}}, "required": ["tips"]}
 SCHEMA_REFERRAL = {"type": "object", "properties": {"id": {"type": ["integer", "null"]}}, "required": ["id"]}
 _ITEMS = {"type": "array", "items": {"type": "object", "properties": {
@@ -838,6 +839,7 @@ def send_draft(s, url, text, stamp, image="", preview_url="", kind="news", note=
         file_id = make_card(card)
         if file_id:
             s["pending"][did]["card"] = file_id
+            s["pending"][did]["card_spec"] = {k: v for k, v in card.items() if k != "queries"}
     return bool(msgs)
 
 
@@ -1476,12 +1478,105 @@ def publish_draft(d, s):
     return fb
 
 
+# ---------- rewriting a draft from an approver's feedback ----------
+
+def handle_feedback(msg, s):
+    """An approver replied to a draft with feedback: rewrite it and send the new version for approval."""
+    sender = str((msg.get("from") or {}).get("id", ""))
+    reply = msg.get("reply_to_message") or {}
+    feedback = (msg.get("text") or "").strip()
+    if sender not in ADMIN_IDS or not feedback or feedback.startswith("/"):
+        return
+    if not reply:
+        tg("sendMessage", chat_id=sender, text=config.LABELS["feedback_hint"])
+        return
+    key = admin_key(sender)
+    did, d = next(((k, v) for k, v in s["pending"].items()
+                   if [key, reply.get("message_id")] in v.get("msgs", [])), (None, None))
+    if not d:
+        tg("sendMessage", chat_id=sender, text=config.LABELS["feedback_gone"],
+           reply_parameters={"message_id": msg["message_id"]})
+        return
+    tg("sendMessage", chat_id=sender, text=config.LABELS["feedback_working"],
+       reply_parameters={"message_id": msg["message_id"]})
+    print(f"Feedback on {d['url']}: {feedback[:200]}")
+    who = html.escape(str(msg["from"].get("first_name") or sender))
+    try:
+        if d.get("telegraph_path"):
+            ok = _redo_long_read(d, feedback, s)
+        else:
+            ok = _revise_post(did, d, feedback, s)
+    except Exception as e:
+        print(f"FEEDBACK ERROR: {e}")
+        ok = False
+    if ok:
+        close_draft(d, f"✏️ {config.LABELS['feedback_done']} ({who})")
+    else:
+        tg("sendMessage", chat_id=sender, text=config.LABELS["feedback_failed"],
+           reply_parameters={"message_id": msg["message_id"]})
+
+
+def _revise_post(did, d, feedback, s):
+    """Rewrite a post (news, practical story, digest) by the feedback, keeping its links and format."""
+    m = re.match(r'(<a href="[^"]*">&#8203;</a>)', d["text"])
+    invisible = m.group(1) if m else ""
+    text = d["text"][len(invisible):]
+    source = fetch_article(d["url"]) if d["url"].startswith("http") else ""
+    r = _json(ask_claude(REVISE_PROMPT.format(feedback=feedback, post=text,
+                                              article=SOURCE_REF if source else "(not available)"),
+                         source=source or None, schema=SCHEMA_REVISED), "{", "}") or {}
+    new = fix_homoglyphs(str(r.get("text", "")).replace("\\n", "\n")).strip()
+    links_before = set(re.findall(r'href="([^"]+)"', text))
+    bad_tag = re.search(r"<(?!/?(b|i|u|s|a|code|blockquote)\b)[^>]*>", new)
+    if (not new or bad_tag or visible_length(new) > 4000 or len(new) < 0.3 * len(text)
+            or not set(re.findall(r'href="([^"]+)"', new)) <= links_before | set(re.findall(r'https?://\S+', feedback))):
+        print("Revision rejected (empty, broken HTML, too long or new links)")
+        return False
+    old = dict(d)
+    card = dict(d.get("card_spec") or {})
+    m = re.search(r"<b>(.*?)</b>", new, re.S)
+    if card and m:  # new headline on the Facebook card
+        card["title"] = re.sub(r"^\W+\s*", "", html.unescape(re.sub(r"<[^>]+>", "", m.group(1)))).strip()
+    image = html.unescape(re.search(r'href="([^"]*)"', invisible).group(1)) if invisible else ""
+    lp_url = (d.get("lp") or {}).get("url", "")
+    sent = send_draft(s, d["url"], new, d["created"], kind=d.get("kind", "news"), card=card or None, image=image,
+                      preview_url=lp_url if lp_url and lp_url != d["url"] and not image else "")
+    if sent:
+        for k in ("referral",):  # keep what the old draft had
+            if old.get(k):
+                s["pending"][did][k] = old[k]
+    return sent
+
+
+def _redo_long_read(d, feedback, s):
+    """Write a long-read (history, this day) again from its source, following the feedback."""
+    url = d["url"]
+    if "wikipedia.org/wiki/" in url:
+        article, url = wiki_text(urllib.parse.unquote(url.split("/wiki/", 1)[1]))
+        image, source_name = fetch_page(url)[1], config.LABELS["wikipedia"]
+    else:
+        article, image = fetch_page(url, 15000)
+        source_name = urllib.parse.urlparse(url).netloc.replace("www.", "")
+    if len(article) < 500:
+        return False
+    m = re.search(r"<b>(.*?)</b>", d["text"], re.S)
+    title = html.unescape(re.sub(r"<[^>]+>", "", m.group(1))) if m else url
+    kind = d.get("kind") or "history"
+    header = config.LABELS["thisday_header" if kind == "thisday" else "history_header"]
+    opening = ("Start with the date" + DATE_WORDS[:-1] + " and what happened on it." if kind == "thisday"
+               else "Open with a vivid detail or the key moment.")
+    opening += (f"\n\nEDITOR'S FEEDBACK on the previous version (titled «{title}»); follow it closely: {feedback}")
+    retire_telegraph(d, s)
+    return _write_history(title, source_name, article, opening, header, source_name, d["url"], s,
+                          now().isoformat(), image)
+
+
 def cmd_approve():
     s = load_state()
     updates = None
     for attempt in range(3):  # reading taps is safe to retry; a dropped connection is usually momentary
         try:
-            updates = tg("getUpdates", offset=s["tg_offset"], timeout=0, allowed_updates=["callback_query"])
+            updates = tg("getUpdates", offset=s["tg_offset"], timeout=0, allowed_updates=["callback_query", "message"])
             break
         except (urllib.error.URLError, ConnectionError, TimeoutError) as e:
             print(f"Telegram unreachable ({e}); retrying" if attempt < 2 else
@@ -1497,11 +1592,15 @@ def cmd_approve():
         # of state.json (another tick, or a manual run) would get the same taps again and post twice.
         try:
             tg("getUpdates", offset=updates[-1]["update_id"] + 1, timeout=0, limit=1,
-               allowed_updates=["callback_query"])
+               allowed_updates=["callback_query", "message"])
         except Exception as e:
             print(f"(could not confirm the taps: {e})")
     for u in updates:
         s["tg_offset"] = u["update_id"] + 1
+        if u.get("message"):  # an approver's reply to a draft = feedback: rewrite the draft
+            handle_feedback(u["message"], s)
+            save_state(s)
+            continue
         cq = u.get("callback_query")
         if not cq:
             continue

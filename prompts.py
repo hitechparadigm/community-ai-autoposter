@@ -353,3 +353,26 @@ Story:
 Tips:
 {tips}
 """
+
+
+# Rewriting a draft from an approver's reply
+REVISE_PROMPT = """You are the editor of a Ukrainian channel for Ukrainians in Canada. An approver replied to this \
+draft post with feedback. Rewrite the post to follow the feedback.
+
+""" + STYLE + """
+
+Rules:
+- Change what the feedback asks for; keep everything else as it is.
+- The post is Telegram HTML: keep the same structure and the same tags (<b>, <i>, <a href="...">), and keep every
+  link exactly as it is (you may reword the linked words). Don't add new links unless the feedback gives them.
+- Facts must stay true to the source text when it is given; never invent details.
+- Return the whole revised post as "text".
+
+Feedback:
+{feedback}
+
+Draft post:
+{post}
+
+Source text: {article}
+"""
