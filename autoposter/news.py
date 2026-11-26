@@ -17,10 +17,11 @@ from .channels import format_post
 from .drafts import matching_referral, send_draft
 
 
-def _draft_item(s, it, stamp, mode="news", idea=""):
-    """Write, edit, review and send one news (or "Варто знати") draft. idea: an approver's note to follow."""
+def write_news(it, article, mode="news", idea=""):
+    """Write, copy-edit and review one news (or "Варто знати") post from a story and its article text.
+    Returns {"title", "body", "emoji", "photo_query", "problems"} (problems: what the reviewer still found),
+    or None if Claude couldn't write it. Used for drafts and by the evaluation set (evals/)."""
     tips = mode == "tips"
-    article = fetch_article(it["url"])
     src_text = article or "(not available)"
     write_prompt = TIPS_WRITE_PROMPT if tips else WRITE_PROMPT
     summary = it["summary"] + (f"\nEDITOR'S REQUEST (follow it): {idea}" if idea else "")
@@ -29,7 +30,7 @@ def _draft_item(s, it, stamp, mode="news", idea=""):
         schema=schema_post(("title", "body"), ("image_query", "emoji", "tips"))))
     if not post:
         print(f"Could not write post for: {it['title']}")
-        return False
+        return None
     photo_query = (post.pop("image_query", "") or "").strip()  # for the Facebook card
     emoji = (post.pop("emoji", "") or "").strip()[:4]  # shown before the headline
     advice = (post.pop("tips", "") or "").strip() if tips else ""  # general advice, checked on its own
@@ -47,6 +48,17 @@ def _draft_item(s, it, stamp, mode="news", idea=""):
         if str(checked.get("tips", "")).count("•") >= 2:
             advice = checked["tips"].strip()
         post["body"] += f"\n\n{config.LABELS['tips_what_to_do']}\n{advice}"
+    return {"title": post["title"], "body": post["body"], "emoji": emoji, "photo_query": photo_query,
+            "problems": problems}
+
+
+def _draft_item(s, it, stamp, mode="news", idea=""):
+    """Write one news (or "Варто знати") draft and send it to the approvers. idea: an approver's note to follow."""
+    tips = mode == "tips"
+    post = write_news(it, fetch_article(it["url"]), mode, idea)
+    if not post:
+        return False
+    emoji, photo_query, problems = post["emoji"], post["photo_query"], post["problems"]
     header = config.LABELS["tips_header"] if tips else ""
     text = format_post(f"{emoji} {post['title']}".strip(), post["body"], it["source"], it["url"], header=header)
     ref = matching_referral(s, post)

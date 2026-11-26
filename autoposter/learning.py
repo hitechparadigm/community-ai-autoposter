@@ -1,6 +1,7 @@
 """Learning from editors and readers: comments, reactions and the monthly review."""
 import hashlib
 import html
+import os
 from datetime import timedelta
 
 from community import config
@@ -103,3 +104,51 @@ def handle_lessons(cq, s):
     except Exception:
         pass
     save_state(s)
+
+
+def cmd_stats(days=30, path="docs/RESULTS.md"):
+    """Production numbers for the last `days` days, from the learning log: posts published per kind, how many drafts
+    approvers skipped or asked to rewrite, and how readers reacted on Telegram and Facebook. Writes them as Markdown
+    (only totals and averages: no titles, names or comments) to `path`."""
+    s = load_state()
+    since = (now() - timedelta(days=days)).isoformat()
+    events = [e for e in s.get("learn", []) if e["t"] > since]
+    published = [e for e in events if e["event"] == "published"]
+    skipped = sum(e["event"] == "skipped" for e in events)
+    feedback = sum(e["event"] == "feedback" for e in events)
+    ideas = sum(e["event"] == "idea" for e in events)
+    if not events:
+        print("No activity in the learning log yet")
+        return
+    first = min(e["t"] for e in events)[:10]
+    by_kind = {}
+    for e in published:
+        by_kind[e["kind"] or "other"] = by_kind.get(e["kind"] or "other", 0) + 1
+    tg_reacts = [sum(s.get("tg_reactions", {}).get(str(e.get("tg")), {}).values()) for e in published if e.get("tg")]
+    tg_comments = [sum(1 for c in s.get("tg_comments", []) if c["post"] == e.get("tg"))
+                   + s.get("tg_comment_count", {}).get(str(e.get("tg")), 0) for e in published if e.get("tg")]
+    fb = [fb_stats(e["fb"]) for e in published if e.get("fb")] if FB_TOKEN else []
+    fb = [x for x in fb if x]
+    avg = lambda xs: sum(xs) / len(xs) if xs else 0
+    decided = len(published) + skipped
+    lines = ["# Production results", "",
+             f"Last {days} days ({first} – {now().strftime('%Y-%m-%d')}), from the bot's learning log. "
+             "Updated by the Results workflow; totals and averages only.", "",
+             "| Measure | Value |", "| --- | --- |",
+             f"| Posts published | {len(published)} |",
+             *(f"| – {config.KIND_NAMES.get(k, k) if hasattr(config, 'KIND_NAMES') else k} ({k}) | {n} |"
+               for k, n in sorted(by_kind.items(), key=lambda x: -x[1])),
+             f"| Drafts approved (of those decided) | {len(published) / decided:.0%} ({len(published)}/{decided}) |"
+             if decided else "| Drafts approved | – |",
+             f"| Rewrites asked for by approvers | {feedback} ({feedback / max(1, len(published)):.2f} per published post) |",
+             f"| Post ideas sent by approvers | {ideas} |",
+             f"| Telegram: reactions per post | {avg(tg_reacts):.1f} |",
+             f"| Telegram: comments per post | {avg(tg_comments):.1f} |"]
+    if fb:
+        lines += [f"| Facebook: reactions per post | {avg([x['reactions'] for x in fb]):.1f} |",
+                  f"| Facebook: comments per post | {avg([x['comments'] for x in fb]):.1f} |",
+                  f"| Facebook: shares per post | {avg([x['shares'] for x in fb]):.1f} |"]
+    md = "\n".join(lines) + "\n"
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    open(path, "w", encoding="utf-8").write(md)
+    print(md)

@@ -63,7 +63,8 @@ def _load_glossary():
     """Read community/glossary.json (established names); an empty list if it's missing."""
     try:
         path = os.path.join(HERE, "community", "glossary.json")
-        return json.load(open(path, encoding="utf-8")).get("entries", [])
+        with open(path, encoding="utf-8") as f:
+            return json.load(f).get("entries", [])
     except (OSError, ValueError):
         return []
 

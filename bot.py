@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Community AI autoposter (settings: config.py, editorial instructions: prompts.py, code: autoposter/).
+"""Community AI autoposter (community settings and prompts: community/, code: autoposter/).
 
   python bot.py tick      - every 5 minutes: run what's due by config.SCHEDULE, then publish approved posts
   python bot.py draft     - news drafts ("draft tips" = a 💡 Варто знати practical story)
@@ -9,6 +9,8 @@
   python bot.py history-from SOURCE [thisday] - a long-read from a page or wiki:Article_title
   python bot.py approve   - read approvers' taps, replies and ideas; publish approved posts
   python bot.py review    - the monthly review of feedback and reader reactions, now
+  python bot.py eval [ID ...] - the evaluation set: write posts from test stories and score them (evals/)
+  python bot.py stats [DAYS] - production numbers for the last DAYS days (default 30) into docs/RESULTS.md
   python bot.py rewrite PAGE SOURCE - rewrite a published Telegraph long-read in place
   python bot.py post | edit LINK | recard MATCH | cards [FILE] | check - manual tools (see the workflows)
   python bot.py merge-state BASE OURS - used by save_state.sh

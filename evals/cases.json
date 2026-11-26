@@ -1,0 +1,140 @@
+{
+  "_about": "Test stories for the evaluation set. They are FICTIONAL: written for testing (no real news articles, so nothing copyrighted is stored), with facts, names and institutions chosen to exercise the style rules. Each case lists what a good post must contain: 'facts' (regular expressions, any case; at least one alternative per fact must match), 'people' (original spellings that must appear in brackets), 'keep' (names that must stay untranslated) and 'avoid' (wrong forms that must not appear).",
+  "cases": [
+    {
+      "id": "min-wage-mb",
+      "mode": "news",
+      "source": "Test Wire",
+      "region": "Manitoba",
+      "title": "Manitoba to raise minimum wage to $16.50 an hour on Oct. 1",
+      "summary": "About 40,000 workers will get a raise, the province says.",
+      "article": "Manitoba's minimum wage will rise to $16.50 an hour on October 1, the provincial government announced Tuesday.\n\nThe increase of 65 cents is tied to the province's inflation rate, as required by legislation passed in 2023. Labour Minister Daniel Moreau said about 40,000 workers, most of them in retail and food service, earn the minimum wage.\n\n\"Families are still feeling the cost of groceries and rent, and this adjustment keeps wages in step with prices,\" Moreau said at a news conference in Winnipeg.\n\nThe Manitoba Chambers of Commerce said small businesses would absorb the change but asked the province to give employers more notice in future years. The group said many members already pay above the minimum to attract staff.\n\nManitoba's rate will remain below British Columbia's but above Saskatchewan's. Employers must update pay for all hours worked from October 1, including for students and part-time staff.",
+      "expect": {
+        "facts": [["16,50"], ["1 жовтня"], ["40 ?000", "40 тис"], ["65 цент"]],
+        "people": ["Daniel Moreau"],
+        "keep": ["Manitoba Chambers of Commerce"],
+        "avoid": ["Манітобські палати", "Палати торгівлі Манітоби"]
+      }
+    },
+    {
+      "id": "rcmp-deepfake",
+      "mode": "news",
+      "source": "Test Wire",
+      "region": "British Columbia",
+      "title": "RCMP warns of deepfake romance scams in Metro Vancouver",
+      "summary": "Victims lost $2.3 million this year to scammers using AI-generated video calls.",
+      "article": "The RCMP is warning Metro Vancouver residents about romance scams that use AI-generated video to impersonate real people.\n\nInvestigators say 85 people in the region have reported losing a combined $2.3 million so far this year. In most cases the scammer met the victim on a dating app or social media, then held short video calls in which a deepfake face and voice made the fake identity convincing.\n\n\"The calls look real, and that is what makes these scams so effective,\" said Sgt. Priya Sandhu of the RCMP's financial crime unit in Surrey. \"Once trust is built, the request for money follows: a medical emergency, a frozen bank account, an investment opportunity.\"\n\nPolice say warning signs include a partner who cannot meet in person, calls that end abruptly when asked to turn their head, and any request for cryptocurrency or gift cards. Anyone who has sent money should contact their bank immediately and report it to local police and the Canadian Anti-Fraud Centre.",
+      "expect": {
+        "facts": [["2,3 млн", "2 ?300 ?000"], ["85"], ["криптовалют"], ["подарунков\\w* карт"]],
+        "people": ["Priya Sandhu"],
+        "keep": [],
+        "avoid": ["Королівська канадська кінна", "РКМП"]
+      }
+    },
+    {
+      "id": "ucc-mentorship",
+      "mode": "news",
+      "source": "Test Wire",
+      "region": "Ukrainian community in Canada",
+      "title": "Ukrainian Canadian Congress launches mentorship program for CUAET newcomers in Edmonton",
+      "summary": "120 volunteer mentors will help newcomers with jobs, housing and paperwork.",
+      "article": "The Ukrainian Canadian Congress (UCC) Alberta Provincial Council has launched a mentorship program in Edmonton for Ukrainians who came to Canada under the Canada-Ukraine Authorization for Emergency Travel (CUAET).\n\nThe program pairs newcomers with 120 volunteer mentors, most of them Ukrainian Canadians who work in the trades, health care and engineering. Mentors meet their newcomer at least twice a month for six months to help with job searches, credential recognition, renting and government forms.\n\nThe program is funded by the Prairie Bridges Foundation, a private foundation based in Calgary, which has committed $250,000 over two years.\n\n\"Many people arrived with strong skills, but they don't know how things work here, and nobody tells them,\" said program coordinator Halyna Moroz. \"A mentor saves months of trial and error.\"\n\nApplications for newcomers and mentors are open until January 15. The council plans to expand the program to Calgary next year if funding allows.",
+      "expect": {
+        "facts": [["120"], ["15 січня"], ["250 ?000", "250 тис"], ["Едмонтон"]],
+        "people": ["Halyna Moroz"],
+        "keep": ["Prairie Bridges Foundation"],
+        "avoid": ["Прері Бріджес", "Фонд Прерійні мости", "Український канадський конгрес"]
+      }
+    },
+    {
+      "id": "ircc-cuaet-pr",
+      "mode": "news",
+      "source": "Test Wire",
+      "region": "Canada",
+      "title": "Ottawa opens new permanent residence pathway for Ukrainians who came under CUAET",
+      "summary": "Up to 10,000 applications will be accepted from March 2.",
+      "article": "Immigration, Refugees and Citizenship Canada (IRCC) will open a new pathway to permanent residence for Ukrainians who came to Canada under the CUAET program, the department said Thursday.\n\nThe pathway will accept up to 10,000 applications starting March 2. Applicants need at least one year of full-time work experience in Canada gained after arriving under CUAET, and a language test result of at least CLB 5 in English or NCLC 5 in French.\n\nFamily members in Canada can be included in the same application. Applicants who are outside Quebec must also intend to live outside Quebec, which runs its own selection.\n\nThe Ukrainian Canadian Congress welcomed the announcement but said the cap is too low. More than 300,000 Ukrainians have arrived under CUAET since 2022, and the group says tens of thousands remain on temporary status.\n\nIRCC said it would publish the application guide and the list of required documents two weeks before the pathway opens.",
+      "expect": {
+        "facts": [["10 ?000", "10 тис"], ["2 березня"], ["CLB 5", "CLB5"], ["300 ?000", "300 тис"]],
+        "people": [],
+        "keep": [],
+        "avoid": ["постійне проживання", "постійну резиденцію"]
+      }
+    },
+    {
+      "id": "statcan-population",
+      "mode": "news",
+      "source": "Test Wire",
+      "region": "Canada",
+      "title": "Canada's population growth slows to 0.2% as temporary residents leave",
+      "summary": "Statistics Canada says the number of non-permanent residents fell by 65,000 in the third quarter.",
+      "article": "Canada's population grew by 0.2 per cent in the third quarter, the slowest pace for that period since 2020, Statistics Canada said Wednesday.\n\nThe agency estimated the population at 41.7 million on October 1. Growth came almost entirely from new permanent residents, while the number of non-permanent residents, which includes international students and temporary foreign workers, fell by 65,000.\n\nThe decline follows federal caps on study permits and changes to temporary work programs announced over the past two years. Ottawa has said it wants temporary residents to make up a smaller share of the population.\n\nEconomists said slower growth would ease pressure on rents in large cities but could make labour shortages worse in health care and construction. Alberta grew the fastest of the provinces, by 0.5 per cent, while Ontario and British Columbia grew by less than 0.1 per cent.",
+      "expect": {
+        "facts": [["0,2 ?%", "0,2 відсот"], ["65 ?000", "65 тис"], ["41,7 млн"], ["Альберт"]],
+        "people": [],
+        "keep": [],
+        "avoid": ["Статистика Канади"]
+      }
+    },
+    {
+      "id": "akwesasne-policing",
+      "mode": "news",
+      "source": "Test Wire",
+      "region": "Ontario",
+      "title": "Akwesasne Mohawk police and OPP sign $12-million policing agreement",
+      "summary": "The five-year deal funds joint patrols and a new station on Cornwall Island.",
+      "article": "The Mohawk Council of Akwesasne and the Ontario Provincial Police (OPP) have signed a five-year policing agreement worth $12 million, the council said Monday.\n\nUnder the deal, the Akwesasne Mohawk Police Service and the OPP will run joint patrols on the river and the highways near the community, which straddles the borders of Ontario, Quebec and New York State. The money will also pay for a new police station on Cornwall Island and for training eight new officers.\n\nGrand Chief Laura Benedict said the agreement recognizes that the Mohawk police are the first responders in the community. \"Our officers know these waters and these families. This gives them the resources to do the job,\" she said.\n\nThe OPP said the joint patrols would focus on smuggling and on boating safety in the summer months.",
+      "expect": {
+        "facts": [["12 млн"], ["п'ять рок", "5 рок", "п’ять рок", "п’ятиріч", "п'ятиріч"], ["вісім\\w* (нов|офіц|поліц)", "8 (нов|офіц|поліц)"]],
+        "people": ["Laura Benedict"],
+        "keep": [],
+        "avoid": ["мохок", "Мохок", "Могаук"]
+      }
+    },
+    {
+      "id": "quebec-museum",
+      "mode": "news",
+      "source": "Test Wire",
+      "region": "Quebec",
+      "title": "Montreal's contemporary art museum reopens after $40-million renovation",
+      "summary": "The Musée d'art contemporain de Montréal opens with a show by a Ukrainian-born artist.",
+      "article": "The Musée d'art contemporain de Montréal reopens to the public on Saturday after a four-year, $40-million renovation of its building at Place des Arts.\n\nThe museum has added 2,000 square metres of gallery space, a new entrance on Sainte-Catherine Street and a free public terrace. Admission will be free on the first Sunday of every month.\n\nThe opening exhibition is a survey of the work of Kateryna Lysenko, a painter born in Kharkiv who has lived in Montreal since 1998. It includes 60 works, among them a series of large canvases she painted after visiting her home city in 2023.\n\n\"I wanted people to see Kharkiv as a city of light and students and music, not only as a place on the news,\" Lysenko said at a preview on Thursday. The exhibition runs until April 12.",
+      "expect": {
+        "facts": [["40 млн"], ["60 (робіт|творів)"], ["12 квітня"], ["Харків"]],
+        "people": ["Kateryna Lysenko"],
+        "keep": ["Musée d'art contemporain de Montréal"],
+        "avoid": ["Музей сучасного мистецтва Монреаля"]
+      }
+    },
+    {
+      "id": "cra-ccb-tips",
+      "mode": "tips",
+      "source": "Test Wire",
+      "region": "Canada",
+      "title": "File your taxes to keep the Canada Child Benefit, CRA reminds families",
+      "summary": "Families must file a return by April 30 even if they had no income.",
+      "article": "The Canada Revenue Agency (CRA) is reminding families that they must file their 2026 income tax return by April 30 to keep receiving the Canada Child Benefit (CCB) without interruption, even if they had no income last year.\n\nThe benefit is recalculated every July based on the family's net income from the previous year. If the CRA does not have a return for both parents, payments stop in July until the return is filed and processed.\n\nNewcomers who have not yet applied for the CCB can apply through CRA My Account after they receive a Social Insurance Number, or by mail using form RC66 together with form RC66SCH, which asks about residency status and income from outside Canada.\n\nThe CRA says families can file for free through community volunteer tax clinics, which help people with modest incomes. The agency says the maximum benefit for a child under six is now $8,157 a year.",
+      "expect": {
+        "facts": [["30 квітня"], ["RC66"], ["лип"], ["8 ?157"]],
+        "people": [],
+        "keep": [],
+        "avoid": ["Канадське агентство доходів", "Канадська дитяча виплата"]
+      }
+    },
+    {
+      "id": "health-canada-recall-tips",
+      "mode": "tips",
+      "source": "Test Wire",
+      "region": "Canada",
+      "title": "Health Canada recalls Maple Meadow infant formula over possible bacteria",
+      "summary": "Parents should stop using three lots sold across Canada.",
+      "article": "Health Canada says parents should stop using three lots of Maple Meadow powdered infant formula because they may be contaminated with Cronobacter bacteria.\n\nThe recalled 800-gram cans were sold in grocery stores and pharmacies across Canada and have best-before dates in June 2027. The lot codes are printed on the bottom of each can. No illnesses have been reported.\n\nCronobacter infections are rare but can be serious for newborns, especially babies born early or with weakened immune systems. Symptoms include fever, poor feeding, unusual crying and very low energy.\n\nHealth Canada says parents should not feed the recalled formula to their babies and should return it to the store where it was bought for a refund. Parents whose baby shows symptoms after drinking formula should call a doctor or 811 right away.",
+      "expect": {
+        "facts": [["Maple Meadow"], ["800 ?г"], ["811"], ["червн\\w* 2027", "2027"]],
+        "people": [],
+        "keep": ["Maple Meadow"],
+        "avoid": ["Мейпл Медоу", "Кленовий луг"]
+      }
+    }
+  ]
+}

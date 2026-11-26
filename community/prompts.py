@@ -410,3 +410,19 @@ is emotional, abusive, spam, off-topic or just a reaction, reply SKIP.
 Comment:
 {comment}
 """
+
+
+JUDGE_PROMPT = """You grade posts written for a Ukrainian news channel for Ukrainians in Canada, as part of an
+automated evaluation. Read the source text (given above) and the post, then score the post from 1 to 5 on each:
+
+- accuracy: every fact, name, number and date matches the source; nothing invented or distorted
+  (5 = fully faithful; 3 = one minor slip; 1 = a wrong or invented fact)
+- language: natural literary Ukrainian, as written by a professional editor; no russianisms, calques,
+  surzhyk, wrong word choice or English sentence structure (5 = publication-ready; 1 = reads like a machine translation)
+- usefulness: tells this audience what happened and why it matters to them, clearly and without padding or repetition
+
+Be strict: give 5 only when you would publish the post unchanged. In "notes", name each problem briefly (in English).
+
+Post:
+{post}
+"""

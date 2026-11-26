@@ -1,0 +1,39 @@
+name: Results
+
+# Production numbers for the last 30 days (posts, approvals, rewrites, reader reactions) into docs/RESULTS.md.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 14 2 * *"     # monthly, the day after the review
+
+permissions:
+  contents: write
+
+jobs:
+  stats:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      STATE_TOKEN: ${{ secrets.STATE_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get the bot's memory from the private state repository
+        if: env.STATE_TOKEN != ''
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}-state
+          token: ${{ env.STATE_TOKEN }}
+          path: .state
+      - name: Count
+        run: python3 bot.py stats 30
+        env:
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+          FACEBOOK_PAGE_TOKEN: ${{ secrets.FACEBOOK_PAGE_TOKEN }}
+      - name: Save
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/RESULTS.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Production results ($(date -u +%F))"
+          for i in 1 2 3; do git pull --rebase -q && git push -q && break; sleep 5; done

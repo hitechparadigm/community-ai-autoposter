@@ -1,0 +1,48 @@
+name: Evaluation
+
+# Writes posts from the fixed test stories in evals/cases.json with the current prompts, glossary and model,
+# scores them, and commits the scorecard (evals/results/). Runs when the prompts or glossary change, or by hand.
+on:
+  workflow_dispatch:
+    inputs:
+      cases:
+        description: "Case ids to run, separated by spaces (empty = all)"
+        required: false
+        default: ""
+  push:
+    branches: [main]
+    paths: ["community/prompts.py", "community/glossary.json", "evals/cases.json"]
+
+permissions:
+  contents: write
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: eval
+      cancel-in-progress: true
+    env:
+      STATE_TOKEN: ${{ secrets.STATE_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get the accepted editorial notes from the private state repository
+        if: env.STATE_TOKEN != ''
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}-state
+          token: ${{ env.STATE_TOKEN }}
+          path: .state
+      - name: Write and score the test posts
+        run: python3 bot.py eval ${{ github.event.inputs.cases }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: Save the scorecard
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add evals/results
+          git diff --cached --quiet && exit 0
+          git commit -m "Evaluation results ($(date -u +%F))"
+          for i in 1 2 3; do git pull --rebase -q && git push -q && break; sleep 5; done

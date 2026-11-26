@@ -215,6 +215,8 @@ REFERRAL_DISCLOSURE = ""  # optional line under the link, e.g. "#реклама"
 
 # Claude model used to pick, write and copy-edit posts (Sonnet 5.5)
 MODEL = "claude-sonnet-5-5"
+# US dollars per million tokens for MODEL, to show the cost of a run (check the current Claude pricing page)
+PRICES = {"input": 2.00, "cache_write": 2.50, "cache_read": 0.10, "output": 10.00}
 
 # ---------- Facebook ----------
 # Facebook gets the full post text with a picture card (see CARD) and no links: in Canada, Meta blocks links
@@ -380,3 +382,16 @@ WIKI_REGIONAL_TOPICS = [
     ("Nunavut", "Nunavut Land Claims Agreement"),
     ("Nunavut", "Inuit"),
 ]
+
+
+# ── Evaluation set (evals/): automatic checks on posts written from fixed test stories ──
+EVAL = {
+    # words that must never appear: russianisms and calques (whole words or word starts, any case)
+    "forbidden": ["являється", "являються", "приймати участь", "прийняв участь", "прийняла участь",
+                  "прийняли участь", "на протязі", "слідуюч", "в якості", "співпада", "міроприємств",
+                  "згідно закону", "получ", "являлось", "являлася", "являвся", "любий з", "прибульц"],
+    "foreign_letters": "[ыэъёЫЭЪЁ]",     # letters of other alphabets that must not appear
+    "title_max_words": 12,
+    "body_chars": {"news": (450, 1400), "tips": (350, 1800)},   # tips include the "what to do" list
+    "judge_pass": 4,                    # judge scores at or above this count as a pass
+}

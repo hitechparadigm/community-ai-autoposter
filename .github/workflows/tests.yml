@@ -2,7 +2,7 @@ name: Tests
 
 on:
   push:
-    paths: ["**.py", "community/**", ".github/workflows/tests.yml"]
+    paths: ["**.py", "community/**", "evals/cases.json", ".github/workflows/tests.yml"]
   pull_request:
 
 permissions:

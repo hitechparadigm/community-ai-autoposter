@@ -18,7 +18,8 @@ from .channels import format_post, preview
 from .drafts import send_draft
 from .news import cmd_digest, cmd_draft
 from .history import cmd_history, cmd_history_from, cmd_rewrite, cmd_thisday, history_card
-from .learning import cmd_review
+from .learning import cmd_review, cmd_stats
+from .evals import cmd_eval
 from .approval import cmd_approve
 
 
@@ -219,6 +220,10 @@ def main(argv=None):
         cmd_history_from(argv[2], len(argv) > 3 and argv[3] == "thisday")
     elif cmd == "review":  # the monthly review now (normally on REVIEW_DAY)
         cmd_review(force=True)
+    elif cmd == "eval":  # eval [CASE_ID ...]: the evaluation set (evals/)
+        cmd_eval(argv[2:])
+    elif cmd == "stats":  # stats [DAYS]: production numbers into docs/RESULTS.md
+        cmd_stats(int(argv[2]) if len(argv) > 2 else 30)
     elif cmd == "check":  # test the connections, posts nothing
         cmd_check()
     elif cmd == "merge-state":  # used by save_state.sh: merge-state BASE OURS (theirs = state.json)
@@ -229,4 +234,4 @@ def main(argv=None):
         save_state(merge_state(base, ours, load_state()))
     else:
         sys.exit("Usage: python bot.py tick|draft [tips]|digest|thisday|history [community]|history-from SOURCE [thisday]|"
-                 "approve|review|rewrite PAGE SOURCE|post|edit LINK|recard MATCH|cards [FILE]|check|merge-state BASE OURS")
+                 "approve|review|eval [ID]|stats [DAYS]|rewrite PAGE SOURCE|post|edit LINK|recard MATCH|cards [FILE]|check|merge-state BASE OURS")
