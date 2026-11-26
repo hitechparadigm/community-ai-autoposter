@@ -43,8 +43,8 @@ def write_news(it, article, mode="news", idea=""):
         print("Copy edit failed; using the first draft")
     post, problems = review_post(post, ("title", "body"), article or it["summary"], it["title"])
     if advice:  # general advice, not from the article: checked separately for accuracy and invented details
-        checked = _json(ask_claude(TIPS_CHECK.format(story=post["body"], tips=advice),
-                                   schema=SCHEMA_TIPS), "{", "}") or {}
+        checked = _json(ask_claude(TIPS_CHECK.format(story=post["body"], tips=advice), source=src_text,
+                                   schema=SCHEMA_TIPS), "{", "}") or {}  # with the article: its own specifics stay
         if str(checked.get("tips", "")).count("•") >= 2:
             advice = checked["tips"].strip()
         post["body"] += f"\n\n{config.LABELS['tips_what_to_do']}\n{advice}"

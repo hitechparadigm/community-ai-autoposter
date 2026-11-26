@@ -350,7 +350,7 @@ Article text:
 TIPS_CHECK = """You are the editor of a Ukrainian channel for Ukrainians in Canada. Below are practical tips that \
 follow a news story. Check every tip: it must be accurate for Canada, safe, widely accepted advice, and contain \
 no invented specifics (menu paths, websites or lists on them, phone numbers, amounts, deadlines, company policies \
-stated as fact) unless the story gives them. A tip must not repeat a sentence or fact the story already states \
+stated as fact) unless the story or the source text (given above) gives them. A tip must not repeat a sentence or fact the story already states \
 as is: turn it into a step the reader takes, or drop it. Keep the specifics that come from the story (form \
 names or numbers, deadlines, phone numbers, requirements). Remove or rewrite any tip that fails. Fix the Ukrainian (literary, no russianisms or calques). Keep 3-4 tips, one per \
 line, each starting with "• ", one short line each. Return the corrected tips.
