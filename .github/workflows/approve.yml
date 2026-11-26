@@ -19,6 +19,7 @@ jobs:
       - name: Check taps and publish
         run: python3 bot.py approve
         env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_ADMIN_ID: ${{ secrets.TELEGRAM_ADMIN_ID }}
           TELEGRAPH_TOKEN: ${{ secrets.TELEGRAPH_TOKEN }}
