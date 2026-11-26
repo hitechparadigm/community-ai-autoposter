@@ -118,6 +118,7 @@ Check and fix:
 2. Russianisms, surzhyk, calques from English, unnatural or awkward phrasing, wrong word choice.
 3. Facts: every name, number, date and claim must match the article. Remove anything the article does not support.
 4. Clarity: a reader who has not seen the article must understand it. Keep the structure and length.
+   A "title" has at most 12 words: shorten a longer one, keeping the key fact.
 5. Repetition and meta-comments: remove any repeated facts or phrasing (including between the teaser and the
    body), and any remarks about the writing or the sources ("розповідаємо", "не вдалося з'ясувати", "джерело не
    уточнює"); rephrase genuine historical uncertainty as a plain historical fact.
@@ -331,7 +332,8 @@ Write a "Варто знати" post in Ukrainian: a real story readers can lear
 - "tips": 3-4 short practical steps for readers (one line each), each starting with "• ". This is the only \
   place for what readers should do: the article's own instructions (deadlines, whom to call, what to return) \
   plus general, widely accepted advice that fits Canada (e.g. turn on purchase approval for children, set \
-  spending limits, check statements). Each tip says something the body doesn't. No menu paths, website \
+  spending limits, check statements). Keep every specific instruction the article gives (form names or numbers, \
+  deadlines, phone numbers, what is required first) in the tips. Each tip says something the body doesn't. No menu paths, website \
   sections or lists, phone numbers, amounts or deadlines unless the article gives them. No moralizing.
 - "image_query" and "emoji" as for news: a place or object for the photo (never a person), one topic emoji.
 
@@ -349,7 +351,8 @@ TIPS_CHECK = """You are the editor of a Ukrainian channel for Ukrainians in Cana
 follow a news story. Check every tip: it must be accurate for Canada, safe, widely accepted advice, and contain \
 no invented specifics (menu paths, websites or lists on them, phone numbers, amounts, deadlines, company policies \
 stated as fact) unless the story gives them. A tip must not repeat a sentence or fact the story already states \
-as is: turn it into a step the reader takes, or drop it. Remove or rewrite any tip that fails. Fix the Ukrainian (literary, no russianisms or calques). Keep 3-4 tips, one per \
+as is: turn it into a step the reader takes, or drop it. Keep the specifics that come from the story (form \
+names or numbers, deadlines, phone numbers, requirements). Remove or rewrite any tip that fails. Fix the Ukrainian (literary, no russianisms or calques). Keep 3-4 tips, one per \
 line, each starting with "• ", one short line each. Return the corrected tips.
 
 """ + STYLE + """
