@@ -3,7 +3,7 @@
 # into .state, otherwise to this repository. If another run pushed first, merge both runs' changes and retry.
 set -u
 BOT="$(cd "$(dirname "$0")" && pwd)/bot.py"
-if [ -d .state ]; then cd .state; fi
+if [ -d .state/.git ]; then cd .state; fi
 BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
 [ "$BRANCH" = "HEAD" ] || [ -z "$BRANCH" ] && BRANCH=main
 git config user.name "github-actions[bot]"

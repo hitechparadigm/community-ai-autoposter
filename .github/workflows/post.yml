@@ -29,6 +29,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Get the bot's memory from the private state repository
         if: env.STATE_TOKEN != ''
+        continue-on-error: true    # if it fails, the bot keeps using state.json in this repo
         uses: actions/checkout@v4
         with:
           repository: ${{ github.repository }}-state
