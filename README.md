@@ -54,7 +54,7 @@ Any other community can run its own channel by changing two settings files (see
 
 ### Reusable for any community
 
-Nothing specific to this channel is hard-coded: `bot.py` contains no names, sources, languages, countries or
+Nothing specific to this channel is hard-coded: the code (`autoposter/`) contains no names, sources, languages, countries or
 time zones. Anyone with the same use case (a community channel on Telegram and/or a Facebook Page) can fork
 the repo and change only the settings and the prompts:
 
@@ -142,19 +142,20 @@ sequenceDiagram
 | Workflow | File | What it does |
 |---|---|---|
 | Tick (every 5 minutes) | `tick.yml` | The engine: runs whatever is due by `SCHEDULE`, then publishes approved posts. Started by cron-job.org (and GitHub's schedule as a backup). |
-| Publish approved posts | `approve.yml` | Publish approved posts right now |
-| Draft posts | `draft.yml` | Make a news draft now |
+| Publish approved posts | `approve.yml` | Right now: publish approved posts and handle replies (feedback) and ideas sent to the bot |
+| Draft posts | `draft.yml` | Make a news draft now (tick "Варто знати" for a practical story) |
 | Draft morning digest | `digest.yml` | Make the digest now |
 | Draft this-day post | `thisday.yml` | Make a "This day" draft now |
-| Draft history story | `history.yml` | Make a history long-read now (tick "Community-history story" for a Ukrainian-Canadian one) |
+| Draft history story | `history.yml` | Make a history long-read now (tick "Community-history story" for a Ukrainian-Canadian one), or from a source you give (a page or `wiki:Article_title`, optionally as "this day") |
 | Rewrite a published long-read | `rewrite.yml` | Rewrite a published Telegraph article in place from a source you give |
-| Preview Facebook cards | `cards.yml` | Draw the sample cards in `samples/cards.json` and send them to the approvers |
+| Preview Facebook cards | `cards.yml` | Draw the sample cards in `samples/cards.json`, one card from JSON, or redraw a waiting draft's card |
 | Draft from your own text | `post.yml` | Your own text (and optional source link) as a draft with its Facebook card; publish it with ✅ |
 | Edit a published post | `edit.yml` | Replace the text of a channel post (link, new text, optional source link) |
 | Monthly review | `review.yml` | Report on the last month and proposed rules (runs by itself on the 1st) |
+| Tests | `tests.yml` | Runs by itself on every code change: unit tests and an end-to-end test |
 | Check connections | `check.yml` | Test the Telegram and Facebook tokens and every news feed without posting; optionally try new feeds |
 
-All of them except Tick are for running something by hand: Actions → pick it → Run workflow.
+All of them except Tick and Tests are for running something by hand: Actions → pick it → Run workflow.
 
 ## Daily schedule (Toronto time)
 
@@ -165,7 +166,8 @@ All of them except Tick are for running something by hand: Actions → pick it �
 | 9:00, 12:00, 15:00, 18:00, 21:00 | 📰 News post (Ukrainian-community stories first) |
 | 11:30 | 🍁 Історія Канади long-read (Sundays: a Ukrainian-Canadian story) |
 | 19:30 | 💡 Варто знати: a practical story with what readers can do |
-| every 5 min, around the clock | Publisher: posts what was approved; drafts not tapped expire after 24 hours |
+| 1st of the month, 10:00 | 📈 Monthly review: report and proposed rules for the approvers |
+| every 5 min, around the clock | Publisher: posts what was approved, rewrites drafts from feedback, drafts ideas sent to the bot; drafts not tapped expire after 24 hours |
 
 Times are local (`TIMEZONE` in `config.py`), daylight saving time included. GitHub sometimes starts scheduled
 runs late; a job that is late by less than `CATCH_UP_HOURS` still runs.
@@ -181,6 +183,13 @@ line can be added (see Referral links).
 **Ukrainian community.** Stories in the Canadian feeds that mention Ukraine or Ukrainians, plus everything from
 New Pathway and UCC Manitoba, are always passed to the picker (even when older than a feed's newest 8) and get
 top priority: churches, organizations, events, newcomers, incidents such as vandalism at a church.
+
+**💡 Варто знати.** One practical story a day (scams, surprise charges, children online, banking, consumer and
+tenant rights): two short paragraphs from the article, then "Що можна зробити:" with 3-4 one-line tips that a
+separate check keeps accurate and free of invented details.
+
+**On Facebook.** The full text (no links: Meta blocks Canadian news links), sources named in plain text, a
+picture card, and the Telegram and Telegraph links in an automatic first comment.
 
 **Morning digest** ("🗞 Головне за вчора"): the 3-5 most important national stories from yesterday; 1-2
 stories from 3-4 provinces or territories (rotating so every region is featured over the week);
@@ -391,8 +400,9 @@ merges safely when two runs finish at the same time.
   Encyclopedia (blocks automated access), Canada's History (needs JavaScript), several provincial history
   sites (BC, Atlantic, North).
 - If a feed breaks, the run log shows `FEED ERROR` and the other feeds still work.
-- Costs: Claude API roughly $18-25/month with Sonnet for everything, including the copy-edit and reviewer passes,
+- Costs: Claude API roughly $25-35/month with Sonnet for everything (9 drafts a day, the monthly review), including the copy-edit and reviewer passes,
   thanks to prompt caching (see the Anthropic console);
   GitHub Actions free (public repo); cron-job.org, Telegram and Telegraph free.
-- GitHub pauses scheduled workflows in a repo with no activity for 60 days; the bot's own state commits
-  normally keep it active, but if it happens, re-enable them in the Actions tab.
+- GitHub pauses its own scheduled workflows in a repo with no commits for 60 days (the bot's memory is saved in
+  the private repo now). The bot itself keeps running, since cron-job.org starts the tick; if you also want
+  GitHub's backup schedule, re-enable it in the Actions tab when GitHub asks.
