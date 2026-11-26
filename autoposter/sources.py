@@ -180,7 +180,9 @@ def commons_image(query):
         for p in sorted(pages.values(), key=lambda p: p.get("index", 0)):
             title = set(re.findall(r"\w+", p.get("title", "").lower()))
             src = (p.get("original") or {}).get("source", "")
-            if src and words <= title and not BAD_IMG.search(src) and image_ok(src):
+            # only files on Wikimedia Commons: an image uploaded to Wikipedia itself may be non-free ("fair use")
+            if (src and "/wikipedia/commons/" in src and words <= title and not BAD_IMG.search(src)
+                    and image_ok(src)):
                 return src
     # The article has no lead photo: search Wikimedia Commons files whose name shares the key words
     key = {w for w in words if len(w) > 3} or words

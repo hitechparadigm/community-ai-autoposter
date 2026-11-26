@@ -206,6 +206,7 @@ class Research(unittest.TestCase):
         post = {"title": "Перевірка безпеки", "teaser": "Що перевіряють.", "body": "## Як це працює\n\nТекст.",
                 "image_query": ""}
         answers = iter(['{"queries": ["security screening Canada", "CUAET PR reddit"]}', "[0, 1]",
+                        '{"enough": true}',
                         json.dumps({k: post[k] for k in ("title", "teaser", "body")}, ensure_ascii=False)])
         results = [{"url": "https://www.canada.ca/a", "title": "A", "summary": "", "source": "canada.ca"},
                    {"url": "https://www.facebook.com/x", "title": "F", "summary": "", "source": "facebook.com"},
@@ -232,6 +233,20 @@ class Research(unittest.TestCase):
         self.assertEqual(extra["kind"], "research")
         self.assertIn("telegra.ph/x", text)
         self.assertEqual(list(s["pending"].values())[0]["topic"], "comprehensive security check для CUAET")
+
+    def test_off_topic_sources_stop_before_writing(self):
+        from autoposter import research
+        answers = iter(['{"queries": ["q"]}', "[0]", '{"enough": false, "missing": "Немає даних", "queries": ["q2"]}',
+                        "[0]", '{"enough": false, "missing": "Немає даних про перевірку", "queries": []}'])
+        pages = iter([[{"url": "https://a.ca/1", "title": "A", "summary": "", "source": "a.ca"}],
+                      [{"url": "https://b.ca/2", "title": "B", "summary": "", "source": "b.ca"}]])
+        with mock.patch.object(research, "ask_claude", lambda *a, **k: next(answers)), \
+                mock.patch.object(research, "web_search", lambda q, news=False: [] if news else next(pages)), \
+                mock.patch.object(research, "fetch_article", lambda u, limit=0: "текст " * 200), \
+                mock.patch.object(research, "write_long", lambda *a, **k: self.fail("must not write")):
+            with self.assertRaises(research.NotCovered) as e:
+                research.research_topic({"pending": {}}, "тема")
+        self.assertEqual(str(e.exception), "Немає даних про перевірку")
 
 
 class CommandLine(unittest.TestCase):

@@ -502,3 +502,15 @@ Rules:
 
 Reply with JSON only: {{"title": "...", "teaser": "...", "body": "...", "image_query": "..."}}
 """
+
+RESEARCH_COVERAGE_PROMPT = """An editor asked for an article on this topic:
+{topic}
+
+The source text (given above) holds the pages found so far. Do they contain enough specific, reliable information
+to write the article the editor asked for, on THAT topic (not a related one)? If not, say what is missing and give
+2-4 new web search queries (mostly English) likely to find it, e.g. official pages on canada.ca or
+laws-lois.justice.gc.ca, lawyers' explanations, or forum threads if the editor asked for people's experiences.
+
+Reply with JSON only: {{"enough": true or false, "missing": "what is missing, one short sentence in Ukrainian",
+"queries": ["...", "..."]}}
+"""

@@ -15,7 +15,7 @@ from .channels import retire_telegraph
 from .drafts import auto_publish_on, close_draft, learn, publish_draft, send_draft
 from .news import _draft_item
 from .history import _history_from, _write_history
-from .research import research_topic
+from .research import NotCovered, research_topic
 from .learning import handle_lessons, record_comment
 
 
@@ -140,12 +140,14 @@ def handle_idea(msg, s, sender):
         say(config.LABELS["research_working"])
         learn(s, "idea", None, msg.get("text", ""), mode="research")
         try:
-            ok = research_topic(s, note)
+            ok, missing = research_topic(s, note), ""
+        except NotCovered as e:
+            ok, missing = False, str(e)
         except Exception as e:
             print(f"RESEARCH ERROR: {e}")
-            ok = False
+            ok, missing = False, ""
         if not ok:
-            say(config.LABELS["research_failed"])
+            say(config.LABELS["research_failed"] + (f"\n\n{missing}" if missing else ""))
         return
     say(config.LABELS["idea_working"])
     learn(s, "idea", None, msg.get("text", ""), mode=mode)
