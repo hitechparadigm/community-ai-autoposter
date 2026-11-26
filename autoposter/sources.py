@@ -9,12 +9,13 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
-import config
+from community import config
 
 from .core import ATOM, DC, UA, WIKI, WIKI_UA, http, now
 
 
 def _txt(el, *names):
+    """The text (or href) of the first of these child elements of a feed item that has one."""
     for n in names:
         x = el.find(n)
         if x is not None:
@@ -26,6 +27,7 @@ def _txt(el, *names):
 
 
 def _date(s):
+    """A feed date (RSS or ISO style) as a UTC datetime; None if it can't be read."""
     if not s:
         return None
     try:
@@ -39,11 +41,14 @@ def _date(s):
 
 
 def _clean(s, limit=400):
+    """Plain text from an HTML snippet: tags removed, entities decoded, spaces collapsed, cut to limit."""
     s = html.unescape(re.sub(r"<[^>]+>", " ", s or ""))
     return re.sub(r"\s+", " ", s).strip()[:limit]
 
 
 def parse_feed(xml_bytes, source):
+    """Stories (source, title, url, summary, published) from an RSS or Atom feed. Links from news-search
+    feeds are unwrapped to the real article and credited to the outlet that published it."""
     root = ET.fromstring(xml_bytes)
     entries = root.findall(".//item") or root.findall(f".//{ATOM}entry")
     out = []
@@ -217,6 +222,7 @@ def fetch_page(url, limit=6000):
 
 
 def fetch_article(url, limit=6000):
+    """The main text of an article page (no image)."""
     return fetch_page(url, limit)[0]
 
 
@@ -256,6 +262,7 @@ def wiki_text(title, limit=15000):
 
 
 def _get_page(url, timeout=40):
+    """A page's HTML as text; "" if it can't be loaded."""
     try:
         return http(url, timeout=timeout).decode("utf-8", errors="replace")
     except Exception as e:
@@ -310,6 +317,7 @@ def best_page(text, pages):
     words = set(re.findall(r"\w+", text.lower()))
 
     def score(p):
+        """How well a Wikipedia page title matches the event's words (share of title words found, title length)."""
         title = re.sub(r"_", " ", p.get("title", ""))
         tw = [w for w in re.findall(r"\w+", title.lower()) if len(w) > 2]
         hit = sum(w in words for w in tw) / len(tw) if tw else 0
@@ -318,6 +326,7 @@ def best_page(text, pages):
 
 
 def wiki_on_this_day(d):
+    """Wikipedia's "On this day" events for a date, each with its year and main article."""
     try:
         data = json.loads(http(f"{WIKI}/api/rest_v1/feed/onthisday/all/{d:%m}/{d:%d}"))
     except Exception as e:
@@ -347,6 +356,7 @@ def clean_link(url):
 
 
 def page_title(url):
+    """A page's title (og:title, or <title>); "" if the page can't be loaded."""
     try:
         page = http(url, timeout=30).decode("utf-8", errors="replace")
     except Exception:

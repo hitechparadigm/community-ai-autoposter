@@ -1,7 +1,7 @@
 name: Preview Facebook cards
 
 on:
-  workflow_dispatch:           # draws the sample cards in samples/cards.json and sends them to the approvers
+  workflow_dispatch:           # draws the sample cards in community/samples/cards.json and sends them to the approvers
     inputs:
       draft:
         description: "Optional: part of a waiting draft's source link, to redraw just that draft's card instead"

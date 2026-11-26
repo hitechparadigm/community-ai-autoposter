@@ -4,12 +4,13 @@ import json
 import re
 import urllib.parse
 
-import config
+from community import config
 
 from .core import FB_PAGE_ID, FB_TOKEN, TELEGRAPH_TOKEN, TG_TOKEN, http, post_multipart, tg
 
 
 def format_post(title, body, source, url, header=""):
+    """A Telegram post (HTML): optional header line, bold headline, body, then the source link."""
     e = html.escape
     top = f"{e(header, quote=False)}\n\n" if header else ""
     return (f"{top}<b>{e(title, quote=False)}</b>\n\n{e(body, quote=False)}\n\n"
@@ -17,6 +18,7 @@ def format_post(title, body, source, url, header=""):
 
 
 def buttons(did):
+    """The ✅ Publish / ❌ Skip buttons under a draft; the button data carries the draft id."""
     return {"inline_keyboard": [[
         {"text": "✅ Publish", "callback_data": f"pub:{did}"},
         {"text": "❌ Skip", "callback_data": f"skip:{did}"},
@@ -24,6 +26,7 @@ def buttons(did):
 
 
 def preview(url):
+    """Telegram link-preview options: a large preview of this page."""
     return {"url": url, "prefer_large_media": True}
 
 
@@ -86,6 +89,7 @@ def retire_telegraph(d, s):
 
 
 def fb_footer(text):
+    """Add the FB_FOOTER line (the invitation to the Telegram channel) to a Facebook text."""
     footer = getattr(config, "FB_FOOTER", "")
     return f"{text}\n\n{footer}" if footer else text
 

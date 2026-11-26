@@ -11,7 +11,7 @@ from unittest import mock
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from autoposter import approval, core, drafts, news  # noqa: E402
-import config  # noqa: E402
+from community import config  # noqa: E402
 
 RSS = """<rss><channel><item><title>Ottawa pauses refugee program</title>
 <link>https://globalnews.ca/news/1/pause/</link><description>The federal government paused a program.</description>

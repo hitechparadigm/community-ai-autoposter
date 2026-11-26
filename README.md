@@ -9,7 +9,7 @@ Any other community can run its own channel by changing two settings files (see
 
 **Live demo:** [t.me/UkrainianCanada](https://t.me/UkrainianCanada)
 
-**Approving posts?** Start with the [guide for approvers](docs/USER_GUIDE.md): drafts, replies with feedback, sending your own links and ideas.
+**Approving posts?** Start with the [guide for approvers](docs/USER_GUIDE.md): drafts, replies with feedback, sending your own links and ideas. **Changing the code?** See the [developer guide](docs/DEVELOPER_GUIDE.md).
 
 ### What it does
 
@@ -52,23 +52,25 @@ Any other community can run its own channel by changing two settings files (see
 - **Modular and tested.** A small package with one job per module (below) and layered imports with no cycles;
   unit tests plus an end-to-end test (draft → approval → publish with the network faked) run on every push.
 - **Configurable, not hard-coded.** Sources, schedules, approvers, referral offers and publishing rules live in
-  `config.py`; all editorial instructions live in `prompts.py`, so the same code can serve another community.
+  `community/config.py`; all editorial instructions live in `community/prompts.py`, so the same code can serve another community.
 
 ### Reusable for any community
 
 Nothing specific to this channel is hard-coded: the code (`autoposter/`) contains no names, sources, languages, countries or
-time zones. Anyone with the same use case (a community channel on Telegram and/or a Facebook Page) can fork
-the repo and change only the settings and the prompts:
+time zones. Everything specific to a community lives in one folder, `community/`. Anyone with the same use case
+(a community channel on Telegram and/or a Facebook Page) can fork the repo and change only that folder:
 
 | Change | In |
 |---|---|
-| Telegram channel, bot name, time zone, approvers' auto-publish rules, model, limits | `config.py` |
-| News feeds and regions; which stories count as community news (`COMMUNITY_WORDS`, `COMMUNITY_REGIONS`) | `config.py` |
-| History sources, "people of the day" page, community-history day and sources, Wikipedia language | `config.py` |
-| Fixed words in posts (headers, "Source", "Read more", month names) and the language of the channel | `config.py` → `LABELS`, `MONTHS` |
-| Referral offers | `config.py` → `REFERRALS` |
-| Audience, what counts as important, length and structure of posts, style guide for the language | `prompts.py` |
-| Run times (local time zone, `TIMEZONE`) | `config.py` → `SCHEDULE` |
+| Telegram channel, bot name, time zone, approvers' auto-publish rules, model, limits | `community/config.py` |
+| News feeds and regions; which stories count as community news (`COMMUNITY_WORDS`, `COMMUNITY_REGIONS`) | `community/config.py` |
+| History sources, "people of the day" page, community-history day and sources, Wikipedia language | `community/config.py` |
+| Fixed words in posts (headers, "Source", "Read more", month names) and the language of the channel | `community/config.py` → `LABELS`, `MONTHS` |
+| Referral offers | `community/config.py` → `REFERRALS` |
+| Audience, what counts as important, length and structure of posts, style guide for the language | `community/prompts.py` |
+| Run times (local time zone, `TIMEZONE`) | `community/config.py` → `SCHEDULE` |
+| Established names in the channel's language (institutions, organizations, peoples) | `community/glossary.json` |
+| Facebook card design | `community/card.html` |
 | Bot token, approvers, API and Facebook keys | GitHub secrets |
 
 Examples: a Polish- or Filipino-Canadian channel, a city news channel for newcomers, a diaspora in another
@@ -152,7 +154,7 @@ sequenceDiagram
 | Draft this-day post | `thisday.yml` | Make a "This day" draft now |
 | Draft history story | `history.yml` | Make a history long-read now (tick "Community-history story" for a Ukrainian-Canadian one), or from a source you give (a page or `wiki:Article_title`, optionally as "this day") |
 | Rewrite a published long-read | `rewrite.yml` | Rewrite a published Telegraph article in place from a source you give |
-| Preview Facebook cards | `cards.yml` | Draw the sample cards in `samples/cards.json`, one card from JSON, or redraw a waiting draft's card |
+| Preview Facebook cards | `cards.yml` | Draw the sample cards in `community/samples/cards.json`, one card from JSON, or redraw a waiting draft's card |
 | Draft from your own text | `post.yml` | Your own text (and optional source link) as a draft with its Facebook card; publish it with ✅ |
 | Edit a published post | `edit.yml` | Replace the text of a channel post (link, new text, optional source link) |
 | Monthly review | `review.yml` | Report on the last month and proposed rules (runs by itself on the 1st) |
@@ -173,7 +175,7 @@ All of them except Tick and Tests are for running something by hand: Actions →
 | 1st of the month, 10:00 | 📈 Monthly review: report and proposed rules for the approvers |
 | every 5 min, around the clock | Publisher: posts what was approved, rewrites drafts from feedback, drafts ideas sent to the bot; drafts not tapped expire after 24 hours |
 
-Times are local (`TIMEZONE` in `config.py`), daylight saving time included. GitHub sometimes starts scheduled
+Times are local (`TIMEZONE` in `community/config.py`), daylight saving time included. GitHub sometimes starts scheduled
 runs late; a job that is late by less than `CATCH_UP_HOURS` still runs.
 
 ## What each post looks like
@@ -230,14 +232,14 @@ the draft with those notes and checks again; anything still wrong is listed unde
 never published). It adds about 1-3 Claude calls per post. The digest is not reviewed this way (it is built from
 headlines and summaries only).
 
-**Language.** Every post follows the style guide in `prompts.py` (literary Ukrainian, no russianisms or
+**Language.** Every post follows the style guide in `community/prompts.py` (literary Ukrainian, no russianisms or
 calques, Canadian terms, original English names in brackets on first mention, Ukrainian typography) and goes
 through the copy-edit pass and the reviewer. Look-alike Latin letters inside Ukrainian words (a common AI slip)
 are corrected automatically. Still read drafts before approving; add recurring mistakes to the style guide.
 
 ## Referral links
 
-The morning digest ends with one link from `REFERRALS` in `config.py`, a different one each day. A news post
+The morning digest ends with one link from `REFERRALS` in `community/config.py`, a different one each day. A news post
 gets one only when an offer clearly fits the story (e.g. interest rates → investing, money to Ukraine → Wise),
 never on tragedies, war or crime, and at most `REFERRALS_IN_NEWS_PER_DAY` (1) per day. History posts never
 carry referral links. `REFERRAL_DISCLOSURE` can add a line under the link (empty = none). Update the bonus
@@ -255,14 +257,14 @@ amounts in `REFERRALS` when an offer changes.
 - **Send your own link or idea** to the bot (a normal message, not a reply): a link becomes a news draft;
   "історія …" with a topic or link becomes a long-read; "варто знати …" with a link becomes a practical story.
   Any words besides the link are followed as instructions ("зроби акцент на українцях"). /help shows this.
-- **Daily counts:** each draft shows "📊 Сьогодні опубліковано новин: 4 з 5" (`DAILY_LIMITS` in `config.py`;
+- **Daily counts:** each draft shows "📊 Сьогодні опубліковано новин: 4 з 5" (`DAILY_LIMITS` in `community/config.py`;
   other kinds use their number of times in `SCHEDULE`). Going over is allowed and marked ⚠️.
 - A draft may carry notes for approvers only (never published): "⚠️ Перевірка знайшла проблеми…" from the
   reviewer, or "⏱ Опублікується автоматично о …" when auto-publish is on.
 - If taps seem to do nothing (buttons stay, nothing is published), another program may be using the bot's
   token: replace it in @BotFather (/mybots → API Token → Revoke) and update the `TELEGRAM_BOT_TOKEN` secret.
 - To publish an approved post right away: Actions → "Publish approved posts" → Run workflow.
-- **Publishing without approval** is off. In `config.py`, `AUTO_PUBLISH` can switch it on per kind of post
+- **Publishing without approval** is off. In `community/config.py`, `AUTO_PUBLISH` can switch it on per kind of post
   (news, digest, thisday, history): such drafts show "⏱ Опублікується автоматично о …" and go out after
   `AUTO_PUBLISH_AFTER_MINUTES` (60) unless someone taps ❌.
 
@@ -270,10 +272,10 @@ amounts in `REFERRALS` when an offer changes.
 
 When the secrets `FACEBOOK_PAGE_ID` and `FACEBOOK_PAGE_TOKEN` are set, every published post also goes to the
 Facebook Page, built for Facebook readers:
-- **Picture card** (`card.html`, drawn with headless Chrome): the photo on top and the headline on a panel
+- **Picture card** (`community/card.html`, drawn with headless Chrome): the photo on top and the headline on a panel
   below it. Photos come from Wikimedia Commons or, for history posts, the archive the story comes from (the writer suggests several searches: monument, place, object), or a centred text layout with
   an ornament band when none fits. Approvers see the card with each draft. Try design changes with the
-  **Preview Facebook cards** workflow (`samples/cards.json`).
+  **Preview Facebook cards** workflow (`community/samples/cards.json`).
 - **Full text, no links.** In Canada Meta blocks links to news outlets (Online News Act), even in comments,
   and link posts reach fewer people. Sources stay named in plain text; long-reads go in whole.
 - **First comment** with the links Facebook allows: the Telegram channel and, for long-reads, the Telegraph
@@ -293,7 +295,7 @@ an approver taps ✅; they then guide the writers and story pickers (`editorial_
 
 ### Glossary of names
 
-`glossary.json` lists established Ukrainian names (e.g. CSIS = Канадська служба безпеки й розвідки). Before each
+`community/glossary.json` lists established Ukrainian names (e.g. CSIS = Канадська служба безпеки й розвідки). Before each
 writing, editing or review step, the bot finds which entries' English names appear in the source and passes only
 those to Claude as required names, so a post costs a few extra tokens at most; the reviewer flags any other
 version. When a name comes out wrong, add a line to the file.
@@ -305,17 +307,17 @@ version. When a name comes out wrong, add a line to the file.
 2. **Photo.** The writer (Claude) suggests up to 4 searches for a meaningful picture, best first: a monument,
    building, place or object (never a person in news). The bot looks each one up on Wikipedia/Wikimedia
    Commons (history posts first use the article's own archival photo) and takes the first real photo: big enough, not a banner, not a map, flag, chart or logo. News
-   falls back to a photo of the province's legislature (`REGIONS` in `config.py`). Only Wikimedia photos and
+   falls back to a photo of the province's legislature (`REGIONS` in `community/config.py`). Only Wikimedia photos and
    archival photos from the history sources are used (`CARD["photo_domains"]`; news outlets' photos are
    copyrighted), credited on the card's edge.
-3. **Drawing.** `card.html` is an ordinary web page with placeholders (`{{title}}`, `{{tag}}`…). The bot
+3. **Drawing.** `community/card.html` is an ordinary web page with placeholders (`{{title}}`, `{{tag}}`…). The bot
    fills them in, embeds the photo, and takes a 1080×1350 screenshot with headless Chrome (already on GitHub's
    machines). A small script in the page shrinks the headline until it fits. Without a photo, the page
    switches to the centred large-text layout with the ornament band.
 4. **Approval and storage.** The PNG goes to the approvers in Telegram with the draft; Telegram keeps the
    file. When the post is approved, the bot fetches it back and uploads it to Facebook with the text.
 
-To change the look, edit `card.html` (layout, fonts, colours) and `CARD` in `config.py` (size, brand texts,
+To change the look, edit `community/card.html` (layout, fonts, colours) and `CARD` in `community/config.py` (size, brand texts,
 colours), then run **Preview Facebook cards**. Cost: free (no image-generation service).
 
 Getting the keys (you must be an admin of the Page):
@@ -369,7 +371,7 @@ fine-grained token with Contents read/write on just that repository, and save it
 | `core.py` | Settings from the environment, time, HTTP, the bot's memory, Telegram calls |
 | `sources.py` | News feeds and news searches, article pages, photos, Wikipedia |
 | `ai.py` | Claude calls (caching, structured answers), glossary, editorial notes, copy-edit checks, reviewer agent |
-| `cards.py` | Facebook picture cards (`card.html` + headless Chrome) |
+| `cards.py` | Facebook picture cards (`community/card.html` + headless Chrome) |
 | `channels.py` | Telegraph long-reads, Facebook Page posts and comments, Telegram post format |
 | `drafts.py` | Drafts for approval, daily counts, learning log, publishing |
 | `news.py` | News, 💡 Варто знати and the morning digest |
@@ -382,15 +384,16 @@ fine-grained token with Contents read/write on just that repository, and save it
 
 | What you want to change | Where |
 |---|---|
-| Channel, time zone, fixed words in posts, news and history sources, referral links, auto-publish, model, limits | `config.py` |
-| Tone, Ukrainian style guide, what to pick, length and structure of each post | `prompts.py` |
-| Established Ukrainian names of institutions and organizations (CSIS, RCMP, IRCC, КУК…) | `glossary.json` |
-| Facebook card design | `card.html` (+ `CARD` in `config.py`) |
-| Run times (local time) | `config.py` → `SCHEDULE` |
+| Channel, time zone, fixed words in posts, news and history sources, referral links, auto-publish, model, limits | `community/config.py` |
+| Tone, Ukrainian style guide, what to pick, length and structure of each post | `community/prompts.py` |
+| Established Ukrainian names of institutions and organizations (CSIS, RCMP, IRCC, КУК…) | `community/glossary.json` |
+| Facebook card design | `community/card.html` (+ `CARD` in `community/config.py`) |
+| Run times (local time) | `community/config.py` → `SCHEDULE` |
 | API keys, bot token, approver IDs, Telegraph and Facebook keys | GitHub → Settings → Secrets and variables → Actions |
 | The program itself | `autoposter/` (no settings inside); `bot.py` is the command line |
 | Tests | `tests/` (`python3 -m unittest discover -s tests`) |
 | Guide for approvers | `docs/USER_GUIDE.md` |
+| How the code works (for developers) | `docs/DEVELOPER_GUIDE.md` |
 | What the bot remembers (seen stories, drafts, learning log) | `state.json` in the private `<this repo>-state` repository when the `STATE_TOKEN` secret is set (recommended: keeps drafts and reader data private and this repo free of bot commits); otherwise `state.json` here. Automatic; don't edit by hand |
 
 The timer is cron-job.org (see Setup, step 4); the `cron:` line in `tick.yml` is a backup. GitHub runs its

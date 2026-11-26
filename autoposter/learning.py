@@ -3,8 +3,8 @@ import hashlib
 import html
 from datetime import timedelta
 
-import config
-from prompts import COMMENT_GIST_PROMPT, REVIEW_MONTH_PROMPT
+from community import config
+from community.prompts import COMMENT_GIST_PROMPT, REVIEW_MONTH_PROMPT
 
 from .core import ADMIN_IDS, FB_TOKEN, LOCAL, answer, load_state, now, save_state, tg
 from .ai import SCHEMA_LESSONS, _json, ask_claude
@@ -87,6 +87,7 @@ def cmd_review(force=False):
 
 
 def handle_lessons(cq, s):
+    """An approver tapped ✅/❌ under the monthly review: keep or drop the proposed rules."""
     _, lid, choice = (cq.get("data") or "::").split(":", 2)
     lessons = s.get("lessons_pending", {}).pop(lid, None)
     if lessons is None:

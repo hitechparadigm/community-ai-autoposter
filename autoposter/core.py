@@ -10,7 +10,7 @@ import urllib.request
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
-import config
+from community import config
 
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # the repository folder
@@ -62,10 +62,12 @@ FB_TOKEN = os.environ.get("FACEBOOK_PAGE_TOKEN", "").strip()
 
 
 def now():
+    """The current time, in UTC (convert with .astimezone(LOCAL) for local times)."""
     return datetime.now(timezone.utc)
 
 
 def http(url, data=None, headers=None, timeout=30):
+    """GET (or POST JSON when data is given) a URL and return the raw bytes; raises RuntimeError on HTTP errors."""
     h = {"User-Agent": WIKI_UA if re.search(r"wiki[mp]edia\.org", url) else UA}
     h.update(headers or {})
     body = None
@@ -82,6 +84,7 @@ def http(url, data=None, headers=None, timeout=30):
 
 
 def load_state():
+    """The bot's memory (state.json): seen stories, drafts waiting for approval, read position, logs."""
     try:
         with open(STATE_FILE, encoding="utf-8") as f:
             s = json.load(f)
@@ -94,6 +97,7 @@ def load_state():
 
 
 def save_state(s):
+    """Write the bot's memory back to state.json (save_state.sh then commits and pushes it)."""
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(s, f, ensure_ascii=False, indent=1, sort_keys=True)
 
@@ -142,6 +146,7 @@ def merge_state(base, ours, theirs):
 
 
 def tg(method, **params):
+    """Call a Telegram Bot API method and return its result; raises RuntimeError if Telegram says no."""
     if not TG_TOKEN:
         sys.exit("TELEGRAM_BOT_TOKEN is not set")
     raw = http(f"https://api.telegram.org/bot{TG_TOKEN}/{method}", params)
@@ -169,6 +174,7 @@ def multipart(fields, files):
 
 
 def post_multipart(url, fields, files, timeout=60):
+    """POST a form with files (used for picture uploads to Telegram and Facebook); returns the JSON reply."""
     body, ctype = multipart(fields, files)
     req = urllib.request.Request(url, data=body, headers={"Content-Type": ctype, "User-Agent": UA})
     try:
@@ -191,6 +197,7 @@ LOCAL = ZoneInfo(config.TIMEZONE)  # for picking "today", showing times and the 
 
 def answer(cq, text, alert=False):
     # Telegram rejects answers to taps older than a few minutes; that's harmless.
+    """Answer an approver's button tap with a short pop-up text."""
     try:
         tg("answerCallbackQuery", callback_query_id=cq["id"], text=text, show_alert=alert)
     except Exception as e:

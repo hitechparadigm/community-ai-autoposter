@@ -4,8 +4,8 @@ import html
 import re
 from datetime import timedelta
 
-import config
-from prompts import REFERRAL_MATCH_PROMPT
+from community import config
+from community.prompts import REFERRAL_MATCH_PROMPT
 
 from .core import ADMIN_IDS, LOCAL, admin_key, now, tg
 from .ai import SCHEMA_REFERRAL, _json, ask_claude
@@ -30,6 +30,7 @@ def close_draft(d, status):
 
 
 def auto_publish_on(kind):
+    """Whether this kind of post goes out without approval (AUTO_PUBLISH in config.py)."""
     return bool(getattr(config, "AUTO_PUBLISH", {}).get(kind))
 
 
@@ -69,6 +70,7 @@ def send_draft(s, url, text, stamp, image="", preview_url="", kind="news", note=
 
 
 def _ref_today(s):
+    """How many news posts with a referral link were published today."""
     today = now().astimezone(LOCAL).strftime("%Y-%m-%d")
     r = s.get("ref_news", {})
     return r.get("count", 0) if r.get("date") == today else 0
@@ -133,6 +135,7 @@ def daily_count(s, kind, add=0):
 
 
 def count_note(s, kind):
+    """The draft's daily count line, e.g. "📊 Сьогодні опубліковано новин: 4 з 5" (⚠️ at or over the limit)."""
     n, limit = daily_count(s, kind)
     name = config.KIND_NAMES.get(kind, kind)
     over = " ⚠️" if n >= limit else ""

@@ -9,7 +9,7 @@ from unittest import mock
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from autoposter import ai, approval, cards, channels, core, drafts, sources  # noqa: E402
-import config  # noqa: E402
+from community import config  # noqa: E402
 
 
 class StateMerge(unittest.TestCase):

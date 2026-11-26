@@ -8,7 +8,7 @@ import sys
 import urllib.parse
 from datetime import datetime, timedelta, timezone
 
-import config
+from community import config
 
 from .core import FB_PAGE_ID, FB_TOKEN, LOCAL, http, load_state, merge_state, now, save_state, tg
 from .ai import _print_usage
@@ -107,7 +107,7 @@ def cmd_check():
         sys.exit(1)
 
 
-def cmd_cards(path="samples/cards.json"):
+def cmd_cards(path="community/samples/cards.json"):
     """Draw sample Facebook cards (to try changes to card.html): sends them to the approvers and saves them in cards/."""
     os.makedirs("cards", exist_ok=True)
     one = os.environ.get("CARD_JSON", "").strip()  # a single card given as JSON (e.g. for a post made earlier)

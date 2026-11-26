@@ -6,8 +6,8 @@ import re
 import sys
 from datetime import timedelta
 
-import config
-from prompts import (DIGEST_PROMPT, EDIT_PROMPT, PICK_PROMPT, TIPS_CHECK, TIPS_PICK_PROMPT, TIPS_WRITE_PROMPT,
+from community import config
+from community.prompts import (DIGEST_PROMPT, EDIT_PROMPT, PICK_PROMPT, TIPS_CHECK, TIPS_PICK_PROMPT, TIPS_WRITE_PROMPT,
                      WRITE_PROMPT)
 
 from .core import ADMIN_IDS, LOCAL, load_state, now, save_state, visible_length
@@ -109,6 +109,8 @@ def _digest_ids(digest, items):
 
 
 def cmd_digest():
+    """The morning digest: everything the feeds published since yesterday, grouped by Claude into national
+    news, a few rotating regions, the community and today's events; each item links to its outlet."""
     if not ADMIN_IDS:
         sys.exit("TELEGRAM_ADMIN_ID is not set")
     s = load_state()
@@ -145,6 +147,7 @@ def cmd_digest():
     used = {}  # line -> outlet
 
     def line(entry):
+        """One digest item as a bullet whose [key phrase] links to the outlet's article."""
         try:
             it = items[int(entry["id"])]
         except (KeyError, ValueError, IndexError, TypeError):
@@ -172,6 +175,7 @@ def cmd_digest():
     today_lines = [l for l in map(line, digest.get("today") or []) if l]
 
     def build():
+        """Assemble the digest text from the current lists (rebuilt while trimming to Telegram's length limit)."""
         parts = [f"🗞 <b>{config.LABELS['digest_title']} · {y.day} {config.MONTHS[y.month - 1]}</b>", "",
                  f"<b>{config.LABELS['digest_national']}</b>"] + national
         for reg, lines in regions:

@@ -6,8 +6,8 @@ import os
 import re
 import sys
 
-import config
-from prompts import AUDIENCE, FIX_PROMPT, REVIEW_PROMPT, STYLE
+from community import config
+from community.prompts import AUDIENCE, FIX_PROMPT, REVIEW_PROMPT, STYLE
 
 from .core import ANTHROPIC_KEY, HERE, STATE_FILE, http
 
@@ -60,8 +60,9 @@ SCHEMA_DIGEST = {"type": "object", "properties": {
 
 
 def _load_glossary():
+    """Read community/glossary.json (established names); an empty list if it's missing."""
     try:
-        path = os.path.join(HERE, "glossary.json")
+        path = os.path.join(HERE, "community", "glossary.json")
         return json.load(open(path, encoding="utf-8")).get("entries", [])
     except (OSError, ValueError):
         return []
@@ -150,6 +151,7 @@ def ask_claude(prompt, source=None, schema=None):
 
 
 def _json(text, open_ch, close_ch):
+    """The JSON value between the first open_ch and the last close_ch in a reply (None if there is none)."""
     start, end = text.find(open_ch), text.rfind(close_ch)
     if start == -1 or end == -1:
         return None
@@ -160,6 +162,7 @@ def _json(text, open_ch, close_ch):
 
 
 def parse_picks(text):
+    """Story ids from a picker's answer, e.g. "[4, 17]" -> [4, 17]."""
     ids = _json(text, "[", "]") or []
     return [int(i) for i in ids if isinstance(i, (int, str)) and str(i).isdigit()]
 
@@ -208,6 +211,7 @@ def review_post(post, keys, article, topic):
     """Reviewer agent: checks the draft against its source; fixes it once if needed and checks again.
     Returns (post, remaining problems)."""
     def review(p):
+        """Ask the reviewer about one version; returns its list of problems ([] = fine)."""
         r = _json(ask_claude(REVIEW_PROMPT.format(
             topic=topic, draft=json.dumps({k: p[k] for k in keys}, ensure_ascii=False), article=SOURCE_REF),
             source=article, schema=SCHEMA_REVIEW),
@@ -252,6 +256,7 @@ def write_long(prompt, keys, tries=2, source=None, optional=()):
 
 
 def parse_post(text, keys=("title", "body")):
+    """A post (title, body, ...) from Claude's JSON answer, cleaned up; None if a required key is missing."""
     post = _json(text, "{", "}")
     if isinstance(post, dict):
         # The model sometimes writes line breaks as the two characters "\n" inside its answer: turn them back
@@ -263,6 +268,7 @@ def parse_post(text, keys=("title", "body")):
 
 
 def _print_usage():
+    """At exit: one log line with this run's Claude calls and tokens (to keep an eye on cost)."""
     if _usage["calls"]:
         print(f"Claude usage: {_usage['calls']} calls, input {_usage['input']}, cache write {_usage['cache_write']}, "
               f"cache read {_usage['cache_read']}, output {_usage['output']} tokens")

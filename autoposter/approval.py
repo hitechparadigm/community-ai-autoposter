@@ -5,8 +5,8 @@ import urllib.error
 import urllib.parse
 from datetime import timedelta
 
-import config
-from prompts import DATE_WORDS, REVISE_PROMPT
+from community import config
+from community.prompts import DATE_WORDS, REVISE_PROMPT
 
 from .core import ADMIN_IDS, admin_key, answer, load_state, now, save_state, tg, visible_length
 from .sources import fetch_article, fetch_page, outlet_name, page_title, wiki_text
@@ -155,6 +155,8 @@ def _redo_long_read(d, feedback, s):
 
 
 def cmd_approve():
+    """Every run: read Telegram updates (taps, replies, ideas, comments, reactions) and act on them,
+    publish drafts due for auto-publishing, and expire drafts older than DRAFT_EXPIRY_HOURS."""
     s = load_state()
     updates = None
     for attempt in range(3):  # reading taps is safe to retry; a dropped connection is usually momentary

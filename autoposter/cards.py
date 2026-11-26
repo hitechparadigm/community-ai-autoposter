@@ -4,7 +4,7 @@ import os
 import re
 import urllib.parse
 
-import config
+from community import config
 
 from .core import ADMIN_IDS, FB_PAGE_ID, FB_TOKEN, HERE, LOCAL, TG_TOKEN, http, now, post_multipart, tg
 from .sources import commons_image, wiki_thumb
@@ -33,7 +33,7 @@ def render_card(card):
     """Draw a Facebook picture card from card.html with headless Chrome. Returns PNG bytes, or b"" if it can't."""
     import base64, shutil, subprocess, tempfile
     chrome = next((c for c in ("google-chrome", "chromium", "chromium-browser") if shutil.which(c)), None)
-    tpl = os.path.join(HERE, "card.html")
+    tpl = os.path.join(HERE, "community", "card.html")
     if not chrome or not os.path.exists(tpl):
         print("Card skipped: Chrome or card.html not found")
         return b""

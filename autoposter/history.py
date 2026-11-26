@@ -7,8 +7,8 @@ import re
 import sys
 import urllib.parse
 
-import config
-from prompts import (COMMUNITY_FOCUS, DATE_WORDS, EDIT_PROMPT, HISTORY_WRITE_PROMPT, STORY_PICK_PROMPT,
+from community import config
+from community.prompts import (COMMUNITY_FOCUS, DATE_WORDS, EDIT_PROMPT, HISTORY_WRITE_PROMPT, STORY_PICK_PROMPT,
                      THISDAY_PICK_PROMPT)
 
 from .core import ADMIN_IDS, LOCAL, load_state, now, save_state
@@ -76,6 +76,7 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
 
 
 def _history_state():
+    """The bot's memory, with the list of history sources already used."""
     if not ADMIN_IDS:
         sys.exit("TELEGRAM_ADMIN_ID is not set")
     s = load_state()
@@ -84,11 +85,13 @@ def _history_state():
 
 
 def _done(s, key):
+    """Remember that this history source was used (the last 1000 are kept)."""
     s["history_done"].append(key)
     s["history_done"] = s["history_done"][-1000:]
 
 
 def _date_opening(d, year=""):
+    """The writer's instruction to open a this-day post with the date."""
     return (f"Start with the date: this happened on this day, {d.day}.{d.month:02d}"
             + (f".{year}" if year else "") + DATE_WORDS)
 
@@ -170,6 +173,7 @@ def _story_from(candidates, s, stamp, header, community=False):
 
 
 def _collect(sources, s, per_source=6):
+    """Candidate history stories: a few unused article links from each source's index pages."""
     out = []
     for src in sources:
         links = [(u, t) for u, t in harvest(src) if u not in s["history_done"]]
@@ -265,6 +269,7 @@ def cmd_history_from(source, thisday=False):
 
 
 def _history_from(s, source, thisday=False, idea=""):
+    """Write a history (or this-day) draft from one source, optionally following an approver's request."""
     if source.startswith("wiki:"):
         article, url = wiki_text(source[5:])
         image = fetch_page(url)[1] if url else ""

@@ -94,7 +94,7 @@ If a channel post needs a fix after publishing, edit it in Telegram (long-press 
 ## Quality and learning
 
 - **Style rules:** literary Ukrainian, no russianisms or calques. People's names in Ukrainian with the original in brackets on first mention: Марі Томпсон (Marie Thompson). Companies and most organizations keep their English or French name (Open Harbour Refugee Association). Government bodies and Ukrainian organizations use their established Ukrainian name: міністерство імміграції Канади (IRCC), Конгрес українців Канади (КУК).
-- **Glossary:** a list of established names (CSIS = Канадська служба безпеки й розвідки, могавки, метиси…) that the bot must use. When you spot a wrong name, tell the bot's maintainer and it goes into the glossary ([glossary.json](../glossary.json)), so the mistake doesn't repeat.
+- **Glossary:** a list of established names (CSIS = Канадська служба безпеки й розвідки, могавки, метиси…) that the bot must use. When you spot a wrong name, tell the bot's maintainer and it goes into the glossary ([glossary.json](../community/glossary.json)), so the mistake doesn't repeat.
 - **Monthly review:** the bot records what we publish, skip, ask to change and suggest, plus how readers react: Telegram reactions and comments, Facebook reactions, comments and shares. On the 1st of each month it sends us a short report and proposes a few rules for future posts. The rules apply only if one of us taps ✅. Emotional and off-topic comments are ignored, and readers' words are never stored, only an anonymous summary of useful ones.
 
 So the more feedback we give through replies, the better the posts get.
