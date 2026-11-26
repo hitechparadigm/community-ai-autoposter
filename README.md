@@ -86,7 +86,7 @@ flowchart LR
         K["tick.yml → bot.py tick<br/>runs what's due by SCHEDULE<br/>(local time, catches up late runs)"]
         D["draft · digest · thisday · history"]
         P["publish approved posts"]
-        S[("state.json<br/>seen stories, pending drafts,<br/>jobs done")]
+        S[("state.json in a private<br/>-state repo: seen stories,<br/>drafts, learning log")]
     end
     C["Claude API<br/>pick → write → copy-edit<br/>→ review (fix or flag)"]
     TG["Telegraph<br/>long-read articles"]
@@ -321,6 +321,9 @@ If posts don't appear publicly, switch the Meta app to Live (it asks for a priva
 
 ## Setup from scratch
 
+Optional but recommended: create an empty **private** repository named like this one plus `-state`, a
+fine-grained token with Contents read/write on just that repository, and save it as the secret `STATE_TOKEN`.
+
 1. GitHub repo with these files (keep the `.github/workflows` folder). Public is fine: no keys are stored in
    files, and GitHub Actions is free for public repos.
 2. Telegram: create a bot with @BotFather; each approver opens the bot and presses Start; make the bot an
@@ -352,7 +355,7 @@ If posts don't appear publicly, switch the Meta app to Live (it asks for a priva
 | Run times (local time) | `config.py` → `SCHEDULE` |
 | API keys, bot token, approver IDs, Telegraph and Facebook keys | GitHub → Settings → Secrets and variables → Actions |
 | The program itself | `bot.py` (no settings inside) |
-| What the bot remembers (seen stories, pending drafts, rotation) | `state.json` (automatic; don't edit by hand) |
+| What the bot remembers (seen stories, drafts, learning log) | `state.json` in the private `<this repo>-state` repository when the `STATE_TOKEN` secret is set (recommended: keeps drafts and reader data private and this repo free of bot commits); otherwise `state.json` here. Automatic; don't edit by hand |
 
 The timer is cron-job.org (see Setup, step 4); the `cron:` line in `tick.yml` is a backup. GitHub runs its
 own schedules on behalf of the person who last changed a `cron:` line, so after forking, edit that line
