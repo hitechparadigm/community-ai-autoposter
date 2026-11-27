@@ -225,7 +225,7 @@ class Research(unittest.TestCase):
                 mock.patch.object(research, "web_search", lambda q, news=False: [] if news else results), \
                 mock.patch.object(research, "fetch_article", lambda u, limit=0: read.append(u) or "текст " * 200), \
                 mock.patch.object(research, "write_long", lambda *a, **k: dict(post)), \
-                mock.patch.object(research, "review_post", lambda p, keys, src, topic: (p, [])), \
+                mock.patch.object(research, "review_post", lambda p, keys, src, topic, note="": (p, [])), \
                 mock.patch.object(research, "telegraph", lambda *a, **k: {"url": "https://telegra.ph/x", "path": "x"}), \
                 mock.patch.object(research, "commons_image", lambda q: ""), \
                 mock.patch.object(research, "send_draft", send), \

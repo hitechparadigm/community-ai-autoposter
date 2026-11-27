@@ -530,3 +530,12 @@ lawyers or settlement agencies, reputable media, and, if the editor asks for peo
 
 When done, list the {n} best pages, most useful first, one per line as: URL — what it covers (a few words).
 """
+
+# Added to the reviewer's instructions for "Розбираємося" articles (written from several sources)
+RESEARCH_REVIEW_NOTE = """
+
+This draft is an explainer written from several sources on an editor's request. These parts are required by the
+editor, so don't report them as problems: plain statements of what the sources don't cover; attributions such as
+«за даними сайту уряду Канади»; a closing sentence recommending a licensed immigration consultant (RCIC) or a
+lawyer; short background that explains the topic when the sources support it. Still report invented or
+unsupported facts and conclusions, wrong terms, repetition and language errors."""

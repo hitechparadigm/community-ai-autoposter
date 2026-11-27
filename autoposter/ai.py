@@ -277,13 +277,13 @@ def edit_ok(original, edited, min_ratio=0.7):
     return True
 
 
-def review_post(post, keys, article, topic):
+def review_post(post, keys, article, topic, note=""):
     """Reviewer agent: checks the draft against its source; fixes it once if needed and checks again.
-    Returns (post, remaining problems)."""
+    note: extra instructions for this kind of post. Returns (post, remaining problems)."""
     def review(p):
         """Ask the reviewer about one version; returns its list of problems ([] = fine)."""
         r = _json(ask_claude(REVIEW_PROMPT.format(
-            topic=topic, draft=json.dumps({k: p[k] for k in keys}, ensure_ascii=False), article=SOURCE_REF),
+            topic=topic, draft=json.dumps({k: p[k] for k in keys}, ensure_ascii=False), article=SOURCE_REF) + note,
             source=article, schema=SCHEMA_REVIEW),
             "{", "}") or {}
         return [] if r.get("verdict") == "ok" else [str(x) for x in (r.get("problems") or ["unspecified"])]

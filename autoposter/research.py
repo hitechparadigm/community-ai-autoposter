@@ -9,7 +9,7 @@ import urllib.parse
 
 from community import config
 from community.prompts import (EDIT_PROMPT, RESEARCH_COVERAGE_PROMPT, RESEARCH_PICK_PROMPT, RESEARCH_QUERIES_PROMPT,
-                               RESEARCH_SEARCH_PROMPT, RESEARCH_WRITE_PROMPT)
+                               RESEARCH_REVIEW_NOTE, RESEARCH_SEARCH_PROMPT, RESEARCH_WRITE_PROMPT)
 
 from .core import now
 from .sources import commons_image, fetch_article, outlet_name, split_queries, web_search
@@ -180,7 +180,7 @@ def research_topic(s, topic, feedback=""):
         draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False), title=topic[:200], summary="",
         article=SOURCE_REF), source=source, schema=schema_post(keys)), keys)
     post = edited if edit_ok(post, edited) else post
-    post, problems = review_post(post, keys, source, topic[:300])
+    post, problems = review_post(post, keys, source, topic[:300], note=RESEARCH_REVIEW_NOTE)
     header = config.LABELS["research_header"]
     image = commons_image(query) if query else ""
     names = list(dict.fromkeys(name for name, _, _ in sources))
