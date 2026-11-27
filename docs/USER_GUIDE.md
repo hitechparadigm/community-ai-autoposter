@@ -70,6 +70,8 @@ Send the bot a normal message (not a reply to a draft) and it prepares a draft f
 | "варто знати" + a link | A practical story with tips |
 | /help | A reminder of these options |
 
+Cost: a news or history draft costs us about 10-30 cents in AI fees, a 🔎 Розбираємося article about $1-1.50 (it reads many pages), so ask for those when the topic is worth it.
+
 A 🔎 Розбираємося article uses only what its sources say: rules come from official and expert pages, and forum stories are presented as individual experiences, without names. Check it as carefully as any draft; reply with feedback to have it researched and written again (adding a link to a good article helps). If the bot can't find enough reliable pages, it says what's missing; rephrase the topic or send a link.
 
 To publish your own finished text, use **Draft from your own text** in GitHub (see the last section).

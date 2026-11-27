@@ -471,16 +471,36 @@ yourself on github.com. Either way the tick never does the same job twice.
 `save_state.sh` saves `state.json` after every run and
 merges safely when two runs finish at the same time.
 
+## Cost per post
+
+Claude API cost of writing one draft (pick, write, copy-edit, review, fix), measured from the bot's runs on
+24-26 November 2026 with Claude Sonnet 5.5 ($2 per million input tokens, $10 output, $0.10 cached input).
+Each run's log ends with a "Claude usage" line; `PRICES` in `community/config.py` turns it into dollars.
+
+| Post | Per draft | Per day | Why |
+| --- | --- | --- | --- |
+| News | $0.06-0.13 (usually ~$0.09) | ~$0.45 (5 a day) | Article read once and cached; 5-7 calls |
+| 💡 Варто знати | $0.09-0.14 | ~$0.11 | Plus a separate check of the tips |
+| 🗞 Digest | ~$0.23 | ~$0.23 | Reads every headline since yesterday (40-60 thousand tokens) |
+| 📅 Цей день | $0.13-0.22 | ~$0.18 | A Telegraph long-read |
+| 🍁 Історія Канади | $0.15-0.35 | ~$0.25 | Longer source and article |
+| 🔎 Розбираємося (on request) | $1.00-1.50 | — | Web search and reading 6-9 whole pages |
+| Rewrite after feedback | a few cents | — | One call (long-reads and 🔎: as much as a new one) |
+| Monthly review | a few cents | — | One call a month |
+| Evaluation run (9 test posts) | ~$0.50 | — | Only when prompts or the glossary change |
+
+The daily schedule comes to about **$1.20 a day, $35-40 a month**. Facebook cards, Telegram, Telegraph,
+GitHub Actions and cron-job.org cost nothing.
+
 ## Notes
 
 - Sources that couldn't be used: National Post (no readable feed for automated requests), The Canadian
   Encyclopedia (blocks automated access), Canada's History (needs JavaScript), several provincial history
   sites (BC, Atlantic, North).
 - If a feed breaks, the run log shows `FEED ERROR` and the other feeds still work.
-- Costs: Claude API roughly $25-35/month with Sonnet for everything (9 drafts a day, the monthly review), including the copy-edit and reviewer passes,
-  thanks to prompt caching (see the Anthropic console); plus about $1-1.50 per 🔎 Розбираємося article and about
-  $0.50 per evaluation run (it runs by itself when the prompts or glossary change). When the API credit runs out,
-  every job stops with "credit balance is too low": top it up in the Claude Console (Plans & Billing);
+- Costs: Claude API about $35-40/month for the daily schedule (see the table below), plus 🔎 articles and
+  evaluation runs on demand. When the API credit runs out, every job stops with "credit balance is too low": top it
+  up in the Claude Console (Plans & Billing);
   GitHub Actions free (public repo); cron-job.org, Telegram and Telegraph free.
 - GitHub pauses its own scheduled workflows in a repo with no commits for 60 days (the bot's memory is saved in
   the private repo now). The bot itself keeps running, since cron-job.org starts the tick; if you also want
