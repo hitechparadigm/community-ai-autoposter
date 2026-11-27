@@ -1,11 +1,23 @@
 # Community AI Autoposter
 
 **An AI editorial assistant for community news channels**, reusable for any community or language. It runs the Telegram channel
-[Українська Канада (@UkrainianCanada)](https://t.me/UkrainianCanada), about 17,000 Ukrainians living in
+"Ukrainian Canada" ([@UkrainianCanada](https://t.me/UkrainianCanada)), about 17,000 Ukrainians living in
 Canada: every day it finds the news and history that matter to this community, writes posts in literary
 Ukrainian with Claude, and sends each one to human editors for one-tap approval before anything is published.
 Any other community can run its own channel by changing two settings files (see
 [Reusable for any community](#reusable-for-any-community)).
+
+The channel itself is in Ukrainian; this README is in English. Ukrainian words appear below only where they are
+literally what the bot writes, with a translation. The post types are called here by English names:
+
+| In this README | In the channel |
+|---|---|
+| News | (topic emoji + headline) |
+| 🗞 Morning digest ("Yesterday in Canada") | 🗞 Головне в Канаді за вчора |
+| 💡 Good to Know (a practical story with tips) | 💡 Варто знати |
+| 📅 This Day in Canadian History | 📅 Цей день в історії Канади |
+| 🍁 Canadian History (long-read) | 🍁 Історія Канади |
+| 🔎 Explainer (on request, from web research) | 🔎 Розбираємося |
 
 **Live demo:** [t.me/UkrainianCanada](https://t.me/UkrainianCanada)
 
@@ -17,7 +29,7 @@ Any other community can run its own channel by changing two settings files (see
   Postmedia papers, Ukrainian-Canadian outlets, community organizations and churches, plus news searches that
   find Ukrainian-Canadian stories in any outlet), puts Ukrainian-community stories first, and writes a short,
   self-contained post in Ukrainian from the full article.
-- **💡 Варто знати, daily.** One practical story readers can learn from (scams, surprise charges, children's
+- **💡 Good to Know, daily.** One practical story readers can learn from (scams, surprise charges, children's
   spending online, banking, tenant and consumer rights) with 3-5 steps on what to do; the reviewer checks the
   steps for accuracy and invented specifics.
 - **Morning digest.** Yesterday's key national stories, rotating provincial highlights, community news and
@@ -25,9 +37,9 @@ Any other community can run its own channel by changing two settings files (see
 - **Canadian history.** A daily "This day in Canadian history" post and a history long-read, published as
   Telegraph articles (Instant View in Telegram), grounded in Canadian archives and encyclopedias.
 - **Articles on request.** An editor can send the bot a topic in plain words; it searches the web (official
-  sites first, then media and forums), reads the best pages and writes a "🔎 Розбираємося" long-read with its
+  sites first, then media and forums), reads the best pages and writes a 🔎 Explainer long-read with its
   list of sources, checked like every other post.
-- **Human in the loop.** Every draft goes to the editors in Telegram with ✅ / ❌ (or a reply "опублікувати" /
+- **Human in the loop.** Every draft goes to the editors in Telegram with ✅ / ❌ (or a reply "опублікувати" ("publish") /
   a 👍 reaction if a tap doesn't get through); nothing is published without approval (optional timed
   auto-publish per post type). Approved posts also go to the Facebook Page.
 
@@ -63,7 +75,7 @@ Any other community can run its own channel by changing two settings files (see
 ## Results
 
 **Evaluation** ([full scorecard](evals/results/latest.md), [history of runs](evals/results/history.csv)).
-Nine fictional test stories (`evals/cases.json`: news, community and 💡 Варто знати, each built around the rules
+Nine fictional test stories (`evals/cases.json`: news, community and 💡 Good to Know, each built around the rules
 that are easy to break) go through the same write → copy-edit → review pipeline as real drafts. Each post is then
 checked automatically and graded by a separate Claude call acting as a judge:
 
@@ -80,7 +92,7 @@ checked automatically and graded by a separate Claude call acting as a judge:
 The judge scores accuracy, language and usefulness from 1 to 5 (5 = would publish unchanged).
 
 What the evaluation changed. The first runs passed 4-5 of 9 posts on every check. The judge's notes showed that
-the 💡 Варто знати "what to do" lists repeated the story and added specifics not in the source, that some
+the 💡 Good to Know "what to do" lists repeated the story and added specifics not in the source, that some
 headlines ran over 12 words, and that the naming rule left museums ambiguous. Fixes: advice moved out of the story
 into the tips, a tips check that sees the article, a one-call headline shortener, short forms after an
 institution's first mention, and a clear rule for public institutions. Latest run, model `claude-sonnet-5-5`:
@@ -131,7 +143,7 @@ flowchart LR
     end
     subgraph GH["GitHub Actions"]
         K["tick.yml → autoposter (cli)<br/>runs what's due by SCHEDULE<br/>(local time, catches up late runs)"]
-        D["news · Варто знати · digest<br/>this day · history · monthly review"]
+        D["news · Good to Know · digest<br/>this day · history · explainers · monthly review"]
         P["approvals: taps, feedback,<br/>ideas → publish"]
         S[("state.json in a private<br/>-state repo: seen stories,<br/>drafts, learning log")]
     end
@@ -189,10 +201,10 @@ sequenceDiagram
 |---|---|---|
 | Tick (every 5 minutes) | `tick.yml` | The engine: runs whatever is due by `SCHEDULE`, then publishes approved posts. Started by cron-job.org (and GitHub's schedule as a backup). |
 | Publish approved posts | `approve.yml` | Right now: publish approved posts and handle replies (feedback) and ideas sent to the bot |
-| Draft posts | `draft.yml` | Make a news draft now (tick "Варто знати" for a practical story) |
+| Draft posts | `draft.yml` | Make a news draft now (tick "Варто знати" for a 💡 Good to Know practical story) |
 | Draft morning digest | `digest.yml` | Make the digest now |
 | Draft this-day post | `thisday.yml` | Make a "This day" draft now |
-| Draft an article on a topic | `research.yml` | A 🔎 Розбираємося article on a topic you type, written from web sources (the same as sending the bot a topic) |
+| Draft an article on a topic | `research.yml` | A 🔎 Explainer on a topic you type, written from web sources (the same as sending the bot a topic) |
 | Draft history story | `history.yml` | Make a history long-read now (tick "Community-history story" for a Ukrainian-Canadian one), or from a source you give (a page or `wiki:Article_title`, optionally as "this day") |
 | Rewrite a published long-read | `rewrite.yml` | Rewrite a published Telegraph article in place from a source you give |
 | Preview Facebook cards | `cards.yml` | Draw the sample cards in `community/samples/cards.json`, one card from JSON, or redraw a waiting draft's card |
@@ -211,10 +223,10 @@ All of them except Tick, Tests and Results are for running something by hand: Ac
 | Time | Draft |
 |---|---|
 | 6:30 | 🗞 Morning digest: yesterday's news, regions, Ukrainian community, what happens today, a referral link |
-| 8:30 | 📅 Цей день в історії Канади: an event or a person on today's date (alternating) |
+| 8:30 | 📅 This Day in Canadian History: an event or a person on today's date (alternating) |
 | 9:00, 12:00, 15:00, 18:00, 21:00 | 📰 News post (Ukrainian-community stories first) |
-| 11:30 | 🍁 Історія Канади long-read (Sundays: a Ukrainian-Canadian story) |
-| 19:30 | 💡 Варто знати: a practical story with what readers can do |
+| 11:30 | 🍁 Canadian History long-read (Sundays: a Ukrainian-Canadian story) |
+| 19:30 | 💡 Good to Know: a practical story with what readers can do |
 | 1st of the month, 10:00 | 📈 Monthly review: report and proposed rules for the approvers |
 | every 5 min, around the clock | Publisher: posts what was approved, rewrites drafts from feedback, drafts ideas sent to the bot; drafts not tapped expire after 24 hours |
 
@@ -233,22 +245,22 @@ line can be added (see Referral links).
 New Pathway and UCC Manitoba, are always passed to the picker (even when older than a feed's newest 8) and get
 top priority: churches, organizations, events, newcomers, incidents such as vandalism at a church.
 
-**💡 Варто знати.** One practical story a day (scams, surprise charges, children online, banking, consumer and
-tenant rights): two short paragraphs from the article, then "Що можна зробити:" with 3-4 one-line tips that a
+**💡 Good to Know.** One practical story a day (scams, surprise charges, children online, banking, consumer and
+tenant rights): two short paragraphs from the article, then "Що можна зробити:" ("What you can do:") with 3-4 one-line tips that a
 separate check keeps accurate and free of invented details.
 
 **On Facebook.** The full text (no links: Meta blocks Canadian news links), sources named in plain text, a
 picture card, and the Telegram and Telegraph links in an automatic first comment.
 
-**Morning digest** ("🗞 Головне в Канаді за вчора"): the 3-5 most important national stories from yesterday; 1-2
+**Morning digest** ("Yesterday in Canada"): the 3-5 most important national stories from yesterday; 1-2
 stories from 3-4 provinces or territories (rotating so every region is featured over the week);
-"🇺🇦 Українська громада" when there is community news; "📌 Сьогодні": up to 3 things the news says happen
+a Ukrainian-community section when there is community news; "📌 Today": up to 3 things the news says happen
 today (left out when there are none). A key phrase in each item links to the source, outlets are mixed
-(CBC, Global News, CTV News, Postmedia papers), and it ends with "За матеріалами: ..." and a referral link.
+(CBC, Global News, CTV News, Postmedia papers), and it ends with the list of outlets used and a referral link.
 Its Facebook card lists the top 4 stories as complete one-sentence versions Claude writes for the card (at most
 80 characters each), never cut off.
 
-**🔎 Розбираємося** (on request). An approver sends the bot a topic or a task in plain words, with no link
+**🔎 Explainer** (on request). An approver sends the bot a topic or a task in plain words, with no link
 (Actions → "Draft an article on a topic" does the same). Claude searches the web with Anthropic's web search tool
 and lists the best pages: official sources first (canada.ca, laws, the IRB, court decisions), then lawyers,
 settlement agencies and media, and forum threads when the request asks for people's experiences. The bot reads
@@ -262,11 +274,11 @@ writes it again. Cost: about $1-1.50 per article, mostly for reading the pages.
 
 **History long-reads.** Written as Telegraph articles (telegra.ph, open inside Telegram with Instant View),
 with photo, subheadings and the source credited at the end. The channel gets a teaser with one bold
-"📖 Читати повністю →" link. A skipped or expired draft's Telegraph page is blanked.
-- 📅 *Цей день*: people from the Dictionary of Canadian Biography (`PEOPLE_OF_THE_DAY`); events from
+"📖 Read in full →" link. A skipped or expired draft's Telegraph page is blanked.
+- 📅 *This Day*: people from the Dictionary of Canadian Biography (`PEOPLE_OF_THE_DAY`); events from
   Wikipedia "On this day" (entries matching `THISDAY_WORDS`), because the Canadian sites with dated events
   block automated access.
-- 🍁 *Історія Канади*: Canadian sources first (`HISTORY_SOURCES`: CBC Archives, Library and Archives Canada,
+- 🍁 *Canadian History*: Canadian sources first (`HISTORY_SOURCES`: CBC Archives, Library and Archives Canada,
   Ontario Heritage Trust, Quebec Anglophone Heritage Network, Manitoba Historical Society, Encyclopedia of
   Saskatchewan, RETROactive Alberta). Wikipedia (`WIKI_REGIONAL_TOPICS`) is the fallback and covers BC, the
   Atlantic provinces and the North, whose history sites can't be read automatically.
@@ -285,7 +297,7 @@ with photo, subheadings and the source credited at the end. The channel gets a t
 against its source: on topic (not mainly about something the source only mentions), every fact supported,
 no repetition or padding, no remarks about sources, complete, good Ukrainian. If it finds problems, the bot fixes
 the draft with those notes and checks again; anything still wrong is listed under the draft as
-"⚠️ Перевірка знайшла проблеми, перегляньте уважно:" with the problems in Ukrainian (shown to approvers only,
+"⚠️ The check found problems, review carefully:" with the problems in Ukrainian (shown to approvers only,
 never published). It adds about 1-3 Claude calls per post. The digest is not reviewed this way (it is built from
 headlines and summaries only).
 
@@ -306,23 +318,25 @@ amounts in `REFERRALS` when an offer changes.
 
 - Everyone listed in the `TELEGRAM_ADMIN_ID` secret gets each draft; whoever taps first decides, and every
   copy then shows "✅ Published by …" or "❌ Skipped by …".
-- **Rewrite by feedback:** reply (Reply) to a draft with what to change, e.g. "коротше" or "не перекладай назву
-  організації". Within one publish cycle (about 5 minutes) the bot rewrites it and sends the new version with
-  new buttons; the old one shows "✏️ Переписано…". News, practical stories and the digest are revised in place
+- **Rewrite by feedback:** reply (Reply) to a draft with what to change, e.g. "shorter" or "don't translate the
+  organization's name" (in Ukrainian or English). Within one publish cycle (about 5 minutes) the bot rewrites it and sends the new version with
+  new buttons; the old one is marked "rewritten". News, practical stories and the digest are revised in place
   (same links, facts checked against the source); long-reads are written again from their source, with a new
   Telegraph page. The Facebook card follows the new headline.
 - **Send your own link or idea** to the bot (a normal message, not a reply): a link becomes a news draft;
-  "історія …" with a topic or link becomes a long-read; "варто знати …" with a link becomes a practical story.
-  Any words besides the link are followed as instructions ("зроби акцент на українцях"). /help shows this.
-- **Daily counts:** each draft shows "📊 Сьогодні опубліковано новин: 4 з 5" (`DAILY_LIMITS` in `community/config.py`;
+  "історія …" ("history …") with a topic or link becomes a long-read; "варто знати …" ("good to know …") with a link becomes a
+  practical story; a topic or task with no link becomes a 🔎 Explainer. Any words besides the link are followed as
+  instructions (e.g. "focus on Ukrainians"). /help shows this.
+- **Daily counts:** each draft shows how many posts of its kind went out today against the plan, e.g.
+  "📊 news published today: 4 of 5" (`DAILY_LIMITS` in `community/config.py`;
   other kinds use their number of times in `SCHEDULE`). Going over is allowed and marked ⚠️.
-- A draft may carry notes for approvers only (never published): "⚠️ Перевірка знайшла проблеми…" from the
-  reviewer, or "⏱ Опублікується автоматично о …" when auto-publish is on.
+- A draft may carry notes for approvers only (never published): the reviewer's warning, or the time it will
+  be published automatically when auto-publish is on.
 - If taps seem to do nothing (buttons stay, nothing is published), another program may be using the bot's
   token: replace it in @BotFather (/mybots → API Token → Revoke) and update the `TELEGRAM_BOT_TOKEN` secret.
 - To publish an approved post right away: Actions → "Publish approved posts" → Run workflow.
 - **Publishing without approval** is off. In `community/config.py`, `AUTO_PUBLISH` can switch it on per kind of post
-  (news, digest, thisday, history): such drafts show "⏱ Опублікується автоматично о …" and go out after
+  (news, digest, thisday, history): such drafts show when they will go out and are published after
   `AUTO_PUBLISH_AFTER_MINUTES` (60) unless someone taps ❌.
 
 ## Facebook Page
@@ -330,7 +344,7 @@ amounts in `REFERRALS` when an offer changes.
 When the secrets `FACEBOOK_PAGE_ID` and `FACEBOOK_PAGE_TOKEN` are set, every published post also goes to the
 Facebook Page, built for Facebook readers:
 - **Picture card** (`community/card.html`, drawn with headless Chrome): the photo on top and the headline on a panel
-  below it, the brand with the line "Новини Канади українською" at the top, and "Підписуйтеся: t.me/UkrainianCanada"
+  below it, the brand with the line "Canadian news in Ukrainian" at the top, and "Subscribe: t.me/UkrainianCanada"
   as a call to action at the bottom. Photos come from Wikimedia Commons or, for history posts, the archive the
   story comes from; when nothing of the subject exists, a Canadian landmark (see How the picture cards are made).
   Approvers see the card with each draft. Try design changes with the **Preview Facebook cards** workflow
@@ -354,7 +368,7 @@ an approver taps ✅; they then guide the writers and story pickers (`editorial_
 
 ### Glossary of names
 
-`community/glossary.json` lists established Ukrainian names (e.g. CSIS = Канадська служба безпеки й розвідки). Before each
+`community/glossary.json` lists established Ukrainian names (e.g. CSIS = «Канадська служба безпеки й розвідки», the form Ukrainian media use). Before each
 writing, editing or review step, the bot finds which entries' English names appear in the source and passes only
 those to Claude as required names, so a post costs a few extra tokens at most; the reviewer flags any other
 version. When a name comes out wrong, add a line to the file.
@@ -362,14 +376,14 @@ version. When a name comes out wrong, add a line to the file.
 ### How the picture cards are made
 
 1. **Content.** When a draft is written, the bot fills in a card: the final, edited headline, a tag (the
-   province, "Українська громада", "Історія Канади"…) and, for the digest, the top 4 headlines.
+   province, "Ukrainian community", "Canadian History"…, in Ukrainian on the card) and, for the digest, the top 4 headlines.
 2. **Photo.** The writer (Claude) suggests up to 4 searches for a meaningful picture, best first: a monument,
    building, place or object (never a person in news). The bot looks each one up on Wikipedia/Wikimedia
    Commons (history posts first use the article's own archival photo) and takes the first real photo: big enough, not a banner, not a map, flag, chart or logo. News
    falls back to a photo of the province's legislature (`REGIONS` in `community/config.py`). If there is still
    nothing (for example no free photo of a person exists), a Canadian landmark goes on the card instead:
    `CARD["fallback_photos"]` lists them per card kind (Library and Archives Canada for history, Pier 21 for
-   🔎 Розбираємося, Parliament Hill for news…), chosen by the headline so they vary. Only Wikimedia Commons
+   🔎 Explainers, Parliament Hill for news…), chosen by the headline so they vary. Only Wikimedia Commons
    files and archival photos from the history sources are used (`CARD["photo_domains"]`): news outlets' photos
    are copyrighted, and so can be images uploaded to Wikipedia itself under "fair use". The source is credited
    on the card's edge.
@@ -439,9 +453,9 @@ fine-grained token with Contents read/write on just that repository, and save it
 | `cards.py` | Facebook picture cards (`community/card.html` + headless Chrome) |
 | `channels.py` | Telegraph long-reads, Facebook Page posts and comments, Telegram post format |
 | `drafts.py` | Drafts for approval, daily counts, learning log, publishing |
-| `news.py` | News, 💡 Варто знати and the morning digest |
-| `history.py` | 📅 Цей день and 🍁 history long-reads |
-| `research.py` | 🔎 Розбираємося: articles on a topic an approver sends, from web search |
+| `news.py` | News, 💡 Good to Know and the morning digest |
+| `history.py` | 📅 This Day and 🍁 Canadian History long-reads |
+| `research.py` | 🔎 Explainers: articles on a topic an approver sends, from web search |
 | `learning.py` | Reader comments and reactions, the monthly review, production numbers |
 | `evals.py` | The evaluation set: test posts, automatic checks, judge, scorecard |
 | `approval.py` | Taps, feedback replies, ideas and links sent to the bot |
@@ -453,7 +467,7 @@ fine-grained token with Contents read/write on just that repository, and save it
 |---|---|
 | Channel, time zone, fixed words in posts, news and history sources, referral links, auto-publish, model, limits | `community/config.py` |
 | Tone, Ukrainian style guide, what to pick, length and structure of each post | `community/prompts.py` |
-| Established Ukrainian names of institutions and organizations (CSIS, RCMP, IRCC, КУК…) | `community/glossary.json` |
+| Established Ukrainian names of institutions and organizations (CSIS, RCMP, IRCC, the Ukrainian Canadian Congress…) | `community/glossary.json` |
 | Facebook card design | `community/card.html` (+ `CARD` in `community/config.py`) |
 | Run times (local time) | `community/config.py` → `SCHEDULE` |
 | API keys, bot token, approver IDs, Telegraph and Facebook keys | GitHub → Settings → Secrets and variables → Actions |
@@ -480,11 +494,11 @@ Each run's log ends with a "Claude usage" line; `PRICES` in `community/config.py
 | Post | Per draft | Per day | Why |
 | --- | --- | --- | --- |
 | News | $0.06-0.13 (usually ~$0.09) | ~$0.45 (5 a day) | Article read once and cached; 5-7 calls |
-| 💡 Варто знати | $0.09-0.14 | ~$0.11 | Plus a separate check of the tips |
+| 💡 Good to Know | $0.09-0.14 | ~$0.11 | Plus a separate check of the tips |
 | 🗞 Digest | ~$0.23 | ~$0.23 | Reads every headline since yesterday (40-60 thousand tokens) |
-| 📅 Цей день | $0.13-0.22 | ~$0.18 | A Telegraph long-read |
-| 🍁 Історія Канади | $0.15-0.35 | ~$0.25 | Longer source and article |
-| 🔎 Розбираємося (on request) | $1.00-1.50 | — | Web search and reading 6-9 whole pages |
+| 📅 This Day | $0.13-0.22 | ~$0.18 | A Telegraph long-read |
+| 🍁 Canadian History | $0.15-0.35 | ~$0.25 | Longer source and article |
+| 🔎 Explainer (on request) | $1.00-1.50 | — | Web search and reading 6-9 whole pages |
 | Rewrite after feedback | a few cents | — | One call (long-reads and 🔎: as much as a new one) |
 | Monthly review | a few cents | — | One call a month |
 | Evaluation run (9 test posts) | ~$0.50 | — | Only when prompts or the glossary change |
@@ -498,7 +512,7 @@ GitHub Actions and cron-job.org cost nothing.
   Encyclopedia (blocks automated access), Canada's History (needs JavaScript), several provincial history
   sites (BC, Atlantic, North).
 - If a feed breaks, the run log shows `FEED ERROR` and the other feeds still work.
-- Costs: Claude API about $35-40/month for the daily schedule (see the table below), plus 🔎 articles and
+- Costs: Claude API about $35-40/month for the daily schedule (see the table below), plus 🔎 Explainers and
   evaluation runs on demand. When the API credit runs out, every job stops with "credit balance is too low": top it
   up in the Claude Console (Plans & Billing);
   GitHub Actions free (public repo); cron-job.org, Telegram and Telegraph free.
