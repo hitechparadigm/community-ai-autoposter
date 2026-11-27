@@ -54,7 +54,7 @@ If a draft needs changes, **reply to it** (swipe left on the draft, or long-pres
 
 The bot answers "✍️ Переписую…" and within about 5 minutes sends a new version with new buttons and a new Facebook card. The old draft is marked "✏️ Переписано…". You can reply to the new version again if needed.
 
-News, Варто знати and the digest are edited in place: links stay the same and facts are checked against the original article. History long-reads are written again from their source, following your note. If a rewrite fails, the bot says so and the old draft stays as it was.
+News, Варто знати and the digest are edited in place: links stay the same and facts are checked against the original article. History long-reads are written again from their source, following your note; 🔎 Розбираємося articles are researched and written again. If a rewrite fails, the bot says so and the old draft stays as it was.
 
 ## Suggesting your own posts
 
@@ -70,7 +70,7 @@ Send the bot a normal message (not a reply to a draft) and it prepares a draft f
 | "варто знати" + a link | A practical story with tips |
 | /help | A reminder of these options |
 
-A 🔎 Розбираємося article uses only what its sources say: rules come from official and expert pages, and forum stories are presented as individual experiences, without names. Check it as carefully as any draft; reply with feedback to have it researched and written again. If the bot can't find enough reliable pages, it says so; rephrase the topic or send a link.
+A 🔎 Розбираємося article uses only what its sources say: rules come from official and expert pages, and forum stories are presented as individual experiences, without names. Check it as carefully as any draft; reply with feedback to have it researched and written again (adding a link to a good article helps). If the bot can't find enough reliable pages, it says what's missing; rephrase the topic or send a link.
 
 To publish your own finished text, use **Draft from your own text** in GitHub (see the last section).
 
