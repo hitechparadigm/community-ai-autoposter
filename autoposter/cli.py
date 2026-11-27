@@ -180,11 +180,17 @@ def cmd_recard(match):
         kind = d.get("kind") or "news"
         header = config.LABELS["thisday_header"] if kind == "thisday" else config.LABELS["history_header"]
         image = fetch_page(d["url"])[1] if d["url"].startswith("http") else ""
-        card = (history_card(kind, header, title, image, "", "") if kind in ("history", "thisday")
-                else {"kind": kind, "title": title})
-        file_id = make_card(card)
+        if d.get("card_spec"):  # the card as first made (kind, title, tag, date): redraw it, finding a photo again
+            card = {k: v for k, v in d["card_spec"].items() if k not in ("photo", "credit")}
+            card["queries"] = [title] if kind in ("history", "thisday") else []
+        else:
+            card = (history_card(kind, header, title, image, "", "") if kind in ("history", "thisday")
+                    else {"kind": kind, "title": title})
+        sent = []
+        file_id = make_card(card, sent)
         if file_id:
-            d["card"] = file_id
+            d["card"], d["card_msgs"] = file_id, d.get("card_msgs", []) + sent
+            d["card_spec"] = {k: v for k, v in card.items() if k != "queries"}
             print(f"New card for: {title} (photo: {card.get('photo') or 'none'})")
     save_state(s)
 

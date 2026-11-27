@@ -259,6 +259,15 @@ CARD = {
     "band": 0,                            # red side bands like the Canadian flag (e.g. 135 = square image)
     "band_color": "#A51D18",              # (fills Facebook's frame on desktop); 0 = no bands
     "digest_items": 4,                    # headlines listed on the digest card
+    # When no freely licensed photo of the subject exists, a Canadian landmark goes on the card instead: English
+    # Wikipedia article titles whose lead photo is on Wikimedia Commons, by card kind (one picked per post).
+    "fallback_photos": {
+        "news": ["Parliament Hill", "Centre Block", "Library of Parliament", "Peace Tower"],
+        "community": ["St. Vladimir and Olga Cathedral", "Ukrainian Cultural Heritage Village", "Pier 21"],
+        "history": ["Library and Archives Canada", "Canadian Museum of History", "Pier 21", "Library of Parliament"],
+        "thisday": ["Library and Archives Canada", "Canadian Museum of History", "Library of Parliament"],
+        "research": ["Pier 21", "Parliament Hill", "Library of Parliament", "Centre Block"],
+    },
     # Photos allowed on cards: Wikimedia Commons (free licences) and the archive and heritage sites used for
     # history posts (archival photos, credited to the site). Never news outlets: their photos are copyrighted.
     "photo_domains": ("wikimedia.org", "albertashistoricplaces.com", "thediscoverblog.com", "qahn.org",

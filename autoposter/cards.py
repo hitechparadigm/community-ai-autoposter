@@ -1,4 +1,5 @@
 """Facebook picture cards, drawn from card.html with headless Chrome."""
+import hashlib
 import html
 import os
 import re
@@ -117,5 +118,14 @@ def make_card(card, sent=None):
         if card.get("photo"):
             break
         card["photo"] = card_photo(commons_image(q)) if q else ""
+    fallback = list(config.CARD.get("fallback_photos", {}).get(card.get("kind"), []))
+    if not card.get("photo") and fallback:  # nothing of the subject: a Canadian landmark (varies by title)
+        start = int(hashlib.sha1(card.get("title", "").encode()).hexdigest(), 16) % len(fallback)
+        for q in fallback[start:] + fallback[:start]:
+            card["photo"] = card_photo(commons_image(q))
+            if card["photo"]:
+                card["credit"] = "Wikimedia Commons"
+                print(f"Card photo: no photo of the subject; using {q}")
+                break
     png = render_card(card)
     return send_card(png, "🖼 Facebook", sent) if png else ""

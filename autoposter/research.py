@@ -193,7 +193,7 @@ def research_topic(s, topic, feedback=""):
     text = (f"{e(header, quote=False)}\n\n<b>{e(post['title'], quote=False)}</b>\n\n{e(post['teaser'], quote=False)}"
             f"\n\n📖 <b><a href=\"{e(page['url'], quote=True)}\">{e(config.LABELS['read_more'])} →</a></b>")
     key = "research:" + hashlib.sha1((topic + now().isoformat()).encode()).hexdigest()[:12]
-    card = {"kind": "news", "title": post["title"], "tag": header.split(" ", 1)[-1],
+    card = {"kind": "research", "title": post["title"], "tag": header.split(" ", 1)[-1],
             "queries": [*split_queries(query)]}
     ok = send_draft(s, key, text, now().isoformat(), preview_url=page["url"], kind="research",
                     note=review_note(problems), card=card, fb=fb_long(header, post, ", ".join(names)))
