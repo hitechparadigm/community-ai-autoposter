@@ -82,10 +82,11 @@ To publish your own finished text, use **Draft from your own text** in GitHub (s
 | 💡 Варто знати | A short real story, then "Що можна зробити:" with 3-4 tips |
 | 🗞 Digest | National news, 3-4 provinces, the community, today; each item links to its outlet; one referral link at the end |
 | 📅 Цей день / 🍁 Історія | A short teaser with "📖 Читати повністю": the full article opens on Telegraph, with a photo |
+| 🔎 Розбираємося | Only when one of us sends the bot a topic. A teaser with "📖 Читати повністю": the Telegraph article is written from several web sources and ends with their list |
 
 **On Facebook** every approved post goes out automatically in a Facebook format:
 
-- a picture card (photo on top, headline below) instead of a link preview;
+- a picture card instead of a link preview: photo on top, headline below, "Новини Канади українською" under our name and "Підписуйтеся: t.me/UkrainianCanada" at the bottom. When there's no free photo of the subject (often for people), the card shows a Canadian landmark instead; the digest card lists the top 4 stories as complete sentences;
 - the full text, with no links, because Meta blocks Canadian news links in Canada; sources are named in plain text;
 - an automatic first comment with the link to our Telegram channel, and for long-reads the Telegraph article;
 - no referral links.
@@ -109,6 +110,7 @@ Most of the time Telegram is all you need. For extra tools, there are buttons in
 | Tool | Use it to |
 | --- | --- |
 | Draft posts | Get a news draft now (tick "Варто знати" for a practical story) |
+| Draft an article on a topic | The same as sending the bot a topic: a 🔎 Розбираємося article from web sources |
 | Draft morning digest / Draft this-day post / Draft history story | Get those drafts now; history can also be written from a link or Wikipedia article you give |
 | Draft from your own text | Turn your own finished text into a draft with a Facebook card |
 | Publish approved posts | Publish what was approved right away, instead of waiting up to 5 minutes |

@@ -245,6 +245,20 @@ stories from 3-4 provinces or territories (rotating so every region is featured 
 "🇺🇦 Українська громада" when there is community news; "📌 Сьогодні": up to 3 things the news says happen
 today (left out when there are none). A key phrase in each item links to the source, outlets are mixed
 (CBC, Global News, CTV News, Postmedia papers), and it ends with "За матеріалами: ..." and a referral link.
+Its Facebook card lists the top 4 stories as complete one-sentence versions Claude writes for the card (at most
+80 characters each), never cut off.
+
+**🔎 Розбираємося** (on request). An approver sends the bot a topic or a task in plain words, with no link
+(Actions → "Draft an article on a topic" does the same). Claude searches the web with Anthropic's web search tool
+and lists the best pages: official sources first (canada.ca, laws, the IRB, court decisions), then lawyers,
+settlement agencies and media, and forum threads when the request asks for people's experiences. The bot reads
+them (pages it can't load, such as PDFs or sites that refuse scripts, are read through Anthropic's web fetch
+tool), checks that they cover the request and searches once more for what's missing. It needs at least 3
+readable pages (`RESEARCH` in `community/config.py`); with fewer it tells the approver what is missing instead
+of writing. The article (Telegraph, like the long-reads below) states what the sources don't cover, presents
+forum stories as individual experiences without names, and ends with the list of sources. It goes through the
+same copy editor and reviewer, with reviewer rules for this kind of article. A feedback reply researches and
+writes it again. Cost: about $1-1.50 per article, mostly for reading the pages.
 
 **History long-reads.** Written as Telegraph articles (telegra.ph, open inside Telegram with Instant View),
 with photo, subheadings and the source credited at the end. The channel gets a teaser with one bold
@@ -316,9 +330,11 @@ amounts in `REFERRALS` when an offer changes.
 When the secrets `FACEBOOK_PAGE_ID` and `FACEBOOK_PAGE_TOKEN` are set, every published post also goes to the
 Facebook Page, built for Facebook readers:
 - **Picture card** (`community/card.html`, drawn with headless Chrome): the photo on top and the headline on a panel
-  below it. Photos come from Wikimedia Commons or, for history posts, the archive the story comes from (the writer suggests several searches: monument, place, object), or a centred text layout with
-  an ornament band when none fits. Approvers see the card with each draft. Try design changes with the
-  **Preview Facebook cards** workflow (`community/samples/cards.json`).
+  below it, the brand with the line "Новини Канади українською" at the top, and "Підписуйтеся: t.me/UkrainianCanada"
+  as a call to action at the bottom. Photos come from Wikimedia Commons or, for history posts, the archive the
+  story comes from; when nothing of the subject exists, a Canadian landmark (see How the picture cards are made).
+  Approvers see the card with each draft. Try design changes with the **Preview Facebook cards** workflow
+  (`community/samples/cards.json`).
 - **Full text, no links.** In Canada Meta blocks links to news outlets (Online News Act), even in comments,
   and link posts reach fewer people. Sources stay named in plain text; long-reads go in whole.
 - **First comment** with the links Facebook allows: the Telegram channel and, for long-reads, the Telegraph
@@ -350,18 +366,24 @@ version. When a name comes out wrong, add a line to the file.
 2. **Photo.** The writer (Claude) suggests up to 4 searches for a meaningful picture, best first: a monument,
    building, place or object (never a person in news). The bot looks each one up on Wikipedia/Wikimedia
    Commons (history posts first use the article's own archival photo) and takes the first real photo: big enough, not a banner, not a map, flag, chart or logo. News
-   falls back to a photo of the province's legislature (`REGIONS` in `community/config.py`). Only Wikimedia photos and
-   archival photos from the history sources are used (`CARD["photo_domains"]`; news outlets' photos are
-   copyrighted), credited on the card's edge.
+   falls back to a photo of the province's legislature (`REGIONS` in `community/config.py`). If there is still
+   nothing (for example no free photo of a person exists), a Canadian landmark goes on the card instead:
+   `CARD["fallback_photos"]` lists them per card kind (Library and Archives Canada for history, Pier 21 for
+   🔎 Розбираємося, Parliament Hill for news…), chosen by the headline so they vary. Only Wikimedia Commons
+   files and archival photos from the history sources are used (`CARD["photo_domains"]`): news outlets' photos
+   are copyrighted, and so can be images uploaded to Wikipedia itself under "fair use". The source is credited
+   on the card's edge.
 3. **Drawing.** `community/card.html` is an ordinary web page with placeholders (`{{title}}`, `{{tag}}`…). The bot
    fills them in, embeds the photo, and takes a 1080×1350 screenshot with headless Chrome (already on GitHub's
-   machines). A small script in the page shrinks the headline until it fits. Without a photo, the page
-   switches to the centred large-text layout with the ornament band.
+   machines). Headlines start large (72 px on photo cards) and a small script in the page shrinks them until they
+   fit in at most four lines. Without a photo (the digest, or no photo at all), the page switches to the centred
+   large-text layout with the ornament band.
 4. **Approval and storage.** The PNG goes to the approvers in Telegram with the draft; Telegram keeps the
    file. When the post is approved, the bot fetches it back and uploads it to Facebook with the text.
 
-To change the look, edit `community/card.html` (layout, fonts, colours) and `CARD` in `community/config.py` (size, brand texts,
-colours), then run **Preview Facebook cards**. Cost: free (no image-generation service).
+To change the look, edit `community/card.html` (layout, fonts, colours) and `CARD` in `community/config.py` (size, brand,
+tagline, call to action, colours, fallback photos), then run **Preview Facebook cards**. To redraw a waiting
+draft's card (after a design change, or to get a photo), run the same workflow with part of the draft's link. Cost: free (no image-generation service).
 
 Getting the keys (you must be an admin of the Page):
 1. developers.facebook.com/apps → Create App. Use case: Content management → **Manage everything on your
@@ -456,7 +478,9 @@ merges safely when two runs finish at the same time.
   sites (BC, Atlantic, North).
 - If a feed breaks, the run log shows `FEED ERROR` and the other feeds still work.
 - Costs: Claude API roughly $25-35/month with Sonnet for everything (9 drafts a day, the monthly review), including the copy-edit and reviewer passes,
-  thanks to prompt caching (see the Anthropic console);
+  thanks to prompt caching (see the Anthropic console); plus about $1-1.50 per 🔎 Розбираємося article and about
+  $0.50 per evaluation run (it runs by itself when the prompts or glossary change). When the API credit runs out,
+  every job stops with "credit balance is too low": top it up in the Claude Console (Plans & Billing);
   GitHub Actions free (public repo); cron-job.org, Telegram and Telegraph free.
 - GitHub pauses its own scheduled workflows in a repo with no commits for 60 days (the bot's memory is saved in
   the private repo now). The bot itself keeps running, since cron-job.org starts the tick; if you also want

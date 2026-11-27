@@ -62,21 +62,32 @@ Every function has a short docstring saying what it does; start from the main fu
 7. **Send** (`drafts.send_draft`): the draft goes to every approver with ✅/❌ buttons and the daily count; if
    Facebook is set up, `cards.make_card` draws the picture card and sends it too. The draft is stored in
    `state["pending"]`.
-8. **Approve** (next tick, `approval.cmd_approve`): Telegram reports the tap; `drafts.publish_draft` posts to the
-   channel, then `channels.post_to_facebook` posts the card and text and adds the first comment. Approvers' copies
-   are updated, the count goes up, and the event is logged for the monthly review.
+8. **Approve** (next tick, `approval.cmd_approve`): Telegram reports the tap, a reply "опублікувати"
+   (`PUBLISH_WORDS`, `approval.handle_feedback`) or a 👍 reaction (`PUBLISH_REACTIONS`, `approval.handle_reaction`)
+   on the draft or its card. All three go through `approval.decide`: `drafts.publish_draft` posts to the channel,
+   then `channels.post_to_facebook` posts the card and text and adds the first comment. Approvers' copies are
+   updated, the count goes up, and the event is logged for the monthly review.
 
-A topic sent without a link goes to `research.research_topic`: Claude writes search queries, `sources.web_search`
-runs them (the search feeds in `RESEARCH` in `community/config.py`), Claude picks the most reliable results, the
-pages are read and numbered as one source text, and the article is written, copy-edited and reviewed against it,
-then published on Telegraph with the list of sources.
+A topic sent without a link goes to `research.research_topic`:
+1. `research.find_sources`: `ai.claude_search` lets Claude search the web with Anthropic's web search tool and
+   list the best pages (`RESEARCH_SEARCH_PROMPT`). If that tool is unavailable, the bot falls back to the search
+   feeds in `RESEARCH` (`sources.web_search`) and lets Claude pick from the results.
+2. `research._read_pages` reads them with the bot's own reader; pages it can't load (PDFs, slow or
+   script-blocking sites) are read in one call through Anthropic's web fetch tool (`ai.claude_fetch`).
+3. A coverage check (`RESEARCH_COVERAGE_PROMPT`) asks whether the pages answer the request; if not, one more
+   search for what is missing. With fewer than `min_sources` readable pages, `NotCovered` is raised and the
+   approver is told what's missing; otherwise the gaps go to the writer, who must say plainly what isn't covered.
+4. The pages are numbered as one source text; the article is written (`RESEARCH_WRITE_PROMPT`), copy-edited and
+   reviewed (with `RESEARCH_REVIEW_NOTE`), then published on Telegraph with the list of sources. The draft keeps
+   its `topic`, so a feedback reply researches and writes it again.
 
 History long-reads follow the same path, but are written by `history._write_history`, published as a Telegraph
 page, and the channel gets a teaser with a "Read more" link.
 
 ## Where Claude is called
 
-All calls go through `ai.ask_claude(prompt, source=None, schema=None)`:
+Almost all calls go through `ai.ask_claude(prompt, source=None, schema=None)` (the exceptions are
+`ai.claude_search` and `ai.claude_fetch`, which use Anthropic's web search and web fetch tools for 🔎 articles):
 
 - **`source`**: the article text, sent first with prompt caching, so the writer, editor and reviewer read it from
   the cache instead of paying for it again. Prompts refer to it as `SOURCE_REF`.
@@ -93,7 +104,7 @@ prompt.
 | Key | What it holds |
 | --- | --- |
 | `seen` | Story links already offered (one week), so they aren't offered again |
-| `pending` | Drafts waiting for approval: text, approvers' message ids, Facebook card file id, kind |
+| `pending` | Drafts waiting for approval: text, approvers' message ids (`msgs`, and `card_msgs` for the card), Facebook card file id and spec, kind; long-reads also their Telegraph path, 🔎 articles their `topic` |
 | `tg_offset` | The next Telegram update to read |
 | `schedule_done` | Scheduled jobs already run (one week) |
 | `history_done` | History sources already used |
@@ -116,7 +127,11 @@ runs' changes. A tap is confirmed to Telegram as soon as it is read, so overlapp
   `community/glossary.json` instead.
 - **Add a destination** (another network): add a `post_to_…` function in `channels.py` and call it from
   `drafts.publish_draft`, the way Facebook is called.
-- **Change the card design:** edit `community/card.html`, then run the Preview Facebook cards workflow.
+- **Change the card design:** edit `community/card.html` (and `CARD` in `community/config.py`: brand, tagline,
+  call to action, fallback photos), then run the Preview Facebook cards workflow. `cards.make_card` looks for a
+  photo in this order: the card's `queries` (Wikimedia Commons, Commons-hosted files only), then
+  `CARD["fallback_photos"]` for the card's kind; it records the card's message ids (`card_msgs`) so replies and
+  👍 on the card work like on the draft.
 
 ## Evaluation
 
