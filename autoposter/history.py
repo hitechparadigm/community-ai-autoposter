@@ -38,7 +38,7 @@ def _write_history(topic, source, article, opening, header, source_name, url, s,
         return False
     query = (post.get("image_query") or "").strip()
     if not query and not image:  # ask separately: the English Wikipedia title of the main subject
-        query = ask_claude("Give the exact English Wikipedia article title for the main person, place or event "
+        query = ask_claude(fast=True, prompt="Give the exact English Wikipedia article title for the main person, place or event "
                            f"of this story: {topic}\nReply with the title only.").strip().strip('"')[:100]
     edited = parse_post(ask_claude(EDIT_PROMPT.format(
         draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False),
@@ -118,7 +118,7 @@ def cmd_thisday():
     prompt = THISDAY_PICK_PROMPT.format(items=listing) + (
         f"\nToday choose {'an EVENT (something that happened)' if want == 'event' else 'a PERSON'} "
         "if there is a good one; otherwise the best entry of any kind. Return up to 3 ids, best first.")
-    for i in parse_picks(ask_claude(prompt, schema=SCHEMA_IDS))[:3]:
+    for i in parse_picks(ask_claude(prompt, schema=SCHEMA_IDS, fast=True))[:3]:
         if i >= len(cands):
             continue
         c = cands[i]
@@ -152,7 +152,8 @@ def _story_from(candidates, s, stamp, header, community=False):
     On community days only stories mainly about the community count."""
     listing = "\n".join(f"[{i}] ({c['region']}, {c['source']}) {c['title']}" for i, c in enumerate(candidates))
     focus = COMMUNITY_FOCUS.format(community=config.COMMUNITY_HISTORY_LABEL) if community else ""
-    for i in parse_picks(ask_claude(STORY_PICK_PROMPT.format(items=listing, focus=focus), schema=SCHEMA_IDS))[:3]:
+    for i in parse_picks(ask_claude(STORY_PICK_PROMPT.format(items=listing, focus=focus), schema=SCHEMA_IDS,
+                                    fast=True))[:3]:
         if i >= len(candidates):
             continue
         c = candidates[i]

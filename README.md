@@ -129,7 +129,7 @@ Examples: a Polish- or Filipino-Canadian channel, a city news channel for newcom
 country, a university or church community, a professional association. Facebook is optional; the history
 columns can use any country's archives, or be switched off by removing their schedules.
 
-**Stack:** Python 3 (standard library only) · Claude API (Claude Sonnet 5.5 by Anthropic) · GitHub Actions · Telegram Bot API ·
+**Stack:** Python 3 (standard library only) · Claude API (Claude Sonnet 5.5 writes; Claude Haiku 5.5 picks) · GitHub Actions · Telegram Bot API ·
 Telegraph API · Facebook Graph API · RSS/Atom
 
 ## How it works
@@ -503,8 +503,15 @@ Each run's log ends with a "Claude usage" line; `PRICES` in `community/config.py
 | Monthly review | a few cents | — | One call a month |
 | Evaluation run (9 test posts) | ~$0.50 | — | Only when prompts or the glossary change |
 
-The daily schedule comes to about **$1.20 a day, $35-40 a month**. Facebook cards, Telegram, Telegraph,
+The daily schedule came to about **$1.20 a day, $35-40 a month**. Facebook cards, Telegram, Telegraph,
 GitHub Actions and cron-job.org cost nothing.
+
+**Two models since 27 November.** Simple choices (picking stories, search queries, Wikipedia titles, referral
+matches, comment gists) and the digest's shortlist now go to Claude Haiku 5.5 (`FAST_MODEL`, $0.10/$0.50 per
+million tokens, 20 times cheaper); everything readers see is still written, edited and reviewed by Sonnet
+(`MODEL`). The digest writer reads a shortlist of 150 headlines (`DIGEST_SHORTLIST`) instead of all of them.
+Expected: about **$0.95-1.00 a day, $28-30 a month**; the table above will be re-measured after a week. Every
+run's log now ends with its cost ("about $…"), and Actions → Check connections tests both models.
 
 ## Notes
 

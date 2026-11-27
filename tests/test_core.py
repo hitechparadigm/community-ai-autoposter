@@ -281,6 +281,28 @@ class ResearchWithClaudeSearch(unittest.TestCase):
         self.assertEqual([u for _, u, _ in out], ["https://a.ca/1", "https://b.ca/2.pdf"])
 
 
+class Models(unittest.TestCase):
+    def test_simple_choices_use_the_fast_model_and_costs_are_counted(self):
+        sent = []
+        reply = {"content": [{"type": "text", "text": "ok"}], "usage": {"input_tokens": 1000, "output_tokens": 100}}
+        with mock.patch.object(ai, "http", lambda url, body, *a, **k: sent.append(body["model"]) or json.dumps(reply)), \
+                mock.patch.object(ai, "ANTHROPIC_KEY", "x"), mock.patch.dict(ai._usage, {"cost": 0.0}):
+            ai.ask_claude("pick", fast=True)
+            ai.ask_claude("write")
+            cost = ai._usage["cost"]
+        self.assertEqual(sent, [config.FAST_MODEL, config.MODEL])
+        fast, main = config.PRICES[config.FAST_MODEL], config.PRICES[config.MODEL]
+        self.assertAlmostEqual(cost, (1000 * (fast["input"] + main["input"]) + 100 * (fast["output"] + main["output"])) / 1e6)
+
+    def test_digest_shortlist_keeps_community_news_and_order(self):
+        from autoposter import news
+        items = [{"title": f"t{i}", "region": "Canada", "community": i == 7} for i in range(40)]
+        with mock.patch.object(news, "ask_claude", lambda *a, **k: json.dumps(list(range(20, 40)))), \
+                mock.patch.dict(config.__dict__, {"DIGEST_SHORTLIST": 25}):
+            short = news._shortlist(items)
+        self.assertEqual([it["title"] for it in short], ["t7"] + [f"t{i}" for i in range(20, 40)])
+
+
 class CommandLine(unittest.TestCase):
     def test_unknown_command_prints_usage(self):
         from autoposter import cli

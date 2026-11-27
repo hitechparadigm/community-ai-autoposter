@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from community import config
 
 from .core import FB_PAGE_ID, FB_TOKEN, LOCAL, http, load_state, merge_state, now, save_state, tg
-from .ai import _print_usage
+from .ai import _print_usage, ask_claude
 from .sources import commons_image, fetch_page, outlet_name, parse_feed, split_queries
 from .cards import card_photo, make_card, render_card, send_card
 from .channels import format_post, preview
@@ -72,6 +72,15 @@ def cmd_check():
     except Exception as e:
         ok = False
         print(f"Telegram: FAILED ({e})")
+    if os.environ.get("ANTHROPIC_API_KEY"):  # one tiny call per model: the key, the credit and both model names
+        for fast in (False, True):
+            name = (getattr(config, "FAST_MODEL", "") or config.MODEL) if fast else config.MODEL
+            try:
+                ask_claude("Reply with the word OK.", fast=fast)
+                print(f"Claude: OK, {name}")
+            except BaseException as e:  # ask_claude exits on a missing key; an HTTP error says why (e.g. credit)
+                ok = False
+                print(f"Claude: FAILED for {name} ({str(e)[:200]})")
     if not (FB_PAGE_ID and FB_TOKEN):
         print("Facebook: not set up (FACEBOOK_PAGE_ID / FACEBOOK_PAGE_TOKEN missing)")
     else:

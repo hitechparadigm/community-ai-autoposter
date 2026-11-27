@@ -158,7 +158,7 @@ def handle_idea(msg, s, sender):
                 u = urls[0]
                 src = ("wiki:" + urllib.parse.unquote(u.split("/wiki/", 1)[1])) if "wikipedia.org/wiki/" in u else u
             else:  # a topic: find its English Wikipedia article
-                title = ask_claude("Give the exact English Wikipedia article title for this Canadian history topic: "
+                title = ask_claude(fast=True, prompt="Give the exact English Wikipedia article title for this Canadian history topic: "
                                    f"{note}\nReply with the title only.").strip().strip('"«»')[:120]
                 src = "wiki:" + title.replace(" ", "_")
             ok = _history_from(s, src, False, note)

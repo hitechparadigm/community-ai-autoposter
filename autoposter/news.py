@@ -7,8 +7,8 @@ import sys
 from datetime import timedelta
 
 from community import config
-from community.prompts import (DIGEST_PROMPT, EDIT_PROMPT, PICK_PROMPT, SHORTEN_TITLE, TIPS_CHECK, TIPS_PICK_PROMPT, TIPS_WRITE_PROMPT,
-                     WRITE_PROMPT)
+from community.prompts import (DIGEST_PROMPT, DIGEST_SHORTLIST_PROMPT, EDIT_PROMPT, PICK_PROMPT, SHORTEN_TITLE,
+                               TIPS_CHECK, TIPS_PICK_PROMPT, TIPS_WRITE_PROMPT, WRITE_PROMPT)
 
 from .core import ADMIN_IDS, LOCAL, load_state, now, save_state, visible_length
 from .sources import fetch_article, fetch_news, outlet, split_queries
@@ -102,7 +102,8 @@ def cmd_draft(mode="news"):
         f"[{i}] {'[UKRAINIAN COMMUNITY] ' if it.get('community') else ''}({it['region']}, {it['source']}) "
         f"{it['title']} — {it['summary'][:120]}" for i, it in enumerate(items))
     pick_prompt = TIPS_PICK_PROMPT if tips else PICK_PROMPT
-    picks = parse_picks(ask_claude(pick_prompt.format(n=config.DRAFTS_PER_RUN, items=listing), schema=SCHEMA_IDS))
+    picks = parse_picks(ask_claude(pick_prompt.format(n=config.DRAFTS_PER_RUN, items=listing), schema=SCHEMA_IDS,
+                                   fast=True))
     print(f"Claude picked {picks}")
 
     stamp = now().isoformat()
@@ -136,6 +137,22 @@ def card_line(entry, limit=110):
     return h if len(h) <= limit else h[:limit - 3].rsplit(" ", 1)[0] + "…"
 
 
+def _shortlist(items):
+    """Cut the day's items to the DIGEST_SHORTLIST most relevant, chosen by the cheaper FAST_MODEL from headlines
+    only, so the digest writer (MODEL) reads a short list instead of every headline. Keeps the original order."""
+    n = getattr(config, "DIGEST_SHORTLIST", 0)
+    if not n or len(items) <= n:
+        return items
+    listing = "\n".join(f"[{i}] {'[UKRAINIAN COMMUNITY] ' if it.get('community') else ''}({it['region']}) "
+                        f"{it['title']}" for i, it in enumerate(items))
+    keep = set(parse_picks(ask_claude(DIGEST_SHORTLIST_PROMPT.format(n=n, items=listing), schema=SCHEMA_IDS,
+                                      fast=True)))
+    keep |= {i for i, it in enumerate(items) if it.get("community")}  # community news always goes through
+    short = [it for i, it in enumerate(items) if i in keep]
+    print(f"Shortlist: {len(short)} of {len(items)} items for the digest")
+    return short if len(short) >= 20 else items  # a failed shortlist: use everything
+
+
 def cmd_digest():
     """The morning digest: everything the feeds published since yesterday, grouped by Claude into national
     news, a few rotating regions, the community and today's events; each item links to its outlet."""
@@ -153,6 +170,7 @@ def cmd_digest():
     print(f"{len(items)} items for the digest")
     if len(items) < 5:
         return save_state(s)
+    items = _shortlist(items)
     recent = sorted(s["digest_regions"], key=lambda r: s["digest_regions"][r], reverse=True)[:6]
     listing = "\n".join(
         f"[{i}] {'[UKRAINIAN COMMUNITY] ' if it.get('community') else ''}({it['region']}, {it['source']}, "

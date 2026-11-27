@@ -15,7 +15,20 @@ from .core import ANTHROPIC_KEY, HERE, STATE_FILE, http
 SOURCE_REF = "(the source text is at the beginning of this message)"
 
 
-_usage = {"calls": 0, "input": 0, "cache_read": 0, "cache_write": 0, "output": 0}
+_usage = {"calls": 0, "input": 0, "cache_read": 0, "cache_write": 0, "output": 0, "cost": 0.0}
+
+
+def _count(usage, model):
+    """Add one API response's token counts (and their price, from config.PRICES) to this run's totals."""
+    rates = getattr(config, "PRICES", {}).get(model, {})
+    _usage["calls"] += 1
+    for k, f in (("input", "input_tokens"), ("cache_read", "cache_read_input_tokens"),
+                 ("cache_write", "cache_creation_input_tokens"), ("output", "output_tokens")):
+        n = usage.get(f) or 0
+        _usage[k] += n
+        _usage["cost"] += n * rates.get(k, 0) / 1e6
+    searches = (usage.get("server_tool_use") or {}).get("web_search_requests") or 0
+    _usage["cost"] += searches * 0.01  # web search: $10 per 1,000 searches
 
 
 def schema_post(keys, optional=()):
@@ -99,7 +112,7 @@ def glossary_for(text):
     return found
 
 
-def ask_claude(prompt, source=None, schema=None):
+def ask_claude(prompt, source=None, schema=None, fast=False):
     """One Claude call. With `source`, the source text goes first as a cached block: the writer, copy editor,
     reviewer and fixer all send the same source within a minute, so later calls read it from the cache at a
     fraction of the price (prompts then refer to it with SOURCE_REF instead of repeating it)."""
@@ -120,7 +133,8 @@ def ask_claude(prompt, source=None, schema=None):
                    {"type": "text", "text": prompt}]
     else:
         content = prompt
-    body = {"model": config.MODEL, "max_tokens": 12000, "messages": [{"role": "user", "content": content}]}
+    model = (getattr(config, "FAST_MODEL", "") or config.MODEL) if fast else config.MODEL
+    body = {"model": model, "max_tokens": 12000, "messages": [{"role": "user", "content": content}]}
     if schema:  # structured answer through tool use: always well-formed JSON, no parsing guesswork
         body["tools"] = [{"name": "answer", "description": "Return the answer in this structure.",
                           "input_schema": schema}]
@@ -138,11 +152,7 @@ def ask_claude(prompt, source=None, schema=None):
         timeout=180,
     )
     resp = json.loads(raw)
-    u = resp.get("usage", {})
-    _usage["calls"] += 1
-    for k, f in (("input", "input_tokens"), ("cache_read", "cache_read_input_tokens"),
-                 ("cache_write", "cache_creation_input_tokens"), ("output", "output_tokens")):
-        _usage[k] += u.get(f) or 0
+    _count(resp.get("usage", {}), model)
     if schema:
         for b in resp.get("content", []):
             if b.get("type") == "tool_use":
@@ -194,11 +204,7 @@ def claude_search(prompt, max_uses=6):
         except Exception as e:
             print(f"Claude web search failed: {str(e)[:200]}")
             return "", []
-        u = resp.get("usage", {})
-        _usage["calls"] += 1
-        for k, f in (("input", "input_tokens"), ("cache_read", "cache_read_input_tokens"),
-                     ("cache_write", "cache_creation_input_tokens"), ("output", "output_tokens")):
-            _usage[k] += u.get(f) or 0
+        _count(resp.get("usage", {}), config.MODEL)
         for b in resp.get("content", []):
             if b.get("type") == "web_search_tool_result" and isinstance(b.get("content"), list):
                 results += [{"url": r.get("url", ""), "title": r.get("title", "")} for r in b["content"]
@@ -229,11 +235,7 @@ def claude_fetch(urls, max_chars=7000):
     except Exception as e:
         print(f"Claude web fetch failed: {str(e)[:200]}")
         return {}
-    u = resp.get("usage", {})
-    _usage["calls"] += 1
-    for k, f in (("input", "input_tokens"), ("cache_read", "cache_read_input_tokens"),
-                 ("cache_write", "cache_creation_input_tokens"), ("output", "output_tokens")):
-        _usage[k] += u.get(f) or 0
+    _count(resp.get("usage", {}), config.MODEL)
     pages = {}
     for b in resp.get("content", []):
         c = b.get("content") or {}
@@ -341,4 +343,4 @@ def _print_usage():
     """At exit: one log line with this run's Claude calls and tokens (to keep an eye on cost)."""
     if _usage["calls"]:
         print(f"Claude usage: {_usage['calls']} calls, input {_usage['input']}, cache write {_usage['cache_write']}, "
-              f"cache read {_usage['cache_read']}, output {_usage['output']} tokens")
+              f"cache read {_usage['cache_read']}, output {_usage['output']} tokens, about ${_usage['cost']:.3f}")

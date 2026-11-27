@@ -62,7 +62,8 @@ def _read(topic, found, n):
         return []
     listing = "\n".join(f"[{i}] {it['source']} | {it['url'][:90]} | {it['title']} | {it['summary'][:160]}"
                         for i, it in enumerate(found))
-    picks = parse_picks(ask_claude(RESEARCH_PICK_PROMPT.format(topic=topic, n=n, results=listing), schema=SCHEMA_IDS))
+    picks = parse_picks(ask_claude(RESEARCH_PICK_PROMPT.format(topic=topic, n=n, results=listing), schema=SCHEMA_IDS,
+                                   fast=True))
     print("Picked: " + ", ".join(found[i]["url"] for i in picks if 0 <= i < len(found)))
     out = []
     for it in [found[i] for i in picks if 0 <= i < len(found)][:n + 2]:  # a couple spare, in case pages fail
@@ -130,7 +131,8 @@ def find_sources(topic):
     if found:
         sources = _read_pages(found, n)
     else:  # web search tool unavailable: search feeds + Claude picks
-        r = _json(ask_claude(RESEARCH_QUERIES_PROMPT.format(topic=topic), schema=SCHEMA_QUERIES), "{", "}") or {}
+        r = _json(ask_claude(RESEARCH_QUERIES_PROMPT.format(topic=topic), schema=SCHEMA_QUERIES, fast=True),
+                  "{", "}") or {}
         queries = [str(q).strip() for q in r.get("queries", []) if str(q).strip()][:6] or [topic]
         sources = _read(topic, _search(queries, seen), n)
     missing = ""

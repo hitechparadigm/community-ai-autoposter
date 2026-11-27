@@ -539,3 +539,19 @@ editor, so don't report them as problems: plain statements of what the sources d
 «за даними сайту уряду Канади»; a closing sentence recommending a licensed immigration consultant (RCIC) or a
 lawyer; short background that explains the topic when the sources support it. Still report invented or
 unsupported facts and conclusions, wrong terms, repetition and language errors."""
+
+# Before the digest: a cheaper model shortlists the headlines the digest writer will see
+DIGEST_SHORTLIST_PROMPT = AUDIENCE + """
+
+Below are all the news items the feeds published since yesterday. The morning digest will cover the most important
+national stories, notable stories from several provinces and territories, Ukrainian community news, and things
+happening today. Shortlist up to {n} items the digest writer should consider: every item marked
+[UKRAINIAN COMMUNITY] that is really about Ukrainians in Canada, the important national stories, the most notable
+regional stories from EVERY province and territory present, and items about events happening today. Keep one item
+per story when several outlets cover it. Leave out routine crime, celebrity and sports stories.
+
+Reply with JSON only: {{"ids": [3, 17, 42]}}
+
+News items:
+{items}
+"""

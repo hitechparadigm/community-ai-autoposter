@@ -93,9 +93,8 @@ def judge(case, post):
 
 
 def cost(usage):
-    """US dollars for the tokens used (prices from config.PRICES)."""
-    p = getattr(config, "PRICES", {})
-    return sum(usage.get(k, 0) * p.get(k, 0) for k in ("input", "cache_write", "cache_read", "output")) / 1e6
+    """US dollars for this run's Claude calls (each priced by its model, from config.PRICES)."""
+    return usage.get("cost", 0.0)
 
 
 def fingerprint():

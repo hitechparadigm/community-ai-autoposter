@@ -20,7 +20,7 @@ def record_comment(m, s):
     text = (m.get("text") or "").strip()
     if post_id and text:  # state.json is in a public repo: readers' words are kept only as a short, unsigned
         # gist of what they ask or say (no names, no quotes), written by Claude; emotional or off-topic ones not at all
-        gist = ask_claude(COMMENT_GIST_PROMPT.format(comment=text[:600])).strip()
+        gist = ask_claude(COMMENT_GIST_PROMPT.format(comment=text[:600]), fast=True).strip()
         if gist and gist.upper() != "SKIP":
             s["tg_comments"] = (s.get("tg_comments", []) + [{"post": post_id, "text": gist[:200],
                                                               "t": now().isoformat(timespec="seconds")}])[-800:]

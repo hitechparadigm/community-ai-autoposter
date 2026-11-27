@@ -86,7 +86,7 @@ def matching_referral(s, post):
     if not refs or _ref_today(s) + waiting >= cap:
         return None
     offers = "\n".join(f"[{i}] {r[0]} ({r[2] if len(r) > 2 else ''})" for i, r in enumerate(refs))
-    pick = _json(ask_claude(REFERRAL_MATCH_PROMPT.format(
+    pick = _json(ask_claude(fast=True, prompt=REFERRAL_MATCH_PROMPT.format(
         offers=offers, post=f"{post['title']}\n{post['body']}"), schema=SCHEMA_REFERRAL), "{", "}") or {}
     try:
         i = int(pick.get("id"))

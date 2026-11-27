@@ -228,9 +228,15 @@ REFERRALS_IN_NEWS_PER_DAY = 1
 REFERRAL_DISCLOSURE = ""  # optional line under the link, e.g. "#реклама"; empty = none
 
 # Claude model used to pick, write and copy-edit posts (Sonnet 5.5)
-MODEL = "claude-sonnet-5-5"
-# US dollars per million tokens for MODEL, to show the cost of a run (check the current Claude pricing page)
-PRICES = {"input": 2.00, "cache_write": 2.50, "cache_read": 0.10, "output": 10.00}
+MODEL = "claude-sonnet-5-5"        # writes, edits and reviews every post
+FAST_MODEL = "claude-haiku-5-5"    # simple choices: picking stories, search queries, comment gists ("" = MODEL)
+# US dollars per million tokens, to show the cost of a run (check the current Claude pricing page).
+# Haiku 5.5's rates are for prompts up to 100,000 tokens (the bot's are far smaller).
+PRICES = {
+    "claude-sonnet-5-5": {"input": 2.00, "cache_write": 2.50, "cache_read": 0.10, "output": 10.00},
+    "claude-haiku-5-5": {"input": 0.10, "cache_write": 0.125, "cache_read": 0.01, "output": 0.50},
+}
+DIGEST_SHORTLIST = 150             # the digest writer sees this many headlines, shortlisted by FAST_MODEL
 
 # ---------- Facebook ----------
 # Facebook gets the full post text with a picture card (see CARD) and no links: in Canada, Meta blocks links

@@ -91,6 +91,9 @@ Almost all calls go through `ai.ask_claude(prompt, source=None, schema=None)` (t
 
 - **`source`**: the article text, sent first with prompt caching, so the writer, editor and reviewer read it from
   the cache instead of paying for it again. Prompts refer to it as `SOURCE_REF`.
+- **`fast=True`**: a simple choice (picking stories, search queries, titles, comment gists, the digest shortlist)
+  goes to `config.FAST_MODEL` (Haiku) instead of `config.MODEL` (Sonnet). Anything readers will see stays on
+  `MODEL`. Each call's tokens are priced by its model (`config.PRICES`) and the run's total is printed at the end.
 - **`schema`**: when given, Claude answers through a tool with that JSON schema, so the answer is always
   well-formed. Schemas are defined in `ai.py` (`SCHEMA_IDS`, `SCHEMA_REVIEW`, …).
 - **Added automatically:** the matching entries of `community/glossary.json` (only names that appear in the text)
