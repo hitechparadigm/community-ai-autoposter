@@ -555,3 +555,10 @@ Reply with JSON only: {{"ids": [3, 17, 42]}}
 News items:
 {items}
 """
+
+# Added to the news and "Варто знати" writing prompts: where the story is about (for the Facebook card's tag
+# and photo), since the feed it came from can be another province's (e.g. CTV Regina reporting on Quebec)
+REGION_FIELD = """
+- "region": where the story mainly happens, exactly one of: {regions}. Use "Canada" for national news or when
+  several provinces are involved equally.
+"""

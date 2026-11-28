@@ -8,7 +8,7 @@ from datetime import timedelta
 
 from community import config
 from community.prompts import (DIGEST_PROMPT, DIGEST_SHORTLIST_PROMPT, EDIT_PROMPT, PICK_PROMPT, SHORTEN_TITLE,
-                               TIPS_CHECK, TIPS_PICK_PROMPT, TIPS_WRITE_PROMPT, WRITE_PROMPT)
+                               TIPS_CHECK, TIPS_PICK_PROMPT, TIPS_WRITE_PROMPT, WRITE_PROMPT, REGION_FIELD)
 
 from .core import ADMIN_IDS, LOCAL, load_state, now, save_state, visible_length
 from .sources import fetch_article, fetch_news, outlet, split_queries
@@ -25,13 +25,18 @@ def write_news(it, article, mode="news", idea=""):
     src_text = article or "(not available)"
     write_prompt = TIPS_WRITE_PROMPT if tips else WRITE_PROMPT
     summary = it["summary"] + (f"\nEDITOR'S REQUEST (follow it): {idea}" if idea else "")
+    places = [r for r in getattr(config, "REGIONS", {}) if r not in config.COMMUNITY_REGIONS]
+    where = REGION_FIELD.format(regions=", ".join(f'"{r}"' for r in places)) if places else ""
     post = parse_post(ask_claude(write_prompt.format(
-        source=it["source"], title=it["title"], summary=summary, article=SOURCE_REF), source=src_text,
-        schema=schema_post(("title", "body"), ("image_query", "emoji", "tips"))))
+        source=it["source"], title=it["title"], summary=summary, article=SOURCE_REF) + where, source=src_text,
+        schema=schema_post(("title", "body"), ("image_query", "emoji", "tips", "region"))))
     if not post:
         print(f"Could not write post for: {it['title']}")
         return None
     photo_query = (post.pop("image_query", "") or "").strip()  # for the Facebook card
+    region = (post.pop("region", "") or "").strip()  # where the story is about (the feed's region can differ)
+    if region not in places:
+        region = it["region"]
     emoji = (post.pop("emoji", "") or "").strip()[:4]  # shown before the headline
     advice = (post.pop("tips", "") or "").strip() if tips else ""  # general advice, checked on its own
     edited = parse_post(ask_claude(EDIT_PROMPT.format(
@@ -54,7 +59,7 @@ def write_news(it, article, mode="news", idea=""):
             advice = checked["tips"].strip()
         post["body"] += f"\n\n{config.LABELS['tips_what_to_do']}\n{advice}"
     return {"title": post["title"], "body": post["body"], "emoji": emoji, "photo_query": photo_query,
-            "problems": problems}
+            "region": region, "problems": problems}
 
 
 def _draft_item(s, it, stamp, mode="news", idea=""):
@@ -69,7 +74,8 @@ def _draft_item(s, it, stamp, mode="news", idea=""):
     ref = matching_referral(s, post)
     if ref:
         text += f'\n\n<a href="{html.escape(ref[1], quote=True)}">{html.escape(ref[0], quote=False)}</a>'
-    region, fallback = getattr(config, "REGIONS", {}).get(it["region"], (it["region"], ""))
+    where = post.get("region") or it["region"]
+    region, fallback = getattr(config, "REGIONS", {}).get(where, (where, ""))
     community = it.get("community")
     card = {"kind": "community" if community else "news", "title": post["title"],
             "tag": (re.sub(r"^\W+", "", config.LABELS["tips_header"]).strip() if tips

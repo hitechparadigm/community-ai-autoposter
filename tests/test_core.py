@@ -281,6 +281,23 @@ class ResearchWithClaudeSearch(unittest.TestCase):
         self.assertEqual([u for _, u, _ in out], ["https://a.ca/1", "https://b.ca/2.pdf"])
 
 
+class StoryRegion(unittest.TestCase):
+    def test_card_tag_follows_the_story_not_the_feed(self):
+        from autoposter import news
+        sent = []
+        item = {"url": "https://www.ctvnews.ca/regina/x", "title": "Supreme Court upholds Quebec law",
+                "summary": "", "source": "CTV News Regina", "region": "Saskatchewan"}
+        post = {"title": "Заголовок", "body": "Текст.", "emoji": "⚖️", "photo_query": "", "region": "Quebec",
+                "problems": []}
+        with mock.patch.object(news, "write_news", lambda *a, **k: dict(post)), \
+                mock.patch.object(news, "fetch_article", lambda u: ""), \
+                mock.patch.object(news, "matching_referral", lambda s, p: None), \
+                mock.patch.object(news, "send_draft", lambda *a, **k: sent.append(k["card"]) or True):
+            news._draft_item({"pending": {}}, item, "t")
+        self.assertEqual(sent[0]["tag"], "Квебек")
+        self.assertIn("Parliament Building (Quebec)", sent[0]["queries"])
+
+
 class Models(unittest.TestCase):
     def test_simple_choices_use_the_fast_model_and_costs_are_counted(self):
         sent = []
