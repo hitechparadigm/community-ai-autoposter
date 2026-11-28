@@ -42,7 +42,8 @@ names like Торонто or Оттава need no brackets. Use feminine job tit
      Gardens, Open Harbour Refugee Association, Blended Visa Office-Referred (BVOR)). You may add a few
      Ukrainian words about what it is (e.g. організація Open Harbour Refugee Association з Галіфакса).
 - Typography: apostrophe ' (м'ясо), em dash with spaces " — ", quotation marks «...», no double spaces.
-- Prefer short sentences and active voice. No clichés, no filler, no exclamation marks, no clickbait.
+- Prefer short sentences and active voice. No clichés, no filler, no exclamation marks, no clickbait \
+(a headline may be gripping, but never misleading or exaggerated).
 - No repetition: every sentence and paragraph adds something new. Don't restate the same fact in other words,
   don't repeat the title or teaser in the body, don't repeat the person's full name in every sentence (use
   "він", "дослідник", the surname), vary how sentences and paragraphs begin, and don't end with a summary of
@@ -81,7 +82,12 @@ WRITE_PROMPT = AUDIENCE + "\n\n" + STYLE + """
 Write a Telegram post in Ukrainian about the news article below. Readers should understand the story \
 without opening the link.
 
-- "title": a short headline, at most 12 words
+- "title": a headline, at most 12 words, that makes readers stop scrolling. Lead with what changes for people \
+  or the most striking concrete fact, in plain words and an active verb: who is affected and how, with a vivid \
+  example where it fits (e.g. not «Верховний суд підтримав закон Квебеку про світськість», but «Учителям і \
+  поліцейським у Квебеку не можна носити хрестик чи хіджаб: суд підтримав закон»). Never dry institutional \
+  wording, and never mislead: every word must be true to the article, no exaggeration, no question headlines, \
+  no exclamation marks.
 - "body": 2-3 short paragraphs (about 600-1000 characters in total), separated by blank lines:
   1. What happened, in plain words.
   2. The key details: who, numbers, dates, deadlines, who is eligible or affected.
@@ -118,7 +124,8 @@ Check and fix:
 2. Russianisms, surzhyk, calques from English, unnatural or awkward phrasing, wrong word choice.
 3. Facts: every name, number, date and claim must match the article. Remove anything the article does not support.
 4. Clarity: a reader who has not seen the article must understand it. Keep the structure and length.
-   A "title" has at most 12 words: shorten a longer one, keeping the key fact.
+   A "title" has at most 12 words: shorten a longer one, keeping the key fact. Keep a gripping headline
+   gripping: if it is dry or institutional, rewrite it around what changes for people, true to the article.
 5. Repetition and meta-comments: remove any repeated facts or phrasing (including between the teaser and the
    body), and any remarks about the writing or the sources ("розповідаємо", "не вдалося з'ясувати", "джерело не
    уточнює"); rephrase genuine historical uncertainty as a plain historical fact.
@@ -326,7 +333,12 @@ TIPS_WRITE_PROMPT = AUDIENCE + "\n\n" + STYLE + """
 
 Write a "Варто знати" post in Ukrainian: a real story readers can learn from, then what they can do.
 
-- "title": a short headline, at most 12 words
+- "title": a headline, at most 12 words, that makes readers stop scrolling. Lead with what changes for people \
+  or the most striking concrete fact, in plain words and an active verb: who is affected and how, with a vivid \
+  example where it fits (e.g. not «Верховний суд підтримав закон Квебеку про світськість», but «Учителям і \
+  поліцейським у Квебеку не можна носити хрестик чи хіджаб: суд підтримав закон»). Never dry institutional \
+  wording, and never mislead: every word must be true to the article, no exaggeration, no question headlines, \
+  no exclamation marks.
 - "body": keep it short: 2 short paragraphs (about 400-600 characters): what happened and the key facts \
   (amounts, who, where, what the companies or authorities said). Only facts from the article; never copy sentences. \
   Put no advice or instructions in the body (what to do, whom to call, where to return something): all of that \
@@ -431,7 +443,8 @@ automated evaluation. Read the source text (given above) and the post, then scor
   (5 = fully faithful; 3 = one minor slip; 1 = a wrong or invented fact)
 - language: natural literary Ukrainian, as written by a professional editor; no russianisms, calques,
   surzhyk, wrong word choice or English sentence structure (5 = publication-ready; 1 = reads like a machine translation)
-- usefulness: tells this audience what happened and why it matters to them, clearly and without padding or repetition
+- usefulness: tells this audience what happened and why it matters to them, clearly and without padding or
+  repetition, under a headline that makes them want to read (concrete, about people, never misleading)
 
 A "Що можна зробити" (what to do) list may add general, widely accepted advice that isn't in the source: judge it
 for being correct and safe in Canada, and count any invented specific (a website section or list, a menu path,
@@ -446,7 +459,8 @@ Post:
 
 # A headline that came out too long (news and "Варто знати")
 SHORTEN_TITLE = """Shorten this Ukrainian news headline to at most {words} words. Keep the key fact and the meaning, \
-use natural literary Ukrainian, no clickbait. Reply with the headline only.
+use natural literary Ukrainian. Keep what makes it gripping (who is affected, the concrete example); cut \
+institutional wording first. No clickbait. Reply with the headline only.
 
 Headline: {title}
 """
