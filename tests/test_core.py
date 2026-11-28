@@ -281,6 +281,20 @@ class ResearchWithClaudeSearch(unittest.TestCase):
         self.assertEqual([u for _, u, _ in out], ["https://a.ca/1", "https://b.ca/2.pdf"])
 
 
+class Reviewer(unittest.TestCase):
+    def test_second_round_fixes_what_the_first_missed(self):
+        verdicts = iter(['{"verdict": "fix", "problems": ["a"]}', '{"verdict": "fix", "problems": ["b"]}',
+                         '{"verdict": "ok"}'])
+        fixes = iter(['{"title": "Заголовок один", "body": "Текст перший, повний."}',
+                      '{"title": "Заголовок два", "body": "Текст другий, повний."}'])
+        def fake(prompt, source=None, schema=None, fast=False):
+            return next(verdicts) if schema is ai.SCHEMA_REVIEW else next(fixes)
+        with mock.patch.object(ai, "ask_claude", fake):
+            post, left = ai.review_post({"title": "Заголовок", "body": "Текст нульовий, повний."},
+                                        ("title", "body"), "source", "topic")
+        self.assertEqual((post["title"], left), ("Заголовок два", []))
+
+
 class StoryRegion(unittest.TestCase):
     def test_card_tag_follows_the_story_not_the_feed(self):
         from autoposter import news

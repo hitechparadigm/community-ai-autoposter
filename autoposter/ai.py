@@ -280,8 +280,9 @@ def edit_ok(original, edited, min_ratio=0.7):
 
 
 def review_post(post, keys, article, topic, note=""):
-    """Reviewer agent: checks the draft against its source; fixes it once if needed and checks again.
-    note: extra instructions for this kind of post. Returns (post, remaining problems)."""
+    """Reviewer agent: checks the draft against its source and fixes what it finds, then checks again, up to
+    config.REVIEW_FIX_ROUNDS times (default 2), so approvers see a corrected draft rather than a list of problems.
+    note: extra instructions for this kind of post. Returns (post, problems still left after the last round)."""
     def review(p):
         """Ask the reviewer about one version; returns its list of problems ([] = fine)."""
         r = _json(ask_claude(REVIEW_PROMPT.format(
@@ -295,17 +296,20 @@ def review_post(post, keys, article, topic, note=""):
         print("Review: ok")
         return post, []
     print("Review found:", "; ".join(problems))
-    fixed = parse_post(ask_claude(FIX_PROMPT.format(
-        problems="\n".join(f"- {p}" for p in problems),
-        draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False), article=SOURCE_REF),
-        source=article, schema=schema_post(keys)), keys)
-    if not fixed or not edit_ok({k: post[k] for k in keys}, fixed, min_ratio=0.3):
-        print("Review: the fix came back unusable; keeping the draft and flagging it")
-        return post, problems
-    fixed = {**post, **{k: fixed[k] for k in keys}}
-    left = review(fixed)
-    print("Review after fix:", "ok" if not left else "; ".join(left))
-    return fixed, left
+    for round_ in range(getattr(config, "REVIEW_FIX_ROUNDS", 2)):
+        fixed = parse_post(ask_claude(FIX_PROMPT.format(
+            problems="\n".join(f"- {p}" for p in problems),
+            draft=json.dumps({k: post[k] for k in keys}, ensure_ascii=False), article=SOURCE_REF),
+            source=article, schema=schema_post(keys)), keys)
+        if not fixed or not edit_ok({k: post[k] for k in keys}, fixed, min_ratio=0.3):
+            print("Review: the fix came back unusable; keeping the draft and flagging it")
+            return post, problems
+        post = {**post, **{k: fixed[k] for k in keys}}
+        problems = review(post)
+        print(f"Review after fix {round_ + 1}:", "ok" if not problems else "; ".join(problems))
+        if not problems:
+            break
+    return post, problems
 
 
 def review_note(problems):

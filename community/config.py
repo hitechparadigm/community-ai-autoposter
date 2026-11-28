@@ -415,6 +415,7 @@ WIKI_REGIONAL_TOPICS = [
 ]
 
 
+REVIEW_FIX_ROUNDS = 2   # reviewer finds problems → fixer corrects them → reviewer checks again, up to this many times
 TITLE_MAX_WORDS = 12   # a longer news headline is shortened by one extra Claude call
 
 # ── Articles on a topic an approver sends (no link): the bot searches the web, reads the best pages, writes ──
