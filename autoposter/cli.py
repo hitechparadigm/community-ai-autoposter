@@ -14,7 +14,7 @@ from .core import FB_PAGE_ID, FB_TOKEN, LOCAL, http, load_state, merge_state, no
 from .ai import _print_usage, ask_claude
 from .sources import commons_image, fetch_page, outlet_name, parse_feed, split_queries
 from .cards import card_photo, make_card, render_card, send_card
-from .channels import format_post, preview
+from .channels import format_post, move_photo_down, preview
 from .drafts import send_draft
 from .news import cmd_digest, cmd_draft
 from .history import cmd_history, cmd_history_from, cmd_rewrite, cmd_thisday, history_card
@@ -222,6 +222,9 @@ def main(argv=None):
         cmd_digest()
     elif cmd == "tick":
         cmd_tick()
+    elif cmd == "move-photo":  # move-photo PAGE: a published long-read's opening photo below its first paragraph
+        s = load_state()
+        move_photo_down(argv[2], s)
     elif cmd == "rewrite":  # rewrite TELEGRAPH_PATH SOURCE  (SOURCE = URL or "wiki:Title")
         cmd_rewrite(argv[2], argv[3])
     elif cmd == "cards":  # sample Facebook cards: cards [FILE]

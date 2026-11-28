@@ -54,15 +54,20 @@ def telegraph_nodes(body, image, image_credit, source_name, url, sources=None):
     """Turn the article text into Telegraph content: photo, paragraphs, subheadings, source.
     sources: [(name, url), ...] for an article written from several sources (listed at the end instead)."""
     nodes = []
-    if image:
-        nodes.append({"tag": "figure", "children": [{"tag": "img", "attrs": {"src": image}},
-                                                    {"tag": "figcaption", "children": [f"{config.LABELS['photo']}: {image_credit}"]}]})
+    figure = {"tag": "figure", "children": [{"tag": "img", "attrs": {"src": image}},
+                                            {"tag": "figcaption", "children": [f"{config.LABELS['photo']}: {image_credit}"]}]}
     for block in re.split(r"\n\s*\n", body.strip()):
         block = block.strip()
         if block.startswith("#"):
             nodes.append({"tag": "h4", "children": [block.lstrip("# ").strip()]})
         elif block:
             nodes.append({"tag": "p", "children": [block]})
+        if image and len(nodes) == 1 and nodes[0]["tag"] == "p":
+            # the photo goes after the first paragraph: as the article's first block, Telegram's Instant View
+            # would show it as a cover cropped to a wide strip (a portrait loses its top and bottom)
+            nodes.append(figure)
+    if image and figure not in nodes:  # no opening paragraph (e.g. a subheading first): photo at the top
+        nodes.insert(0, figure)
     nodes.append({"tag": "hr"})
     if sources:
         nodes.append({"tag": "p", "children": [config.LABELS["sources"] + ":"]})
@@ -164,3 +169,22 @@ def fb_stats(post_id):
             "comments": r.get("comments", {}).get("summary", {}).get("total_count", 0),
             "comment_texts": [c.get("message", "")[:300] for c in r.get("comments", {}).get("data", [])
                               if c.get("message")]}
+
+
+def move_photo_down(path, s):
+    """On a published Telegraph page, move a photo that opens the article to after the first paragraph, so
+    Instant View shows it whole instead of as a cropped cover. The link stays the same."""
+    page = telegraph("getPage", s, path=path, return_content=True)
+    content = page.get("content") or []
+    if not content or not isinstance(content[0], dict) or content[0].get("tag") != "figure":
+        print("The page doesn't open with a photo; nothing to move")
+        return False
+    first_p = next((i for i, n in enumerate(content) if isinstance(n, dict) and n.get("tag") == "p"), None)
+    if first_p is None:
+        return False
+    figure = content.pop(0)
+    content.insert(first_p, figure)  # first_p was counted with the figure still in place: now right after it
+    telegraph("editPage", s, path=path, title=page["title"], author_name=page.get("author_name", ""),
+              author_url=page.get("author_url", ""), content=json.dumps(content, ensure_ascii=False))
+    print(f"Photo moved below the first paragraph: {page['url']}")
+    return True

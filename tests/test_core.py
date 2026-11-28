@@ -281,6 +281,12 @@ class ResearchWithClaudeSearch(unittest.TestCase):
         self.assertEqual([u for _, u, _ in out], ["https://a.ca/1", "https://b.ca/2.pdf"])
 
 
+class TelegraphLayout(unittest.TestCase):
+    def test_photo_follows_the_first_paragraph(self):
+        nodes = channels.telegraph_nodes("Перший абзац.\n\n## Далі\n\nТекст.", "https://img", "Вікіпедія", "s", "u")
+        self.assertEqual([n["tag"] for n in nodes][:3], ["p", "figure", "h4"])
+
+
 class Reviewer(unittest.TestCase):
     def test_second_round_fixes_what_the_first_missed(self):
         verdicts = iter(['{"verdict": "fix", "problems": ["a"]}', '{"verdict": "fix", "problems": ["b"]}',

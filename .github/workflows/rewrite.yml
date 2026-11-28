@@ -9,8 +9,9 @@ on:
         description: "Telegraph page: the part after telegra.ph/ in its link"
         required: true
       source:
-        description: "Source: a web page URL, or wiki:Article title (English Wikipedia)"
-        required: true
+        description: "Source: a web page URL, or wiki:Article title (English Wikipedia). Leave empty to only move the opening photo below the first paragraph (shows it whole in Instant View)"
+        required: false
+        default: ""
 
 jobs:
   rewrite:
@@ -19,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Rewrite
-        run: python3 bot.py rewrite "$PAGE" "$SOURCE"
+        run: if [ -z "$SOURCE" ]; then python3 bot.py move-photo "$PAGE"; else python3 bot.py rewrite "$PAGE" "$SOURCE"; fi
         env:
           PAGE: ${{ inputs.page }}
           SOURCE: ${{ inputs.source }}
