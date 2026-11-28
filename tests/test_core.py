@@ -304,12 +304,20 @@ class StoryRegion(unittest.TestCase):
         post = {"title": "Заголовок", "body": "Текст.", "emoji": "⚖️", "photo_query": "", "region": "Quebec",
                 "problems": []}
         with mock.patch.object(news, "write_news", lambda *a, **k: dict(post)), \
-                mock.patch.object(news, "fetch_article", lambda u: ""), \
+                mock.patch.object(news, "read_article", lambda u: "текст статті " * 100), \
                 mock.patch.object(news, "matching_referral", lambda s, p: None), \
                 mock.patch.object(news, "send_draft", lambda *a, **k: sent.append(k["card"]) or True):
             news._draft_item({"pending": {}}, item, "t")
         self.assertEqual(sent[0]["tag"], "Квебек")
         self.assertIn("Parliament Building (Quebec)", sent[0]["queries"])
+
+    def test_no_post_from_a_headline_alone(self):
+        from autoposter import news
+        item = {"url": "https://www.ctvnews.ca/x", "title": "T", "summary": "S", "source": "CTV", "region": "Canada"}
+        with mock.patch.object(news, "fetch_article", lambda u: "short"), \
+                mock.patch.object(news, "claude_fetch", lambda urls: {}), \
+                mock.patch.object(news, "write_news", lambda *a, **k: self.fail("must not write")):
+            self.assertFalse(news._draft_item({"pending": {}}, item, "t"))
 
 
 class Models(unittest.TestCase):

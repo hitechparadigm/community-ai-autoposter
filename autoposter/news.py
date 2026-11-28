@@ -12,7 +12,7 @@ from community.prompts import (DIGEST_PROMPT, DIGEST_SHORTLIST_PROMPT, EDIT_PROM
 
 from .core import ADMIN_IDS, LOCAL, load_state, now, save_state, visible_length
 from .sources import fetch_article, fetch_news, outlet, split_queries
-from .ai import SCHEMA_DIGEST, SCHEMA_IDS, SCHEMA_TIPS, SOURCE_REF, _json, ask_claude, edit_ok, parse_picks, parse_post, review_note, review_post, schema_post
+from .ai import SCHEMA_DIGEST, SCHEMA_IDS, SCHEMA_TIPS, SOURCE_REF, _json, ask_claude, claude_fetch, edit_ok, parse_picks, parse_post, review_note, review_post, schema_post
 from .channels import format_post
 from .drafts import matching_referral, send_draft
 
@@ -62,10 +62,23 @@ def write_news(it, article, mode="news", idea=""):
             "region": region, "problems": problems}
 
 
+def read_article(url, min_chars=600):
+    """The article's text: the bot's own reader first, then Claude's web fetch tool (for sites that refuse
+    scripts or load slowly). "" if neither gets enough text to write a post from."""
+    text = fetch_article(url)
+    if len(text) < min_chars:
+        text = claude_fetch([url]).get(url, "") or text
+    return text if len(text) >= min_chars else ""
+
+
 def _draft_item(s, it, stamp, mode="news", idea=""):
     """Write one news (or "Варто знати") draft and send it to the approvers. idea: an approver's note to follow."""
     tips = mode == "tips"
-    post = write_news(it, fetch_article(it["url"]), mode, idea)
+    article = read_article(it["url"])
+    if not article:  # a post written from the headline alone misses the story and invites invented details
+        print(f"Skipped (the article can't be read): {it['title']}")
+        return False
+    post = write_news(it, article, mode, idea)
     if not post:
         return False
     emoji, photo_query, problems = post["emoji"], post["photo_query"], post["problems"]
@@ -108,17 +121,21 @@ def cmd_draft(mode="news"):
         f"[{i}] {'[UKRAINIAN COMMUNITY] ' if it.get('community') else ''}({it['region']}, {it['source']}) "
         f"{it['title']} — {it['summary'][:120]}" for i, it in enumerate(items))
     pick_prompt = TIPS_PICK_PROMPT if tips else PICK_PROMPT
-    picks = parse_picks(ask_claude(pick_prompt.format(n=config.DRAFTS_PER_RUN, items=listing), schema=SCHEMA_IDS,
-                                   fast=True))
+    # a couple of spare picks, in case an article can't be read
+    picks = parse_picks(ask_claude(pick_prompt.format(n=config.DRAFTS_PER_RUN + 2, items=listing),
+                                   schema=SCHEMA_IDS, fast=True))
     print(f"Claude picked {picks}")
 
     stamp = now().isoformat()
     for it in items:  # don't offer the same stories again next run
         s["seen"][it["url"]] = stamp
 
-    for i in picks[:config.DRAFTS_PER_RUN]:
-        if i < len(items):
-            _draft_item(s, items[i], stamp, mode)
+    sent = 0
+    for i in picks:
+        if sent >= config.DRAFTS_PER_RUN:
+            break
+        if 0 <= i < len(items) and _draft_item(s, items[i], stamp, mode):
+            sent += 1
     save_state(s)
 
 

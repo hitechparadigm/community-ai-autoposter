@@ -226,7 +226,9 @@ it left behind. Mention a connection to Ukrainians in Canada only if the source 
 paragraph about what the story "shows" newcomers.
   If the source is mostly about something else (e.g. a company rather than the event), write only what it says
   about the topic and keep the article short rather than filling it with unrelated background.
-  Length: as long as the source supports, up to about 6000 characters; never pad or repeat. \
+  Length: as long as the story needs, up to about 6000 characters; never pad or repeat. Tell ONE story, the one \
+  the title promises: leave out the rest of a person's life or of the source (later career, unrelated events, \
+  name trivia) even when the source has it, unless it explains this story. \
   Short paragraphs separated by blank lines. Add 2-4 subheadings on their own line starting with "## ".
 - "image_query": up to 4 searches for a meaningful picture, in English, separated by " | ", most specific
   first: the main person, event, monument, memorial, building, place or object, as titled on English Wikipedia
